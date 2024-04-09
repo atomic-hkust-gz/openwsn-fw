@@ -7,7 +7,8 @@
 #include "nrf51.h"
 #include "board.h"
 #include "leds.h"
-
+#include "sctimer.h"
+#include "uart.h"
 
 //=========================== variables =======================================
 
@@ -32,6 +33,9 @@ void board_init(void) {
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
 
     leds_init();
+
+    uart_init();
+    sctimer_init();
 
 }
 

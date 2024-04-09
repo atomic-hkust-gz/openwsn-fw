@@ -1,7 +1,7 @@
 /**
  * Author: Lan HUANG (YelloooBlue@Outlook.com)
  * Date:   Apr 2024
- * Description: nRF51-dk-specific definition of the "board" bsp module.
+ * Description: nRF51-dk-specific definition of the "leds" bsp module.
  */
 
 #include "stdbool.h"
