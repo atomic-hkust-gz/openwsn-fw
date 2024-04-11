@@ -7,6 +7,7 @@
  *    Date: May 2018
  *
  *    Note: We use RTC0 peripheral with its CC0 register.
+ * Author: Lan HUANG (YelloooBlue@Outlook.com) Apr 2024
 */
 
 #include "nrf51.h"

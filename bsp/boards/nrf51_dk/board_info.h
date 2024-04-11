@@ -78,6 +78,17 @@
     #define PORT_delayTx                        10    //  305us (measured 282us; radio_txNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
     #define PORT_delayRx                         5    // ~153us (measured 136us; radio_rxNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
 #endif
+#if BOARD_PCA10028
+//nrf51-DK
+    #define PORT_maxTxDataPrepare               13    // ~397us (measured 364us)
+    #define PORT_maxRxAckPrepare                13    // ~397us (measured 364us)
+    #define PORT_maxRxDataPrepare               13    // ~397us (measured 364us)
+    #define PORT_maxTxAckPrepare                13    // ~397us (measured 364us)
+
+    // radio speed related
+    #define PORT_delayTx                        10    //  305us (measured 282us; radio_txNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
+    #define PORT_delayRx                         5    // ~153us (measured 147us; radio_rxNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
+#endif
 
 #endif // SLOTDURATION==10
 
@@ -106,6 +117,17 @@
     // radio speed related
     #define PORT_delayTx                        10    //  305us (measured 282us; radio_txNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
     #define PORT_delayRx                         5    // ~153us (measured 136us; radio_rxNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
+#endif
+#if BOARD_PCA10028
+//nrf51-DK
+    #define PORT_maxTxDataPrepare               13    // ~397us (measured 364us)
+    #define PORT_maxRxAckPrepare                13    // ~397us (measured 364us)
+    #define PORT_maxRxDataPrepare               13    // ~397us (measured 364us)
+    #define PORT_maxTxAckPrepare                13    // ~397us (measured 364us)
+
+    // radio speed related
+    #define PORT_delayTx                        10    //  305us (measured 282us; radio_txNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
+    #define PORT_delayRx                         5    // ~153us (measured 147us; radio_rxNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
 #endif
 
 #endif // SLOTDURATION==15
@@ -136,6 +158,17 @@
     // radio speed related
     #define PORT_delayTx                        10    //  305us (measured 282us; radio_txNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
     #define PORT_delayRx                         5    // ~153us (measured 136us; radio_rxNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
+#endif
+#if BOARD_PCA10028
+//nrf51-DK
+    #define PORT_maxTxDataPrepare               13    // ~397us (measured 364us)
+    #define PORT_maxRxAckPrepare                13    // ~397us (measured 364us)
+    #define PORT_maxRxDataPrepare               13    // ~397us (measured 364us)
+    #define PORT_maxTxAckPrepare                13    // ~397us (measured 364us)
+
+    // radio speed related
+    #define PORT_delayTx                        10    //  305us (measured 282us; radio_txNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
+    #define PORT_delayRx                         5    // ~153us (measured 147us; radio_rxNow() to RADIO_IRQHandler() / NRF_RADIO->EVENTS_READY)
 #endif
 
 #endif // SLOTDURATION==20

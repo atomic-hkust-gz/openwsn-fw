@@ -381,7 +381,7 @@
  *
  */
 #ifndef PANID_DEFINED
-#define PANID_DEFINED   (0xcafe)
+#define PANID_DEFINED   (0xcafb)
 #endif
 
 // ======================== Board configuration ========================
