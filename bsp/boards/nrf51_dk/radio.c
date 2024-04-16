@@ -243,21 +243,21 @@ void radio_rfOff(void) {
 
 void radio_loadPacket(uint8_t* packet, uint16_t len) {
 
-   radio_ble_loadPacket(packet,len); // *Now for BLE
+   //radio_ble_loadPacket(packet,len); // *Now for BLE
 
-   //radio_vars.state  = RADIOSTATE_LOADING_PACKET;
+   radio_vars.state  = RADIOSTATE_LOADING_PACKET;
 
-   /////< note: 1st byte should be the payload size (for Nordic), and
-   /////   the two last bytes are used by the MAC layer for CRC
-   //if ((len > 0) && (len <= MAX_PACKET_SIZE)) {
-   //    radio_vars.payload[0]= len;
-   //    memcpy(&radio_vars.payload[1], packet, len);
-   //}
+   ///< note: 1st byte should be the payload size (for Nordic), and
+   ///   the two last bytes are used by the MAC layer for CRC
+   if ((len > 0) && (len <= MAX_PACKET_SIZE)) {
+       radio_vars.payload[0]= len;
+       memcpy(&radio_vars.payload[1], packet, len);
+   }
 
-   //// (re)set payload pointer
-   //NRF_RADIO->PACKETPTR = (uint32_t)(radio_vars.payload);
+   // (re)set payload pointer
+   NRF_RADIO->PACKETPTR = (uint32_t)(radio_vars.payload);
 
-   //radio_vars.state  = RADIOSTATE_PACKET_LOADED;
+   radio_vars.state  = RADIOSTATE_PACKET_LOADED;
 }
 
 void radio_ble_loadPacket(uint8_t* packet, uint16_t len) {
@@ -364,6 +364,12 @@ void radio_getReceivedFrame(uint8_t* pBufRead,
    *pRssi = (int8_t)(0-NRF_RADIO->RSSISAMPLE);
 
    *pCrc = (NRF_RADIO->CRCSTATUS == 1U);
+
+   //radio_ble_getReceivedFrame(pBufRead,pLenRead,maxBufLen,pRssi,pLqi,pCrc);
+
+   //*pLqi = radio_vars.payload[radio_vars.payload[0]-1];//?
+
+   //*pRssi = (int8_t)(0-NRF_RADIO->RSSISAMPLE);//?
 }
 
 void radio_ble_getReceivedFrame(uint8_t* pBufRead,
