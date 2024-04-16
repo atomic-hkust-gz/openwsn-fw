@@ -85,40 +85,42 @@ void radio_init(void) {
    // set radio configuration parameters
    NRF_RADIO->TXPOWER   = (RADIO_TXPOWER_TXPOWER_Pos4dBm << RADIO_TXPOWER_TXPOWER_Pos);
 
-   // set radio mode to IEEE 802.15.4
-   //NRF_RADIO->MODE      = (RADIO_MODE_MODE_Ieee802154_250Kbit << RADIO_MODE_MODE_Pos); //nRF51没有这个模式
-   NRF_RADIO->MODE      = (RADIO_MODE_MODE_Nrf_250Kbit << RADIO_MODE_MODE_Pos);
+ //  // set radio mode to IEEE 802.15.4
+ //  //NRF_RADIO->MODE      = (RADIO_MODE_MODE_Ieee802154_250Kbit << RADIO_MODE_MODE_Pos); //nRF51没有这个模式
+ //  NRF_RADIO->MODE      = (RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos);
 
-   // set config field length to 8
-   NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_LFLEN_Msk);
-   NRF_RADIO->PCNF0 |= (((uint32_t)8) << RADIO_PCNF0_LFLEN_Pos);
+ //  // set config field length to 8
+ //  NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_LFLEN_Msk);
+ //  NRF_RADIO->PCNF0 |= (((uint32_t)8) << RADIO_PCNF0_LFLEN_Pos);
 
-   // set 32-bit zero preamble
-   //NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_PLEN_Msk); //nRF51 没有前导字段
-   //NRF_RADIO->PCNF0 |= ((uint32_t) RADIO_PCNF0_PLEN_32bitZero << RADIO_PCNF0_PLEN_Pos); //nRF51 没有前导字段
+ //  // set 32-bit zero preamble
+ //  //NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_PLEN_Msk); //nRF51 没有前导字段
+ //  //NRF_RADIO->PCNF0 |= ((uint32_t) RADIO_PCNF0_PLEN_32bitZero << RADIO_PCNF0_PLEN_Pos); //nRF51 没有前导字段
 
-   // set max packet size
-   NRF_RADIO->PCNF1 &= (~RADIO_PCNF1_MAXLEN_Msk);
-   NRF_RADIO->PCNF1 |= ((uint32_t) MAX_PACKET_SIZE << RADIO_PCNF1_MAXLEN_Pos);
+ //  // set max packet size
+ //  NRF_RADIO->PCNF1 &= (~RADIO_PCNF1_MAXLEN_Msk);
+ //  NRF_RADIO->PCNF1 |= ((uint32_t) MAX_PACKET_SIZE << RADIO_PCNF1_MAXLEN_Pos);
 
-   // set start of frame delimiter
-   //NRF_RADIO->SFD = (SFD_OCTET << RADIO_SFD_SFD_Pos) & RADIO_SFD_SFD_Msk; //nRF51 没有
+ //  // set start of frame delimiter
+ //  //NRF_RADIO->SFD = (SFD_OCTET << RADIO_SFD_SFD_Pos) & RADIO_SFD_SFD_Msk; //nRF51 没有
 
-   // set CRC to be included
-   //NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_CRCINC_Msk); //nRF51 没有
-   //NRF_RADIO->PCNF0 |= ((uint32_t) RADIO_PCNF0_CRCINC_Include << RADIO_PCNF0_CRCINC_Pos); //nRF51 没有
+ //  // set CRC to be included
+ //  //NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_CRCINC_Msk); //nRF51 没有
+ //  //NRF_RADIO->PCNF0 |= ((uint32_t) RADIO_PCNF0_CRCINC_Include << RADIO_PCNF0_CRCINC_Pos); //nRF51 没有
 
-   // set CRC length
-   NRF_RADIO->CRCCNF &= (~RADIO_CRCCNF_LEN_Msk);
-   NRF_RADIO->CRCCNF |= ((uint32_t) LENGTH_CRC << RADIO_CRCCNF_LEN_Pos);
+ //  // set CRC length
+ //  NRF_RADIO->CRCCNF &= (~RADIO_CRCCNF_LEN_Msk);
+ //  NRF_RADIO->CRCCNF |= ((uint32_t) LENGTH_CRC << RADIO_CRCCNF_LEN_Pos);
 
-   // configure CRC (CRC calculation as per 802.15.4 standard. Starting at first byte after length field.)
-   NRF_RADIO->CRCCNF &= (~RADIO_CRCCNF_SKIPADDR_Msk);
- //  NRF_RADIO->CRCCNF |= ((uint32_t) RADIO_CRCCNF_SKIPADDR_Ieee802154 << RADIO_CRCCNF_SKIPADDR_Pos); //nRF51 没有
+ //  // configure CRC (CRC calculation as per 802.15.4 standard. Starting at first byte after length field.)
+ //  NRF_RADIO->CRCCNF &= (~RADIO_CRCCNF_SKIPADDR_Msk);
+ ////  NRF_RADIO->CRCCNF |= ((uint32_t) RADIO_CRCCNF_SKIPADDR_Ieee802154 << RADIO_CRCCNF_SKIPADDR_Pos); //nRF51 没有
 
-   // set CRC polynomial
-   NRF_RADIO->CRCPOLY = (CRC_POLYNOMIAL << RADIO_CRCPOLY_CRCPOLY_Pos);
-   NRF_RADIO->CRCINIT = 0x0UL;
+ //  // set CRC polynomial
+ //  NRF_RADIO->CRCPOLY = (CRC_POLYNOMIAL << RADIO_CRCPOLY_CRCPOLY_Pos);
+ //  NRF_RADIO->CRCINIT = 0x0UL;
+  
+   radio_ble_init(); // Now for BLE
 
    // set payload pointer
    NRF_RADIO->PACKETPTR = (uint32_t)(radio_vars.payload);
@@ -140,7 +142,7 @@ void radio_init(void) {
 }
 
 void radio_ble_init(void){
-   
+
    NRF_RADIO->PCNF0 =   (((1UL) << RADIO_PCNF0_S0LEN_Pos) & RADIO_PCNF0_S0LEN_Msk) | 
                         (((0UL) << RADIO_PCNF0_S1LEN_Pos) & RADIO_PCNF0_S1LEN_Msk) |
                         (((8UL) << RADIO_PCNF0_LFLEN_Pos) & RADIO_PCNF0_LFLEN_Msk);
@@ -192,9 +194,11 @@ void radio_reset(void) {
 
 void radio_setFrequency(uint8_t frequency, radio_freq_t tx_or_rx) {
 
-   NRF_RADIO->FREQUENCY = FREQUENCY_STEP*(frequency-FREQUENCY_OFFSET);
+   radio_ble_setFrequency(frequency); //TODO: convert radio freq 2 ble freq
 
-   radio_vars.state     = RADIOSTATE_FREQUENCY_SET;
+   //NRF_RADIO->FREQUENCY = FREQUENCY_STEP*(frequency-FREQUENCY_OFFSET);
+
+   //radio_vars.state     = RADIOSTATE_FREQUENCY_SET;
 }
 
 void radio_ble_setFrequency(uint8_t channel) {
@@ -239,19 +243,21 @@ void radio_rfOff(void) {
 
 void radio_loadPacket(uint8_t* packet, uint16_t len) {
 
-   radio_vars.state  = RADIOSTATE_LOADING_PACKET;
+   radio_ble_loadPacket(packet,len); // *Now for BLE
 
-   ///< note: 1st byte should be the payload size (for Nordic), and
-   ///   the two last bytes are used by the MAC layer for CRC
-   if ((len > 0) && (len <= MAX_PACKET_SIZE)) {
-       radio_vars.payload[0]= len;
-       memcpy(&radio_vars.payload[1], packet, len);
-   }
+   //radio_vars.state  = RADIOSTATE_LOADING_PACKET;
 
-   // (re)set payload pointer
-   NRF_RADIO->PACKETPTR = (uint32_t)(radio_vars.payload);
+   /////< note: 1st byte should be the payload size (for Nordic), and
+   /////   the two last bytes are used by the MAC layer for CRC
+   //if ((len > 0) && (len <= MAX_PACKET_SIZE)) {
+   //    radio_vars.payload[0]= len;
+   //    memcpy(&radio_vars.payload[1], packet, len);
+   //}
 
-   radio_vars.state  = RADIOSTATE_PACKET_LOADED;
+   //// (re)set payload pointer
+   //NRF_RADIO->PACKETPTR = (uint32_t)(radio_vars.payload);
+
+   //radio_vars.state  = RADIOSTATE_PACKET_LOADED;
 }
 
 void radio_ble_loadPacket(uint8_t* packet, uint16_t len) {

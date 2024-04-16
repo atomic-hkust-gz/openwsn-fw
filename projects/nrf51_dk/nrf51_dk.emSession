@@ -5,9 +5,7 @@
   <BreakpointListItem trigger="" line="344" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="01bsp_rtt/01bsp_rtt.c" useHWbreakpoint="false"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
- <FrameBufferWindow>
-  <FrameBufferWindow bufferHeight="-1" addressSpace="" addressText="" bufferWidth="-1"/>
- </FrameBufferWindow>
+ <FrameBuffer/>
  <Memory1>
   <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" viewType="4" addressOrder="0" columnsText="" refreshPeriod="0" name="01bsp_rtt" sizeText="" addressText=""/>
   <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" viewType="4" addressOrder="0" columnsText="" refreshPeriod="0" name="01bsp_ppi" sizeText="" addressText=""/>
@@ -77,9 +75,9 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="52" y="496" useTextEdit="1" path="../../bsp/boards/nrf51_dk/radio.c" left="0" selected="1" top="506" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="52" y="496" useTextEdit="1" path="../../bsp/boards/nrf51_dk/radio.c" left="0" selected="1" top="484" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="33" y="4409" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51_dk/radio.c" path="../../bsp/boards/nrf51_dk/sdk/nrf51_bitfields.h" left="0" top="4396" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="17" y="900" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/openstack/openstack.c" path="../../openstack/02a-MAClow/IEEE802154E.c" left="1" top="905" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="17" y="900" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/openstack/openstack.c" path="../../openstack/02a-MAClow/IEEE802154E.c" left="1" top="900" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="25" y="301" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51_dk/radio.c" path="../../bsp/boards/nrf51_dk/sdk/nrf51.h" left="0" top="270" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="9" y="17" useTextEdit="1" path="../common/03oos_openwsn/03oos_openwsn.c" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="12" y="70" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/projects/common/03oos_openwsn/03oos_openwsn.c" path="../../openstack/openstack.c" left="0" top="56" codecName="Default"/>

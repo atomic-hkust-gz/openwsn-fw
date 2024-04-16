@@ -36,6 +36,7 @@ void board_init(void) {
 
     uart_init();
     sctimer_init();
+    radio_init(); //Temp BLE
 
 }
 
