@@ -34,8 +34,8 @@ void board_init(void) {
 
     leds_init();
 
-    //uart_init();
-    //sctimer_init();
+    uart_init();
+    sctimer_init();
     //radio_init(); //Temp BLE
 
 }

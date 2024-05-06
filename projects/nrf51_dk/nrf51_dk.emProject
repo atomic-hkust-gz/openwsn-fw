@@ -277,7 +277,7 @@
     <folder
       Name="kernel"
       exclude=""
-      filter="*.h;*.c"
+      filter="*.h"
       path="../../kernel"
       recurse="Yes" />
   </project>
@@ -331,7 +331,7 @@
       exclude=""
       filter="*.h;*.c"
       path="../../drivers/common"
-      recurse="No" />
+      recurse="Yes" />
     <folder
       Name="inc"
       exclude=""
@@ -395,7 +395,7 @@
       exclude=""
       filter="*.h;*.c"
       path="../../drivers/common"
-      recurse="No" />
+      recurse="Yes" />
     <folder
       Name="inc"
       exclude=""
