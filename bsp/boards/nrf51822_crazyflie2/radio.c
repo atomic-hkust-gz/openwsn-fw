@@ -85,42 +85,35 @@ void radio_init(void) {
    // set radio configuration parameters
    NRF_RADIO->TXPOWER   = (RADIO_TXPOWER_TXPOWER_Pos4dBm << RADIO_TXPOWER_TXPOWER_Pos);
 
- //  // set radio mode to IEEE 802.15.4
- //  //NRF_RADIO->MODE      = (RADIO_MODE_MODE_Ieee802154_250Kbit << RADIO_MODE_MODE_Pos); //nRF51没有这个模式
- //  NRF_RADIO->MODE      = (RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos);
+   // =====BLE================================================================================================================
+   // BRIEF: Since nRF51 does not support ieee802.15.4, radio is implemented using the physical layer of BLE
+   
+   NRF_RADIO->PCNF0 =   (((1UL) << RADIO_PCNF0_S0LEN_Pos) & RADIO_PCNF0_S0LEN_Msk) | 
+                        (((0UL) << RADIO_PCNF0_S1LEN_Pos) & RADIO_PCNF0_S1LEN_Msk) |
+                        (((8UL) << RADIO_PCNF0_LFLEN_Pos) & RADIO_PCNF0_LFLEN_Msk);
 
- //  // set config field length to 8
- //  NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_LFLEN_Msk);
- //  NRF_RADIO->PCNF0 |= (((uint32_t)8) << RADIO_PCNF0_LFLEN_Pos);
+   NRF_RADIO->PCNF1 =   (((RADIO_PCNF1_ENDIAN_Little)    << RADIO_PCNF1_ENDIAN_Pos)  & RADIO_PCNF1_ENDIAN_Msk)  |
+                        (((3UL)                          << RADIO_PCNF1_BALEN_Pos)   & RADIO_PCNF1_BALEN_Msk)   |
+                        (((0UL)                          << RADIO_PCNF1_STATLEN_Pos) & RADIO_PCNF1_STATLEN_Msk) |
+                        ((((uint32_t)MAX_PAYLOAD_LENGTH) << RADIO_PCNF1_MAXLEN_Pos)  & RADIO_PCNF1_MAXLEN_Msk)  |
+                        ((RADIO_PCNF1_WHITEEN_Enabled    << RADIO_PCNF1_WHITEEN_Pos) & RADIO_PCNF1_WHITEEN_Msk);
+   
+   NRF_RADIO->CRCPOLY      = RADIO_CRCPOLY_24BIT;
+   NRF_RADIO->CRCCNF       = (
+                               ((RADIO_CRCCNF_SKIPADDR_Skip) << RADIO_CRCCNF_SKIPADDR_Pos) & RADIO_CRCCNF_SKIPADDR_Msk) |
+                               (((RADIO_CRCCNF_LEN_Three)    << RADIO_CRCCNF_LEN_Pos)      & RADIO_CRCCNF_LEN_Msk
+                             );
+   NRF_RADIO->CRCINIT      = RADIO_CRCINIT_24BIT;
 
- //  // set 32-bit zero preamble
- //  //NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_PLEN_Msk); //nRF51 没有前导字段
- //  //NRF_RADIO->PCNF0 |= ((uint32_t) RADIO_PCNF0_PLEN_32bitZero << RADIO_PCNF0_PLEN_Pos); //nRF51 没有前导字段
+   NRF_RADIO->TXADDRESS    = 0;
+   NRF_RADIO->RXADDRESSES  = 1;
 
- //  // set max packet size
- //  NRF_RADIO->PCNF1 &= (~RADIO_PCNF1_MAXLEN_Msk);
- //  NRF_RADIO->PCNF1 |= ((uint32_t) MAX_PACKET_SIZE << RADIO_PCNF1_MAXLEN_Pos);
+   NRF_RADIO->MODE         = ((RADIO_MODE_MODE_Ble_1Mbit) << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
+   NRF_RADIO->TIFS         = INTERFRAM_SPACING;
+   NRF_RADIO->PREFIX0      = ((BLE_ACCESS_ADDR & 0xff000000) >> 24);
+   NRF_RADIO->BASE0        = ((BLE_ACCESS_ADDR & 0x00ffffff) << 8 );
 
- //  // set start of frame delimiter
- //  //NRF_RADIO->SFD = (SFD_OCTET << RADIO_SFD_SFD_Pos) & RADIO_SFD_SFD_Msk; //nRF51 没有
-
- //  // set CRC to be included
- //  //NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_CRCINC_Msk); //nRF51 没有
- //  //NRF_RADIO->PCNF0 |= ((uint32_t) RADIO_PCNF0_CRCINC_Include << RADIO_PCNF0_CRCINC_Pos); //nRF51 没有
-
- //  // set CRC length
- //  NRF_RADIO->CRCCNF &= (~RADIO_CRCCNF_LEN_Msk);
- //  NRF_RADIO->CRCCNF |= ((uint32_t) LENGTH_CRC << RADIO_CRCCNF_LEN_Pos);
-
- //  // configure CRC (CRC calculation as per 802.15.4 standard. Starting at first byte after length field.)
- //  NRF_RADIO->CRCCNF &= (~RADIO_CRCCNF_SKIPADDR_Msk);
- ////  NRF_RADIO->CRCCNF |= ((uint32_t) RADIO_CRCCNF_SKIPADDR_Ieee802154 << RADIO_CRCCNF_SKIPADDR_Pos); //nRF51 没有
-
- //  // set CRC polynomial
- //  NRF_RADIO->CRCPOLY = (CRC_POLYNOMIAL << RADIO_CRCPOLY_CRCPOLY_Pos);
- //  NRF_RADIO->CRCINIT = 0x0UL;
-  
-   radio_ble_init(); // Now for BLE
+   // =====BLE_END============================================================================================================
 
    // set payload pointer
    NRF_RADIO->PACKETPTR = (uint32_t)(radio_vars.payload);
@@ -128,9 +121,6 @@ void radio_init(void) {
    // set up interrupts
    // disable radio interrupt
    NVIC_DisableIRQ(RADIO_IRQn);
-
-   //NRF_RADIO->INTENSET = (RADIO_INTENSET_FRAMESTART_Enabled << RADIO_INTENSET_FRAMESTART_Pos) |
-   //                      (RADIO_INTENSET_END_Enabled        << RADIO_INTENSET_END_Pos); 
 
    NRF_RADIO->INTENSET = (RADIO_INTENSET_ADDRESS_Enabled << RADIO_INTENSET_ADDRESS_Pos) |
                          (RADIO_INTENSET_END_Enabled        << RADIO_INTENSET_END_Pos); 
@@ -194,11 +184,15 @@ void radio_reset(void) {
 
 void radio_setFrequency(uint8_t frequency, radio_freq_t tx_or_rx) {
 
-   radio_ble_setFrequency(frequency); //TODO: convert radio freq 2 ble freq
+   // =====BLE================================================================================================================
+   // BRIEF: Since nRF51 does not support ieee802.15.4, radio is implemented using the physical layer of BLE
+   
+   NRF_RADIO->FREQUENCY   = ble_channel_to_frequency(frequency);//TODO: convert radio freq 2 ble freq
+   NRF_RADIO->DATAWHITEIV = frequency; 
 
-   //NRF_RADIO->FREQUENCY = FREQUENCY_STEP*(frequency-FREQUENCY_OFFSET);
+   radio_vars.state  = RADIOSTATE_FREQUENCY_SET;
 
-   //radio_vars.state     = RADIOSTATE_FREQUENCY_SET;
+   // =====BLE_END============================================================================================================
 }
 
 void radio_ble_setFrequency(uint8_t channel) {
@@ -242,8 +236,6 @@ void radio_rfOff(void) {
 
 
 void radio_loadPacket(uint8_t* packet, uint16_t len) {
-
-   //radio_ble_loadPacket(packet,len); // *Now for BLE
 
    radio_vars.state  = RADIOSTATE_LOADING_PACKET;
 
@@ -365,11 +357,6 @@ void radio_getReceivedFrame(uint8_t* pBufRead,
 
    *pCrc = (NRF_RADIO->CRCSTATUS == 1U);
 
-   //radio_ble_getReceivedFrame(pBufRead,pLenRead,maxBufLen,pRssi,pLqi,pCrc);
-
-   //*pLqi = radio_vars.payload[radio_vars.payload[0]-1];//?
-
-   //*pRssi = (int8_t)(0-NRF_RADIO->RSSISAMPLE);//?
 }
 
 void radio_ble_getReceivedFrame(uint8_t* pBufRead,
@@ -496,7 +483,7 @@ kick_scheduler_t radio_isr(void){
    time_stampe = NRF_RTC0->COUNTER;
 
    // start of frame (payload)
-   if (NRF_RADIO->EVENTS_ADDRESS){
+   if (NRF_RADIO->EVENTS_ADDRESS){                          //===nRF51===
    //if (NRF_RADIO->EVENTS_FRAMESTART){
 
        // start sampling rssi
@@ -507,7 +494,7 @@ kick_scheduler_t radio_isr(void){
        }
        
        //NRF_RADIO->EVENTS_FRAMESTART = (uint32_t)0;
-       NRF_RADIO->EVENTS_ADDRESS = (uint32_t)0;
+       NRF_RADIO->EVENTS_ADDRESS = (uint32_t)0;             //===nRF51===
        return KICK_SCHEDULER;
    }
 

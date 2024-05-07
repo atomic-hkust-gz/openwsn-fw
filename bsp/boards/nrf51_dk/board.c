@@ -9,6 +9,7 @@
 #include "leds.h"
 #include "sctimer.h"
 #include "uart.h"
+#include "radio.h"
 
 //=========================== variables =======================================
 
