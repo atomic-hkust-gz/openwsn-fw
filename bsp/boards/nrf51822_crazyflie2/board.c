@@ -7,8 +7,8 @@
 #include "nrf51.h"
 #include "board.h"
 #include "leds.h"
-//#include "sctimer.h"
-//#include "uart.h"
+#include "sctimer.h"
+#include "uart.h"
 
 //=========================== variables =======================================
 
@@ -36,7 +36,7 @@ void board_init(void) {
 
     uart_init();
     sctimer_init();
-    //radio_init(); //Temp BLE
+    radio_init(); //Temp BLE
 
 }
 
