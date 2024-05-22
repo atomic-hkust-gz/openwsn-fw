@@ -51,6 +51,15 @@
 
 #define BLE_ACCESS_ADDR           0x8E89BED6  // the actual address is 0xD6, 0xBE, 0x89, 0x8E
 
+
+// Pins if RFX2411N is used
+#define RADIO_PA_RX_EN  20
+#define RADIO_PA_ANT_SW 18
+#define RADIO_PA_MODE   19
+#define RADIO_PAEN_PIN 19
+#define RADIO_PATX_DIS_PIN 20
+
+
 //=========================== variables =======================================
 
 typedef struct {
@@ -114,6 +123,20 @@ void radio_init(void) {
    NRF_RADIO->BASE0        = ((BLE_ACCESS_ADDR & 0x00ffffff) << 8 );
 
    // =====BLE_END============================================================================================================
+
+   NRF_GPIO->DIRSET = 1<<RADIO_PA_RX_EN;
+   NRF_GPIO->DIRSET = 1<<RADIO_PA_MODE;
+   NRF_GPIO->DIRSET = 1<<RADIO_PA_ANT_SW;
+
+   // Select chip antenna
+   NRF_GPIO->OUTSET = 1<<RADIO_PA_ANT_SW;
+
+   // MODE
+   NRF_GPIO->OUTSET = 1<<RADIO_PA_RX_EN;
+   NRF_GPIO->OUTCLR = 1<<RADIO_PA_MODE;
+
+
+   // ===============
 
    // set payload pointer
    NRF_RADIO->PACKETPTR = (uint32_t)(radio_vars.payload);
