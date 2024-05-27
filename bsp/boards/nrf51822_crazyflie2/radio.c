@@ -57,7 +57,7 @@
 #define RADIO_PA_ANT_SW 18
 #define RADIO_PA_MODE   19
 #define RADIO_PAEN_PIN 19
-#define RADIO_PATX_DIS_PIN 20
+//#define RADIO_PATX_DIS_PIN 20
 
 
 //=========================== variables =======================================
@@ -124,16 +124,19 @@ void radio_init(void) {
 
    // =====BLE_END============================================================================================================
 
+   // RFX2411N pins
    NRF_GPIO->DIRSET = 1<<RADIO_PA_RX_EN;
    NRF_GPIO->DIRSET = 1<<RADIO_PA_MODE;
    NRF_GPIO->DIRSET = 1<<RADIO_PA_ANT_SW;
 
-   // Select chip antenna
-   NRF_GPIO->OUTSET = 1<<RADIO_PA_ANT_SW;
+   // Select antenna
+   NRF_GPIO->OUTSET = 1<<RADIO_PA_ANT_SW; //chip
 
-   // MODE
+   // Selecte mode
    NRF_GPIO->OUTSET = 1<<RADIO_PA_RX_EN;
-   NRF_GPIO->OUTCLR = 1<<RADIO_PA_MODE;
+   NRF_GPIO->OUTCLR = 1<<RADIO_PA_MODE; //Disable BYPASS mode
+   
+   //NRF_GPIO->OUTSET = 1<<RADIO_PA_MODE; //Enable BYPASS mode
 
 
    // ===============

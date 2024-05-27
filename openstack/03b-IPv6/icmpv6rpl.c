@@ -16,7 +16,7 @@
 
 //=========================== definition ======================================
 
-#define DIO_PORTION 10
+#define DIO_PORTION 2
 #define DAO_PORTION 60
 
 //=========================== variables =======================================
@@ -659,6 +659,7 @@ void icmpv6rpl_timer_DIO_task(void) {
 
     if (openrandom_get16b() < (0xffff / DIO_PORTION)) {
         sendDIO();
+        LOG_INFO(COMPONENT_ICMPv6RPL,ERR_SIXTOP_REQUEST,0,0);//##TEMP Debug Test
     }
 }
 
