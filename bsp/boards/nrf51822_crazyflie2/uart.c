@@ -15,8 +15,8 @@
 
 //=========================== defines =========================================
 
-#define UART_RX_PIN       NRF_GPIO_PIN_MAP(0,12)
-#define UART_TX_PIN       NRF_GPIO_PIN_MAP(0,11)
+#define UART_RX_PIN       NRF_GPIO_PIN_MAP(0,16) //12 # TMP DEBUG Change the to 16 to avoid conflicts with the "debugpin"
+#define UART_TX_PIN       NRF_GPIO_PIN_MAP(0,15) //11 # TMP DEBUG Change the to 16 to avoid conflicts with the "debugpin"
 //#define UART_CTS_PIN      NRF_GPIO_PIN_MAP(0,10)
 //#define UART_RTS_PIN      NRF_GPIO_PIN_MAP(0,8)
 

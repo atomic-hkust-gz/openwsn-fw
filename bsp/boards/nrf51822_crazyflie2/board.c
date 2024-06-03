@@ -10,6 +10,7 @@
 #include "sctimer.h"
 #include "uart.h"
 #include "radio.h"
+#include "debugpins.h"
 
 //=========================== variables =======================================
 
@@ -39,6 +40,7 @@ void board_init(void) {
     sctimer_init();
     radio_init(); //Temp BLE
 
+    debugpins_init();
 }
 
 /**

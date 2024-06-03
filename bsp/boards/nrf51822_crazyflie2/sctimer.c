@@ -16,7 +16,7 @@
 
 // ========================== define ==========================================
 
-#define LFCLKSRC_SRC_POS      0    //CLOCK_LFCLKSRC_SRC_Pos
+#define LFCLKSRC_SRC_POS      1    //CLOCK_LFCLKSRC_SRC_Pos
 //#define LFCLKSRC_BYPASS_POS   16   //nRF51?
 //#define LFCLKSRC_EXTERNAL_POS 17   //nRF51?
 
