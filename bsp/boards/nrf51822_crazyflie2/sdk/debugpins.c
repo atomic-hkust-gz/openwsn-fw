@@ -14,8 +14,8 @@
 // board debug PINS defines
 
 #define DEBUGPIN_FRAME  NRF_GPIO_PIN_MAP(0,26)
-#define DEBUGPIN_SLOT   NRF_GPIO_PIN_MAP(0,11) // TMP DEBUG use uart pins for logic analyzer 
-#define DEBUGPIN_FSM    NRF_GPIO_PIN_MAP(0,12) // TMP DEBUG use uart pins for logic analyzer 
+#define DEBUGPIN_SLOT   NRF_GPIO_PIN_MAP(0,15) // TMP DEBUG use uart pins for logic analyzer 11
+#define DEBUGPIN_FSM    NRF_GPIO_PIN_MAP(0,16) // TMP DEBUG use uart pins for logic analyzer 12
 #define DEBUGPIN_TASK   NRF_GPIO_PIN_MAP(0,29)
 #define DEBUGPIN_ISR    NRF_GPIO_PIN_MAP(0,30)
 #define DEBUGPIN_RADIO  NRF_GPIO_PIN_MAP(0,31)
