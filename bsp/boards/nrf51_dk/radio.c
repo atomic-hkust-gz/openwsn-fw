@@ -88,16 +88,19 @@ void radio_init(void) {
    // =====BLE================================================================================================================
    // BRIEF: Since nRF51 does not support ieee802.15.4, radio is implemented using the physical layer of BLE
    
-   NRF_RADIO->PCNF0 =   (((1UL) << RADIO_PCNF0_S0LEN_Pos) & RADIO_PCNF0_S0LEN_Msk) | 
+   // fields len
+   NRF_RADIO->PCNF0 =   (((0UL) << RADIO_PCNF0_S0LEN_Pos) & RADIO_PCNF0_S0LEN_Msk) | 
                         (((0UL) << RADIO_PCNF0_S1LEN_Pos) & RADIO_PCNF0_S1LEN_Msk) |
                         (((8UL) << RADIO_PCNF0_LFLEN_Pos) & RADIO_PCNF0_LFLEN_Msk);
 
+   // config
    NRF_RADIO->PCNF1 =   (((RADIO_PCNF1_ENDIAN_Little)    << RADIO_PCNF1_ENDIAN_Pos)  & RADIO_PCNF1_ENDIAN_Msk)  |
                         (((3UL)                          << RADIO_PCNF1_BALEN_Pos)   & RADIO_PCNF1_BALEN_Msk)   |
                         (((0UL)                          << RADIO_PCNF1_STATLEN_Pos) & RADIO_PCNF1_STATLEN_Msk) |
                         ((((uint32_t)MAX_PAYLOAD_LENGTH) << RADIO_PCNF1_MAXLEN_Pos)  & RADIO_PCNF1_MAXLEN_Msk)  |
                         ((RADIO_PCNF1_WHITEEN_Enabled    << RADIO_PCNF1_WHITEEN_Pos) & RADIO_PCNF1_WHITEEN_Msk);
    
+   // cnc
    NRF_RADIO->CRCPOLY      = RADIO_CRCPOLY_24BIT;
    NRF_RADIO->CRCCNF       = (
                                ((RADIO_CRCCNF_SKIPADDR_Skip) << RADIO_CRCCNF_SKIPADDR_Pos) & RADIO_CRCCNF_SKIPADDR_Msk) |
@@ -105,11 +108,13 @@ void radio_init(void) {
                              );
    NRF_RADIO->CRCINIT      = RADIO_CRCINIT_24BIT;
 
-   NRF_RADIO->TXADDRESS    = 0;
-   NRF_RADIO->RXADDRESSES  = 1;
 
    NRF_RADIO->MODE         = ((RADIO_MODE_MODE_Ble_1Mbit) << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
    NRF_RADIO->TIFS         = INTERFRAM_SPACING;
+   
+   // address
+   NRF_RADIO->TXADDRESS    = 0;
+   NRF_RADIO->RXADDRESSES  = 1;
    NRF_RADIO->PREFIX0      = ((BLE_ACCESS_ADDR & 0xff000000) >> 24);
    NRF_RADIO->BASE0        = ((BLE_ACCESS_ADDR & 0x00ffffff) << 8 );
 
