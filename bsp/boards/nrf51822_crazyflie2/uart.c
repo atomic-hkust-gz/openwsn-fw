@@ -134,25 +134,26 @@ uint8_t uart_readByte(void) {
 
 //=========================== private =========================================
 
-void UART0_IRQHandler(void) {
+//TODO: temp pending ###### confict with crazyflie UART ######
+//void UART0_IRQHandler(void) {
 
-    //debugpins_isr_set();
+//    //debugpins_isr_set();
 
-    if (NRF_UART0->EVENTS_RXDRDY) {
+//    if (NRF_UART0->EVENTS_RXDRDY) {
 
-        NRF_UART0->EVENTS_RXDRDY = (uint32_t)0;
-        uart_rx_isr();
-    }
+//        NRF_UART0->EVENTS_RXDRDY = (uint32_t)0;
+//        uart_rx_isr();
+//    }
 
     
-    if (NRF_UART0->EVENTS_TXDRDY) {
+//    if (NRF_UART0->EVENTS_TXDRDY) {
         
-        NRF_UART0->EVENTS_TXDRDY = (uint32_t)0;
-        uart_tx_isr();
-    }
+//        NRF_UART0->EVENTS_TXDRDY = (uint32_t)0;
+//        uart_tx_isr();
+//    }
 
-    //debugpins_isr_clr();
-}
+//    //debugpins_isr_clr();
+//}
 
 //=========================== interrupt handlers ==============================
 

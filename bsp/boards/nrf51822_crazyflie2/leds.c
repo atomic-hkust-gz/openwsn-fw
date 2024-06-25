@@ -29,11 +29,11 @@ void leds_init() {
 //==== error led
 
 void leds_error_off(void) {
-    NRF_GPIO->OUTSET = 1<<LED_1;
+    NRF_GPIO->OUTCLR = 1<<LED_1;
 }
 
 void leds_error_on(void) {
-    NRF_GPIO->OUTCLR = 1<<LED_1;
+    NRF_GPIO->OUTSET = 1<<LED_1;
 }
 
 void leds_error_toggle(void) {
