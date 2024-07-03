@@ -61,4 +61,10 @@ PmState pmGetState();
 
 void pmSysBootloader(bool enable);
 
+// =========================================== NEW for OPENWSN ==============================================
+// Lan HUANG (Yelloooblue@outlook.com) June 2024.
+// @brief automatic boot STM32 on Crazyflie.
+
+void crazyflie_init();
+
 #endif //__CF_PM_H__

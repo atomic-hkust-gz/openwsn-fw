@@ -402,49 +402,62 @@ void pmProcess() {
     }
   }
 
-  // VBAT sampling can't be done to often or it will affect the reading, ~100Hz is OK.
-  if (systickGetTick() - lastAdcTick > pmConfig->ticksBetweenAdcMeasurement && !NRF_ADC->BUSY)
-  {
-    uint16_t rawValue = NRF_ADC->RESULT;
-    lastAdcTick = systickGetTick();
+//  // VBAT sampling can't be done to often or it will affect the reading, ~100Hz is OK.
+//  if (systickGetTick() - lastAdcTick > pmConfig->ticksBetweenAdcMeasurement && !NRF_ADC->BUSY)
+//  {
+//    uint16_t rawValue = NRF_ADC->RESULT;
+//    lastAdcTick = systickGetTick();
 
-    // Start temp read
-    NRF_TEMP->TASKS_START = 1;
+//    // Start temp read
+//    NRF_TEMP->TASKS_START = 1;
 
-	  if (adcState == adcVBAT) {
-		  vBat = (float) (rawValue / 1023.0) * 1.2 * pmConfig->vbatFactor;
-		  if (pmConfig->hasCharger) {
-		    pmStartAdc(adcISET);
-		  } else {
-	      pmStartAdc(adcVBAT);
-	    }
-	  } else if (adcState == adcISET) {
-		  // V_ISET = I_CHARGE / 400 × R_ISET
-		  float v = (float) (rawValue / 1023.0) * 1.2 * 3;
-		  iSet = (v * 400.0) / 1000.0;
-		  pmStartAdc(adcVBAT);
-	  }
-	  //TODO: Handle the battery charging...
-  }
+//	  if (adcState == adcVBAT) {
+//		  vBat = (float) (rawValue / 1023.0) * 1.2 * pmConfig->vbatFactor;
+//		  if (pmConfig->hasCharger) {
+//		    pmStartAdc(adcISET);
+//		  } else {
+//	      pmStartAdc(adcVBAT);
+//	    }
+//	  } else if (adcState == adcISET) {
+//		  // V_ISET = I_CHARGE / 400 × R_ISET
+//		  float v = (float) (rawValue / 1023.0) * 1.2 * 3;
+//		  iSet = (v * 400.0) / 1000.0;
+//		  pmStartAdc(adcVBAT);
+//	  }
+//	  //TODO: Handle the battery charging...
+//  }
 
-#ifndef DISABLE_CHARGE_TEMP_CONTROL
-  // Check that environmental temp is OK for charging
-  if (pmConfig->hasCharger && NRF_TEMP->EVENTS_DATARDY)
-  {
-    temp = (float)(NRF_TEMP->TEMP / 4.0);
-    if (temp < PM_CHARGE_MIN_TEMP || temp > PM_CHARGE_MAX_TEMP)
-    {
-      // Disable charging
-      nrf_gpio_pin_set(PM_CHG_EN);
-//      LED_OFF();
-    }
-    else if (temp > PM_CHARGE_MIN_TEMP + PM_CHARE_HYSTERESIS  &&
-             temp < PM_CHARGE_MAX_TEMP - PM_CHARE_HYSTERESIS)
-    {
-      // Enable charging
-      nrf_gpio_pin_clear(PM_CHG_EN);
-//      LED_ON();
-    }
-  }
-#endif
+//#ifndef DISABLE_CHARGE_TEMP_CONTROL
+//  // Check that environmental temp is OK for charging
+//  if (pmConfig->hasCharger && NRF_TEMP->EVENTS_DATARDY)
+//  {
+//    temp = (float)(NRF_TEMP->TEMP / 4.0);
+//    if (temp < PM_CHARGE_MIN_TEMP || temp > PM_CHARGE_MAX_TEMP)
+//    {
+//      // Disable charging
+//      nrf_gpio_pin_set(PM_CHG_EN);
+////      LED_OFF();
+//    }
+//    else if (temp > PM_CHARGE_MIN_TEMP + PM_CHARE_HYSTERESIS  &&
+//             temp < PM_CHARGE_MAX_TEMP - PM_CHARE_HYSTERESIS)
+//    {
+//      // Enable charging
+//      nrf_gpio_pin_clear(PM_CHG_EN);
+////      LED_ON();
+//    }
+//  }
+//#endif
+}
+
+// =========================================== NEW for OPENWSN ==============================================
+// Lan HUANG (Yelloooblue@outlook.com) June 2024.
+// @brief automatic boot STM32 on Crazyflie.
+
+void crazyflie_init(){
+
+  pmNrfPower(true);
+  pmPowerSystem(true);
+  pmSysBoot(true);
+  pmRunSystem(true);
+
 }
