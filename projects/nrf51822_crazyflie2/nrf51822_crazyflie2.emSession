@@ -1,22 +1,18 @@
 <!DOCTYPE CrossStudio_Session_File>
 <session>
  <Bookmarks>
-  <BookmarkItem objectName="" line="108" column="-1" path="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/leds.c" number="3" extra="leds_error_toggle();" color="5"/>
-  <BookmarkItem objectName="" line="38" column="-1" path="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/leds.c" number="1" extra="void leds_error_toggle(void) {" color="5"/>
   <BookmarkItem objectName="" line="95" column="-1" path="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/leds.c" number="2" extra="leds_error_toggle();" color="5"/>
+  <BookmarkItem objectName="" line="38" column="-1" path="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/leds.c" number="1" extra="void leds_error_toggle(void) {" color="5"/>
+  <BookmarkItem objectName="" line="108" column="-1" path="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/leds.c" number="3" extra="leds_error_toggle();" color="5"/>
  </Bookmarks>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
   <BreakpointListItem trigger="" line="193" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../common/01bsp_radio/01bsp_radio.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="" line="206" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../common/01bsp_radio/01bsp_radio.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="" line="344" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="01bsp_rtt/01bsp_rtt.c" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="24" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../common/03oos_openwsn/03oos_openwsn.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="Execute" line="0" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="0x6b0" group="Breakpoints" type="Breakpoint" state="3" filename="../nrf51822_crazyflie2" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="165" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../../bsp/boards/nrf51822_crazyflie2/cf_syslink.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="" line="64" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../../bsp/boards/nrf51822_crazyflie2/cf_syslink.c" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="923" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../../openstack/02a-MAClow/IEEE802154E.c" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="932" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../../openstack/02a-MAClow/IEEE802154E.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="" line="202" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../../openstack/02a-MAClow/IEEE802154E.h" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="167" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../../drivers/common/openserial.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="167" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../../drivers/common/openserial.c" useHWbreakpoint="false"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
  <FrameBufferWindow>
@@ -84,7 +80,11 @@
   <ProjectSessionItem path="nrf51822_crazyflie2;01bsp_crazyflie;application"/>
   <ProjectSessionItem path="nrf51822_crazyflie2;01bsp_crazyflie;bsp"/>
   <ProjectSessionItem path="nrf51822_crazyflie2;01bsp_crazyflie;bsp;crazyflie"/>
-  <ProjectSessionItem path="nrf51822_crazyflie2;01bsp_crazyflie;bsp;sdk"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;application"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;inc"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;openstack"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;openstack;02a-MAClow"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/MSP;CPU/PSP;CPU/PRIMASK;CPU/BASEPRI;CPU/FAULTMASK;CPU/CONTROL;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="01bsp_rtt" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -155,15 +155,20 @@
    <Watchpoint expression="app_vars" name="app_vars" radix="-1" linenumber="164" filename="01bsp_rtt/01bsp_rtt.c"/>
    <Watchpoint expression="ppi_vars" name="ppi_vars" radix="16" linenumber="74" filename="../../bsp/boards/nrf52840_dk/ppi.c"/>
    <Watchpoint expression="TASKS_START" name="TASKS_START" radix="16" linenumber="72" filename="../../bsp/boards/nrf51_dk/sctimer.c"/>
-   <Watchpoint expression="deSyncTimeout" name="deSyncTimeout" radix="16" linenumber="922" filename="../../openstack/02a-MAClow/IEEE802154E.c"/>
-   <Watchpoint expression="numOfSleepSlots" name="numOfSleepSlots" radix="16" linenumber="922" filename="../../openstack/02a-MAClow/IEEE802154E.c"/>
+   <Watchpoint expression="deSyncTimeout" name="deSyncTimeout" radix="16" linenumber="950" filename="../../openstack/02a-MAClow/IEEE802154E.c"/>
+   <Watchpoint expression="numOfSleepSlots" name="numOfSleepSlots" radix="16" linenumber="950" filename="../../openstack/02a-MAClow/IEEE802154E.c"/>
    <Watchpoint expression="state" name="state" radix="-1" linenumber="378" filename="../../bsp/boards/nrf51822_crazyflie2/cf_pm.c"/>
    <Watchpoint expression="delay" name="delay" radix="-1" linenumber="373" filename="../../bsp/boards/nrf51822_crazyflie2/cf_pm.c"/>
    <Watchpoint expression="targetState" name="targetState" radix="-1" linenumber="374" filename="../../bsp/boards/nrf51822_crazyflie2/cf_pm.c"/>
    <Watchpoint expression="tick" name="tick" radix="11" linenumber="29" filename="../../bsp/boards/nrf51822_crazyflie2/systick.c"/>
-   <Watchpoint expression="tickk" name="tickk" radix="11" linenumber="75" filename="../common/01bsp_crazyflie/01bsp_crazyflie.c"/>
-   <Watchpoint expression="rr" name="rr" radix="16" linenumber="73" filename="../common/01bsp_crazyflie/01bsp_crazyflie.c"/>
+   <Watchpoint expression="tickk" name="tickk" radix="11" linenumber="30" filename="../common/01bsp_crazyflie/01bsp_crazyflie.c"/>
+   <Watchpoint expression="rr" name="rr" radix="16" linenumber="30" filename="../common/01bsp_crazyflie/01bsp_crazyflie.c"/>
    <Watchpoint expression="isSyslinkActive" name="isSyslinkActive" radix="-1" linenumber="169" filename="../../bsp/boards/nrf51822_crazyflie2/cf_syslink.c"/>
+   <Watchpoint expression="slp" name="slp" radix="-1" linenumber="82" filename="../common/01bsp_crazyflie/01bsp_crazyflie.c"/>
+   <Watchpoint expression="sent" name="sent" radix="-1" linenumber="102" filename="../common/01bsp_crazyflie/01bsp_crazyflie.c"/>
+   <Watchpoint expression="ieee154e_vars" name="ieee154e_vars" radix="-1" linenumber="32" filename="../../openstack/02a-MAClow/IEEE802154E.c"/>
+   <Watchpoint expression="syslink_pk" name="syslink_pk" radix="-1" linenumber="78" filename="../../bsp/boards/nrf51822_crazyflie2/cf_crazyflie.c"/>
+   <Watchpoint expression="asn_diff" name="asn_diff" radix="10" linenumber="701" filename="../../openstack/02a-MAClow/IEEE802154E.c"/>
   </Watches>
  </Watch1>
  <Watch2>
@@ -176,17 +181,13 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="72" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/projects/common/01bsp_crazyflie/01bsp_crazyflie.c" path="../../bsp/boards/nrf51822_crazyflie2/cf_pm.c" left="0" top="72" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="22" y="67" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/crazyflie/cf_pm.h" left="0" top="11" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="12" y="51" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/board.c" left="6" selected="1" top="7" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="42" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/crazyflie/cf_uart.h" left="0" top="2" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="86" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/crazyflie/cf_uart.h" path="../../bsp/boards/nrf51822_crazyflie2/cf_uart.c" left="0" top="84" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="16" y="107" useTextEdit="1" path="../common/01bsp_crazyflie/01bsp_crazyflie.c" left="0" top="82" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="40" y="45" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/crazyflie/cf_syslink.h" left="0" top="38" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="12" y="59" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/projects/common/01bsp_crazyflie/01bsp_crazyflie.c" path="../../bsp/boards/nrf51822_crazyflie2/cf_systick.c" left="0" top="2" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="26" y="478" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/projects/common/01bsp_crazyflie/01bsp_crazyflie.c" path="../../bsp/boards/nrf51822_crazyflie2/sdk/cmsis_gcc.h" left="0" top="467" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/crazyflie/cf_systick.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditRight" x="42" y="162" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/projects/common/01bsp_crazyflie/01bsp_crazyflie.c" path="../../bsp/boards/nrf51822_crazyflie2/cf_syslink.c" left="1" top="150" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="13" y="25" useTextEdit="1" path="../common/03oos_openwsn/03oos_openwsn.c" left="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="22" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/board.c" left="0" top="22" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="25" y="2291" useTextEdit="1" path="../../openstack/02a-MAClow/IEEE802154E.c" left="3" top="2269" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="6" y="23" useTextEdit="1" path="../../openstack/02a-MAClow/IEEE802154E.h" left="0" top="5" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="58" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/cf_crazyflie.c" left="0" top="66" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="52" y="23" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/openstack/02a-MAClow/IEEE802154E.c" path="../../bsp/boards/nrf51822_crazyflie2/board_info.h" left="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="6" y="341" useTextEdit="1" path="../../inc/config.h" left="0" selected="1" top="353" codecName="Default"/>
  </Files>
- <EMStudioWindow activeProject="01bsp_crazyflie" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3199"/>
+ <EMStudioWindow activeProject="03oos_openwsn" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

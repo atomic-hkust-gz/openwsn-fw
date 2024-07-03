@@ -10,12 +10,17 @@
 #include "openstack.h"
 #include "opendefs.h"
 
+#include "cf_crazyflie.h"
+
 int mote_main(void) {
    
    // initialize
    board_init();
    scheduler_init();
    openstack_init();
+
+   // crazyflie
+   crazyflieInit();
    
    // start
    scheduler_start();

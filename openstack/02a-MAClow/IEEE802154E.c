@@ -19,6 +19,12 @@
 #include "openrandom.h"
 #include "msf.h"
 
+//#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+#include "cf_crazyflie.h"
+asn_t target_asn;
+PORT_TIMER_WIDTH asn_diff;
+//#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+
 //=========================== definition ======================================
 
 //=========================== variables =======================================
@@ -167,6 +173,12 @@ Call this function once before any other function in this module, possibly
 during boot-up.
 */
 void ieee154e_init(void) {
+
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+    target_asn.byte4 = 0x00;
+    target_asn.bytes2and3 = 0x0000;
+    target_asn.bytes0and1 = 0x1000;
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
 
     // initialize variables
     memset(&ieee154e_vars, 0, sizeof(ieee154e_vars_t));
@@ -680,6 +692,12 @@ port_INLINE void activity_synchronize_newSlot(void) {
     // increment dummy ASN to trigger debugprint every now and then
     ieee154e_vars.asn.bytes0and1++;
 
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+    // if we need to schedule some commands while in the "un-synchronized" state,
+    // please put it here.
+    // otherwise, command scheduling in the "synchronized" state will be done in activity_ti1ORri1 => incrementAsnOffset()
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+
     opentimers_scheduleAbsolute(
             ieee154e_vars.serialInhibitTimerId,     // timerId
             DURATION_si,                            // duration
@@ -986,7 +1004,7 @@ port_INLINE void activity_ti1ORri1(void) {
 
             //increase ASN by numOfSleepSlots-1 slots as at this slot is already incremented by 1
             for (i = 0; i < ieee154e_vars.numOfSleepSlots - 1; i++) {
-                incrementAsnOffset();
+                incrementAsnOffset(); // TODO: Waking from sleep can result in intensive calls of multiple commands, which may lead to some blocking.
             }
         }
     } else {
@@ -2252,6 +2270,20 @@ port_INLINE void incrementAsnOffset(void) {
             ieee154e_vars.asn.byte4++;
         }
     }
+
+
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+    asn_diff = ieee154e_asnDiff(&target_asn);
+    if (asn_diff > 0 && asn_diff < 200 && ieee154e_vars.isSync){ //000
+        test_changeThrust(20000);
+        test_sendSetpointSyslinkPkg();
+    }
+    else{
+        test_changeThrust(0);
+        test_sendSetpointSyslinkPkg();
+    }
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+
 
     // increment the offsets
     frameLength = schedule_getFrameLength();

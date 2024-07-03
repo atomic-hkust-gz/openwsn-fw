@@ -35,7 +35,7 @@
  */
 
 
-#ifndef __CF_ART_H__
+#ifndef __CF_UART_H__
 #define __CF_UART_H__
 
 #include <stdbool.h>

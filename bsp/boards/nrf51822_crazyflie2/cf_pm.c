@@ -453,7 +453,7 @@ void pmProcess() {
 // Lan HUANG (Yelloooblue@outlook.com) June 2024.
 // @brief automatic boot STM32 on Crazyflie.
 
-void crazyflie_init(){
+void pm_boot_all(){
 
   pmNrfPower(true);
   pmPowerSystem(true);
