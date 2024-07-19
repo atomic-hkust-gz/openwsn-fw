@@ -2276,11 +2276,11 @@ port_INLINE void incrementAsnOffset(void) {
     asn_diff = ieee154e_asnDiff(&target_asn);
     if (asn_diff > 0 && asn_diff < 200 && ieee154e_vars.isSync){ //000
         test_changeThrust(20000);
-        test_sendSetpointSyslinkPkg();
+        test_sendSyslinkPkg();
     }
     else{
         test_changeThrust(0);
-        test_sendSetpointSyslinkPkg();
+        test_sendSyslinkPkg();
     }
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
 

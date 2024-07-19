@@ -7,6 +7,7 @@
 #include "stdint.h"
 #include "stdio.h"
 #include "string.h"
+#include "stdbool.h"
 
 // bsp modules required
 #include "board.h"
@@ -19,9 +20,7 @@
 
 //=========================== defines =========================================
 
-
 //=========================== variables =======================================
-
 
 //=========================== prototypes ======================================
 
@@ -32,49 +31,105 @@ void mainloop();
 /**
 \brief The program starts executing here.
 */
-int mote_main(void) {
-   
-   // initialize the board
-   board_init();
+int mote_main(void)
+{
 
-   // Crazyflie init
-   crazyflieInit();
+    // initialize the board
+    board_init();
 
-   leds_all_on();
+    // Crazyflie init
+    crazyflieInit();
 
-   while(1){
-      mainloop();
-   }
-   
+    leds_all_on();
 
+    while (1)
+    {
+        mainloop();
+    }
 }
 
 //=========================== callbacks =======================================
 
 int tickk;
 
-void mainloop(){
+bool inited = false;
 
-    syslink_loop();
+bool a = true;
+bool aa = true;
+bool aaa = true;
+bool aaaa = true;
+
+bool b = true;
+bool c = true;
+bool d = true;
+
+
+void mainloop()
+{
 
     tickk = systickGetTick();
 
-    if (tickk >= 15000 && tickk < 16000) {
-        test_changeThrust(20000);
+    if (tickk == 3000 && !inited)
+    {
+        //sendNullCTRPPackage(); //延迟1s启动系统，否则可能会影响1Wire读取
+        inited=true;
     }
 
-    if (tickk >= 16000 && tickk < 18000) {
-        test_changeThrust(45000);
+    //if (tickk >= 15000 && (tickk % 500) == 0)
+    //{
+    //    test_GetTOC();
+    //}
+
+    if (tickk == 14000 && a)
+    {
+        test_param_write_enHL(1);
+        a = false;
     }
 
-    if (tickk >= 18000 && tickk < 20000) {
-        test_changeThrust(20000);
+    if (tickk == 14500 && aa)
+    {
+        test_param_write_stabilizer_controller(1);
+        aa = false;
     }
 
-    if (tickk >= 20000) {
-        test_changeThrust(0);
+    if (tickk == 15000 && aaa)
+    {
+        test_param_write_kalman_estimator(1);
+        aaa = false;
     }
 
-    test_sendSetpointSyslinkPkg();
+    if (tickk == 15500 && aaaa)
+    {
+        test_param_write_kalman_estimator(0);
+        aaaa = false;
+    }
+    
 
+    if (tickk == 16000 && b)
+    {
+        test_send_notify_setpoint_stop();
+        b = false;
+    }
+
+    if (tickk == 16500 && c)
+    {
+        test_HL_SendTakeOff();
+        //test_read_param(10);
+        c = false;
+    }
+
+    if (tickk == 17000 && d)
+    {
+        //test_read_param(10);
+        d = false;
+    }
+
+
+    if (tickk >= 21000 && tickk < 23000)
+    {
+        test_SendEmergencyStop();
+        leds_all_off();
+    }
+
+    syslinkHandle();
 }
