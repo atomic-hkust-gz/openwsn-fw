@@ -28,7 +28,7 @@
 #include <nrf_gpio.h>
 
 #include "cf_pinout.h"
-#include "ow.h"
+#include "cf_ow.h"
 #include "cf_systick.h"
 
 

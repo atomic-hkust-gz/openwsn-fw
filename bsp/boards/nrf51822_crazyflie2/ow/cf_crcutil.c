@@ -28,7 +28,7 @@
 //  version 2.00
 
 // Include files
-#include "ownet.h"
+#include "cf_ownet.h"
 
 // Local global variables
 ushort utilcrc16[MAX_PORTNUM];

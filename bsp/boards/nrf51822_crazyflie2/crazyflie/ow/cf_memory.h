@@ -21,12 +21,33 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-#ifndef __OW_H__
-#define __OW_H__
+#ifndef __CF_MEMORY_H__
+#define __CF_MEMORY_H__
+#include <stdint.h>
 #include <stdbool.h>
 
-void owInit(void);
+#include "cf_syslink.h"
 
-int owScan(void);
+void memoryInit();
 
-#endif //__OW_H__
+bool memorySyslink(struct syslinkPacket *pk);
+
+struct memoryCommand_s {
+  uint8_t nmem;
+  union {
+    struct {
+      uint8_t memId[8];
+    } __attribute__((packed)) info;
+    struct  {
+      uint16_t address;
+      uint8_t data[29];
+    } __attribute__((packed)) read;
+    struct write {
+      uint16_t address;
+      uint16_t length;
+      char data[27];
+    } __attribute__((packed)) write;
+  };
+} __attribute__((packed));
+
+#endif //__CF_MEMORY_H__

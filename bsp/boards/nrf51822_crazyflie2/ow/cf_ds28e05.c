@@ -23,13 +23,13 @@
  *
  * DS28E05 OW memory driver
  */
-#include "ds28e05.h"
+#include "cf_ds28e05.h"
 
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
-#include <ownet.h>
+#include <cf_ownet.h>
 
 #define DS28E05_READ_MEMORY   0xf0
 #define DS28E05_WRITE_MEMORY  0x55

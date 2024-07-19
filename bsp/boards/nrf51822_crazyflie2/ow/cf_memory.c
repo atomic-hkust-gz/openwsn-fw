@@ -23,7 +23,7 @@
  *
  * OW memory interface for syslink
  */
-#include "memory.h"
+#include "cf_memory.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -31,10 +31,10 @@
 
 #include "cf_syslink.h"
 
-#include "ow.h"
-#include "ownet.h"
-#include "ds2431.h"
-#include "ds28e05.h"
+#include "cf_ow.h"
+#include "cf_ownet.h"
+#include "cf_ds2431.h"
+#include "cf_ds28e05.h"
 
 static bool isInit;
 static int nMemory;

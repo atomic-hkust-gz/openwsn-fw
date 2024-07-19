@@ -21,8 +21,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-#ifndef __PACKET_H__
-#define __PACKET_H__
+#ifndef __CF_PACKET_H__
+#define __CF_PACKET_H__
 
 #include <stdbool.h>
 #include <stdint.h>

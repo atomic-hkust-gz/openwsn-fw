@@ -36,8 +36,8 @@
 //                       Added file I/O operations
 //
 
-#ifndef OWNET_H
-#define OWNET_H
+#ifndef CF_OWNET_H
+#define CF_OWNET_H
 
 //--------------------------------------------------------------//
 // Common Includes to ownet applications
@@ -423,4 +423,4 @@ ushort docrc16(int portnum, ushort cdata);
 void setcrc8(int portnum, uchar reset);
 uchar docrc8(int portnum, uchar x);
 
-#endif //OWNET_H
+#endif //CF_OWNET_H

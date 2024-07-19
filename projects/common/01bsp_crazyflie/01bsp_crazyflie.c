@@ -33,14 +33,11 @@ void mainloop();
 */
 int mote_main(void)
 {
-
     // initialize the board
     board_init();
 
     // Crazyflie init
     crazyflieInit();
-
-    leds_all_on();
 
     while (1)
     {
@@ -52,82 +49,45 @@ int mote_main(void)
 
 int tickk;
 
-bool inited = false;
+bool enHighLevel = false;
 
 bool a = true;
-bool aa = true;
-bool aaa = true;
-bool aaaa = true;
-
 bool b = true;
-bool c = true;
 bool d = true;
-
 
 void mainloop()
 {
+    tickk = systickGetTick(); //unsigned int
 
-    tickk = systickGetTick();
-
-    if (tickk == 3000 && !inited)
+    if (tickk == 5000 && !enHighLevel)
     {
-        //sendNullCTRPPackage(); //延迟1s启动系统，否则可能会影响1Wire读取
-        inited=true;
+        high_level_enable();
+        enHighLevel = true;
+
+        leds_all_on();
     }
 
-    //if (tickk >= 15000 && (tickk % 500) == 0)
-    //{
-    //    test_GetTOC();
-    //}
-
-    if (tickk == 14000 && a)
+    if (tickk == 10000 && a)
     {
-        test_param_write_enHL(1);
+        high_level_takeoff(0.5, 1.0, 0.0);
         a = false;
     }
 
-    if (tickk == 14500 && aa)
+    if (tickk == 12000 && b)
     {
-        test_param_write_stabilizer_controller(1);
-        aa = false;
-    }
-
-    if (tickk == 15000 && aaa)
-    {
-        test_param_write_kalman_estimator(1);
-        aaa = false;
-    }
-
-    if (tickk == 15500 && aaaa)
-    {
-        test_param_write_kalman_estimator(0);
-        aaaa = false;
-    }
-    
-
-    if (tickk == 16000 && b)
-    {
-        test_send_notify_setpoint_stop();
+        high_level_goto(0.5, 0.0, 0.0, 0, 1.0, true);
         b = false;
     }
 
-    if (tickk == 16500 && c)
+    if (tickk == 13000 && d)
     {
-        test_HL_SendTakeOff();
-        //test_read_param(10);
-        c = false;
-    }
-
-    if (tickk == 17000 && d)
-    {
-        //test_read_param(10);
+        high_level_land(0.0, 1.2, 0);
         d = false;
     }
 
-
-    if (tickk >= 21000 && tickk < 23000)
+    if (tickk >= 15000 && tickk < 23000)
     {
-        test_SendEmergencyStop();
+        EmergencyStop();
         leds_all_off();
     }
 

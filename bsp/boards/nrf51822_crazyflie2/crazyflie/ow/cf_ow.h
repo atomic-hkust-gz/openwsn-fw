@@ -21,15 +21,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-#ifndef __DS28E05_H__
-#define __DS28E05_H__
+#ifndef __CF_OW_H__
+#define __CF_OW_H__
+#include <stdbool.h>
 
-#include <stdint.h>
+void owInit(void);
 
-#define DS28E05_TYPE (0x0d)
+int owScan(void);
 
-int ds28e05ReadMemory(int bus, uint16_t t, unsigned char *buffer, int length);
-int ds28e05WriteMemory(int bus, uint8_t address, char *buffer, int length);
-
-#endif //__DS28E05_H__
-
+#endif //__OW_H__

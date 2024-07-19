@@ -21,19 +21,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-#ifndef __DS2431_H__
-#define __DS2431_H__
+#ifndef __CF_DS28E05_H__
+#define __CF_DS28E05_H__
 
+#include <stdint.h>
 
-/* Low level memory access */
-int ds2431ReadScratchpad(int bus, uint16_t *t, uint8_t *es,
-                         unsigned char *buffer, int length, uint16_t *crc16);
-int ds2431WriteScratchpad(int bus, uint16_t t, unsigned char *buffer, int length);
-int ds2431ReadMemory(int bus, uint16_t t, unsigned char *buffer, int length);
-int ds2431CopyScratchpad(int bus, uint16_t t, uint8_t es);
+#define DS28E05_TYPE (0x0d)
 
-/* High level for writing in the memory */
-int ds2431WriteMemory(int bus, uint16_t t, unsigned char *buffer, int length);
+int ds28e05ReadMemory(int bus, uint16_t t, unsigned char *buffer, int length);
+int ds28e05WriteMemory(int bus, uint8_t address, char *buffer, int length);
 
-#endif //__DS2431_H__
+#endif //__CF_DS28E05_H__
 

@@ -33,7 +33,7 @@
 //           2.00 -> 2.01  Added support for owError library
 //
 
-#include "ownet.h"
+#include "cf_ownet.h"
 
 //--------------------------------------------------------------------------
 // The 'owBlock' transfers a block of data to and from the

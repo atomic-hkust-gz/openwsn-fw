@@ -39,7 +39,7 @@
 //
 
 #include <stdio.h>
-#include "ownet.h"
+#include "cf_ownet.h"
 
 // exportable functions defined in ownet.c
 SMALLINT bitacc(SMALLINT,SMALLINT,SMALLINT,uchar *);

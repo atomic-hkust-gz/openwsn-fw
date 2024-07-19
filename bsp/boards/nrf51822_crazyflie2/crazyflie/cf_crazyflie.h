@@ -1,6 +1,6 @@
 /**
  * @file cf_crazyflie.h
- * @brief crazyflie all operation
+ * @brief crazyflie operations
  * @author Lan HUANG(YelloooBlue@outlook.com)
  * @date June 2024
  *
@@ -15,56 +15,68 @@
 #define V_MODIFIED true
 
 // Generic setpoint packet ----------------------------------------
-struct notifySetpointsStopPacket {
+struct notifySetpointsStopPacket
+{
   uint32_t remainValidMillisecs;
-} __attribute__((packed));  // byte:4=4
+} __attribute__((packed)); // byte:4=4
 
 struct CommanderCrtpLegacyValues
 {
-  float roll;       // deg
-  float pitch;      // deg
-  float yaw;        // deg
+  float roll;  // deg
+  float pitch; // deg
+  float yaw;   // deg
   uint16_t thrust;
 } __attribute__((packed)); // byte:4+4+4+2=14
 
-struct hoverPacket_s {
-  float vx;           // m/s in the body frame of reference
-  float vy;           // ...
-  float yawrate;      // deg/s
-  float zDistance;    // m in the world frame of reference
+struct hoverPacket_s
+{
+  float vx;                // m/s in the body frame of reference
+  float vy;                // ...
+  float yawrate;           // deg/s
+  float zDistance;         // m in the world frame of reference
 } __attribute__((packed)); // byte:4+4+4+4=16
-
 
 // High level commander ----------------------------------------
 
-struct data_go_to {
-  uint8_t groupMask; // mask for which CFs this should apply to
-  uint8_t relative;  // set to true, if position/yaw are relative to current setpoint
-  float x; // m
-  float y; // m
-  float z; // m
-  float yaw; // rad
-  float duration; // sec
+// vertical takeoff from current x-y position to given height
+struct data_takeoff_2
+{
+  uint8_t groupMask;       // mask for which CFs this should apply to
+  float height;            // m (absolute)
+  float yaw;               // rad
+  bool useCurrentYaw;      // If true, use the current yaw (ignore the yaw parameter)
+  float duration;          // s (time it should take until target height is reached)
+} __attribute__((packed)); // byte:1+4+4+1+4=14
+
+// vertical land from current x-y position to given height
+struct data_land_2
+{
+  uint8_t groupMask;       // mask for which CFs this should apply to
+  float height;            // m (absolute)
+  float yaw;               // rad
+  bool useCurrentYaw;      // If true, use the current yaw (ignore the yaw parameter)
+  float duration;          // s (time it should take until target height is reached)
+} __attribute__((packed)); // byte:1+4+4+1+4=14
+
+// stops the current trajectory (turns off the motors)
+struct data_stop
+{
+  uint8_t groupMask;       // mask for which CFs this should apply to
+} __attribute__((packed)); // byte:1=1
+
+// "take this much time to go here, then hover"
+struct data_go_to
+{
+  uint8_t groupMask;       // mask for which CFs this should apply to
+  uint8_t relative;        // set to true, if position/yaw are relative to current setpoint
+  float x;                 // m
+  float y;                 // m
+  float z;                 // m
+  float yaw;               // rad
+  float duration;          // sec
 } __attribute__((packed)); // byte:1+1+4+4+4+4+4=22
-struct data_takeoff_2 {
-  uint8_t groupMask;        // mask for which CFs this should apply to
-  float height;             // m (absolute)
-  float yaw;                // rad
-  bool useCurrentYaw;       // If true, use the current yaw (ignore the yaw parameter)
-  float duration;           // s (time it should take until target height is reached)
-} __attribute__((packed));  // byte:1+4+4+1+4=14
-
-struct data_land_2 {
-  uint8_t groupMask;        // mask for which CFs this should apply to
-  float height;             // m (absolute)
-  float yaw;                // rad
-  bool useCurrentYaw;       // If true, use the current yaw (ignore the yaw parameter)
-  float duration;           // s (time it should take until target height is reached)
-} __attribute__((packed));  // byte:1+4+4+1+4=14
-
 
 // Communication ----------------------------------------
-
 
 #define CRTP_MAX_DATA_SIZE 30
 struct CRTPPacket
@@ -96,32 +108,24 @@ struct CRTPPacket
   };
 } __attribute__((packed));
 
-
-
-
-
 //====================================
 
-void syslinkHandle();
 void crazyflieInit();
-void sendNullCTRPPackage();
 
-void test_SetHoverValue(float vx, float vy, float yawrate, float zDistance);
-void test_SendHover();
+// Process ----------------------------------------
+void syslinkHandle();
 
-void test_SendEmergencyStop();
-void test_send_notify_setpoint_stop();
+// Parameters Operation ----------------------------------------
+void param_set(uint16_t id, const void *value, uint8_t len);
 
-void test_HL_SetGoToValue(float x, float y, float h);
-void test_HL_SendGoto();
-void test_HL_SendTakeOff();
-void test_HL_SendLand();
+// High level commander ----------------------------------------
+void high_level_enable();
+void high_level_takeoff(float absolute_height_m, float duration_s, float yaw);
+void high_level_land(float absolute_height_m, float duration_s, float yaw);
+void high_level_stop();
+void high_level_goto(float x, float y, float z, float yaw, float duration, bool relative);
 
-void test_GetTOC();
-void test_param_write_enHL(uint8_t value);
-void test_param_write_stabilizer_controller(uint8_t value);
-void test_param_write_kalman_estimator(uint8_t value);
-void test_param_write_deck_Flow2(uint8_t value);
-void test_read_param(uint16_t index);
+// Safety ----------------------------------------
+void EmergencyStop();
 
 #endif

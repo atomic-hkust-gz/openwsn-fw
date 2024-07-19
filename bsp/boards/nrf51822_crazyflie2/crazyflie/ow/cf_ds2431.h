@@ -21,33 +21,19 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-#ifndef __MEMORY_H__
-#define __MEMORY_H__
-#include <stdint.h>
-#include <stdbool.h>
+#ifndef __CF_DS2431_H__
+#define __CF_DS2431_H__
 
-#include "cf_syslink.h"
 
-void memoryInit();
+/* Low level memory access */
+int ds2431ReadScratchpad(int bus, uint16_t *t, uint8_t *es,
+                         unsigned char *buffer, int length, uint16_t *crc16);
+int ds2431WriteScratchpad(int bus, uint16_t t, unsigned char *buffer, int length);
+int ds2431ReadMemory(int bus, uint16_t t, unsigned char *buffer, int length);
+int ds2431CopyScratchpad(int bus, uint16_t t, uint8_t es);
 
-bool memorySyslink(struct syslinkPacket *pk);
+/* High level for writing in the memory */
+int ds2431WriteMemory(int bus, uint16_t t, unsigned char *buffer, int length);
 
-struct memoryCommand_s {
-  uint8_t nmem;
-  union {
-    struct {
-      uint8_t memId[8];
-    } __attribute__((packed)) info;
-    struct  {
-      uint16_t address;
-      uint8_t data[29];
-    } __attribute__((packed)) read;
-    struct write {
-      uint16_t address;
-      uint16_t length;
-      char data[27];
-    } __attribute__((packed)) write;
-  };
-} __attribute__((packed));
+#endif //__CF_DS2431_H__
 
-#endif //__MEMORY_H__

@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <ownet.h>
+#include <cf_ownet.h>
 
 #define DS2431_READ_SCRATCHPAD 0xaa
 #define DS2431_WRITE_SCRATCHPAD 0x0f

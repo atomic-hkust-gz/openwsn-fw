@@ -40,7 +40,7 @@
 #include <nrf.h>
 #include <nrf_gpio.h>
 
-#include "ownet.h"
+#include "cf_ownet.h"
 
 #include "cf_systick.h"
 #include "cf_pinout.h"
