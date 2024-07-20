@@ -48,12 +48,6 @@
       debug_additional_load_file="s130_nrf51_2.0.1_softdevice.hex"
       linker_section_placements_segments="FLASH RX 0x00000000 0x00040000;RAM RWX 0x20000000 0x00004000" />
     <folder
-      Name="application"
-      exclude=""
-      filter="*.c"
-      path="../common/01bsp_crazyflie"
-      recurse="Yes" />
-    <folder
       Name="bsp"
       exclude="system_nrf51.c"
       filter="*.s;*.c;*.h"
@@ -64,6 +58,12 @@
       exclude=""
       filter="*.h"
       path="../../inc"
+      recurse="Yes" />
+    <folder
+      Name="application"
+      exclude=""
+      filter="*.c"
+      path="../common/01bsp_crazyflie"
       recurse="Yes" />
   </project>
   <project Name="01bsp_leds">

@@ -1,13 +1,25 @@
 /**
-\brief This is a program which provide Crazyflie Boot & Communication bsp
+\brief This is a program which provide Crazyflie boot and basic operations.
 
 \author Lan HUANG <yelloooblue@outlook.com>, June 2024
+
+ * HighLevel Coordinate System:
+ *
+ *              ^ Y+
+ *              |
+ *              |
+ *              |
+ *    X+ <------+
+ *             (0,0)
+ *
+
 */
 
-#include "stdint.h"
-#include "stdio.h"
-#include "string.h"
-#include "stdbool.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+#include <math.h>
 
 // bsp modules required
 #include "board.h"
@@ -17,6 +29,7 @@
 // cf
 #include "cf_crazyflie.h"
 #include "cf_systick.h"
+#include "cf_api_commander_high_level.h"
 
 //=========================== defines =========================================
 
@@ -25,6 +38,7 @@
 //=========================== prototypes ======================================
 
 void mainloop();
+void _east_go_to(float x, float y, float z);
 
 //=========================== main ============================================
 
@@ -33,11 +47,8 @@ void mainloop();
 */
 int mote_main(void)
 {
-    // initialize the board
-    board_init();
-
-    // Crazyflie init
-    crazyflieInit();
+    board_init(); // initialize the board
+    crazyflieInit(); // Crazyflie init
 
     while (1)
     {
@@ -47,49 +58,72 @@ int mote_main(void)
 
 //=========================== callbacks =======================================
 
-int tickk;
-
+int tick;
 bool enHighLevel = false;
 
+// make sure onecall
 bool a = true;
 bool b = true;
+bool c = true;
 bool d = true;
+bool e = true;
 
 void mainloop()
 {
-    tickk = systickGetTick(); //unsigned int
+    tick = systickGetTick(); // unsigned int
 
-    if (tickk == 5000 && !enHighLevel)
+    if (tick == 5000 && !enHighLevel)
     {
         high_level_enable();
         enHighLevel = true;
-
         leds_all_on();
     }
 
-    if (tickk == 10000 && a)
+    if (tick == 10000 && a)
     {
         high_level_takeoff(0.5, 1.0, 0.0);
         a = false;
     }
 
-    if (tickk == 12000 && b)
+    if (tick == 11000 && b)
     {
-        high_level_goto(0.5, 0.0, 0.0, 0, 1.0, true);
+        _east_go_to(0.5, 0.0, 0.0);
         b = false;
     }
 
-    if (tickk == 13000 && d)
+    if (tick == 12000 && c)
     {
-        high_level_land(0.0, 1.2, 0);
+        _east_go_to(0.0, 0.5, 0.0);
+        c = false;
+    }
+
+    if (tick == 13000 && d)
+    {
+        _east_go_to(-0.5, -0.5, 0.0);
         d = false;
     }
 
-    if (tickk >= 15000 && tickk < 23000)
+    if (tick == 14000 && e)
+    {
+        high_level_land(0.0, 1.0, 0.0);
+        e = false;
+    }
+
+    if (tick >= 15000 && tick < 23000)
     {
         EmergencyStop();
         leds_all_off();
     }
 
     syslinkHandle();
+}
+
+//=========================== private =========================================
+
+void _east_go_to(float x, float y, float z)
+{
+    float distance = sqrt(x * x + y * y + z * z);
+    float duration = distance / CF_HL_MOVE_VEL;
+
+    high_level_goto(x, y, z, 0.0, duration, true);
 }
