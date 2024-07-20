@@ -5,6 +5,13 @@
 // */
 
 
+//【baned for avoid conflict with crazyflie uart！！！！！！！！！！！！！！！！！！！！！！！！！！！】
+//【baned for avoid conflict with crazyflie uart！！！！！！！！！！！！！！！！！！！！！！！！！！！】
+//【baned for avoid conflict with crazyflie uart！！！！！！！！！！！！！！！！！！！！！！！！！！！】
+//【baned for avoid conflict with crazyflie uart！！！！！！！！！！！！！！！！！！！！！！！！！！！】
+// details in cf_uart.c
+
+
 //#include "nrf51.h"
 //#include "nrf51_bitfields.h"
 //#include "board_info.h"
