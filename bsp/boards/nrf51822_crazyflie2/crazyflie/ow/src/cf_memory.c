@@ -33,7 +33,6 @@
 
 #include "cf_ow.h"
 #include "cf_ownet.h"
-#include "cf_ds2431.h"
 #include "cf_ds28e05.h"
 
 static bool isInit;
