@@ -35,6 +35,7 @@
 #include "cf_systick.h"
 #include "uart.h"
 #include "cf_platform.h"
+#include "cf_uart.h"
 #include "leds.h"
 
 /**
@@ -251,11 +252,11 @@ static void pmSysBoot(bool enable)
       nrf_gpio_pin_clear(STM_BOOT0_PIN);
     }
 
-    //uartInit();
+    uartInit();
   } else {
     nrf_gpio_cfg_input(STM_BOOT0_PIN, NRF_GPIO_PIN_PULLDOWN);
 
-    //uartDeinit();
+    uartDeinit();
   }
 }
 

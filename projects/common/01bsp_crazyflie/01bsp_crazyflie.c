@@ -28,7 +28,6 @@
 
 // cf
 #include "cf_crazyflie.h"
-#include "cf_pm.h"
 #include "cf_systick.h"
 #include "cf_api_commander_high_level.h"
 
@@ -110,15 +109,13 @@ void mainloop()
         e = false;
     }
 
-    if (tick >= 17000 && tick < 23000)
+    if (tick >= 15000 && tick < 23000)
     {
         EmergencyStop();
         leds_all_off();
-        crazyflieShutdown();
     }
 
     syslinkHandle();
-    pmProcess();
 }
 
 //=========================== private =========================================

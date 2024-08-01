@@ -28,7 +28,6 @@
 //=========================== prototypes ======================================
 
 void crazyflieInit();
-void crazyflieShutdown();
 void syslinkHandle();
 void EmergencyStop();
 
