@@ -98,10 +98,10 @@ void openstack_init(void) {
 #endif
 
     //===== application-layer
-    openweb_init();
+    //openweb_init();
 
     //===== applications
-    openapps_init();
+    //openapps_init();
 
     LOG_SUCCESS(COMPONENT_OPENWSN, ERR_BOOTED, (errorparameter_t) 0, (errorparameter_t) 0);
 }
