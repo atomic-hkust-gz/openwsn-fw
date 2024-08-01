@@ -45,11 +45,21 @@ static struct syslinkPacket slTxPacket;
 
 void crazyflieInit()
 {
-  pmInit();
-  uartInit();
+  //uartInit(); // move to pm
   systickInit();
   memoryInit();
-  pm_boot_all(); // boot STM32
+  pmInit();
+  //pm_boot_all(); // boot STM32
+  pmSetState(pmSysRunning);
+}
+
+void crazyflieShutdown()
+{
+  struct syslinkPacket slTxPacket = {
+    .type = SYSLINK_PM_SHUTDOWN_REQUEST,
+  };
+  syslinkSend(&slTxPacket);
+  pmSetState(pmAllOff);
 }
 
 void syslinkHandle()
@@ -66,11 +76,25 @@ void syslinkHandle()
     case SYSLINK_RADIO_RAW:
 
       // Decode ctrp package
-      // int port = (slRxPacket.data[0] >> 4) & 0x0F;
-      // int channel = slRxPacket.data[0] & 0x03;
-      // char *data = slRxPacket.data + 1;
+      int port = (slRxPacket.data[0] >> 4) & 0x0F;
+      int channel = slRxPacket.data[0] & 0x03;
+      char *data = slRxPacket.data + 1;
 
       // @you can debug here...
+
+      // catch the param value read
+      if (port == 2 && channel == 1)
+      {
+        int a;
+        a++;
+      }
+
+      // catch the param value WRITE result
+      if (port == 2 && channel == 2)
+      {
+        int a;
+        a++;
+      }
 
       break;
 
