@@ -17,7 +17,7 @@
 #include "neighbors.h"
 #include "radio.h"
 #include "IEEE802154_security.h"
-#include "ccms.h"
+//#include "ccms.h"
 
 //=============================define==========================================
 //=========================== variables =======================================
