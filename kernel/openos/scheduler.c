@@ -11,6 +11,7 @@
 #include "leds.h"
 
 #include "cf_crazyflie.h"
+#include "cf_pm.h"
 
 //=========================== variables =======================================
 
@@ -42,7 +43,9 @@ void scheduler_start(void) {
     taskList_item_t* pThisTask;
     while (1) {
         
+        // crazyflie task
         syslinkHandle();
+        pmProcess();
       
         while(scheduler_vars.task_list!=NULL) {
          // there is still at least one task in the linked-list of tasks

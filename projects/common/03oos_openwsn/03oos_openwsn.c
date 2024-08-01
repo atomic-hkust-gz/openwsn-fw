@@ -16,12 +16,12 @@ int mote_main(void) {
    
    // initialize
    board_init();
+   // crazyflie
+   crazyflieInit();
+
    scheduler_init();
    openstack_init();
 
-   // crazyflie
-   crazyflieInit();
-   
    // start
    scheduler_start();
    return 0; // this line should never be reached

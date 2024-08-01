@@ -180,7 +180,7 @@ void ieee154e_init(void) {
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
     target_asn.byte4 = 0x00;
     target_asn.bytes2and3 = 0x0000;
-    target_asn.bytes0and1 = 0x01f4;
+    target_asn.bytes0and1 = 0x0400;
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
 
     // initialize variables
@@ -2288,15 +2288,36 @@ port_INLINE void incrementAsnOffset(void) {
             high_level_takeoff(0.5, 1.0, 0.0);
             //param_read(10);
         }
-        if (asn_diff == 150)
+        if (asn_diff == 100)
         {
-            //high_level_land(0.5, 1.0, 0.0);
+            high_level_goto(0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
+        }
+        
+        if (asn_diff == 200)
+        {
+            high_level_goto(0.0, 0.5, 0.0, 0.0, 1.0, TRUE);
+        }
+
+        if (asn_diff == 300)
+        {
+            high_level_goto(-0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
+        }
+        
+        if (asn_diff == 400)
+        {
+            high_level_goto(0.0, -0.5, 0.0, 0.0, 1.0, TRUE);
+        }
+
+        if (asn_diff == 500)
+        {
+            high_level_land(0.0, 1.0, 0.0);
             //high_level_goto(-0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
         }
-        if (asn_diff >= 250 && asn_diff < 9999999)
+        if (asn_diff >= 600 && asn_diff < 9999999)
         {
             EmergencyStop(); 
             leds_all_off();
+            crazyflieShutdown();
         }
     }
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
