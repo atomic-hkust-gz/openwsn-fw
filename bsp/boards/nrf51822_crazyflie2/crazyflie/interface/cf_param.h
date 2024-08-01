@@ -27,5 +27,6 @@
 //=========================== prototypes ======================================
 
 void param_set(uint16_t id, const void *value, uint8_t len);
+void param_read(uint16_t id); // for debug, can not automatically read the param, need cache the port=2, channel=1 CTRP data
 
 #endif // __CF_PARAM_H__
