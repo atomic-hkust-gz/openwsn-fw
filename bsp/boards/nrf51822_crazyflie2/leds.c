@@ -4,11 +4,9 @@
  * Description: nrf51822_crazyflie2-specific definition of the "leds" bsp module.
  */
 
-#include "stdbool.h"
+#include "leds.h"
 #include "nrf51.h"
 #include "board_info.h"
-#include "leds.h"
-
 
 //=========================== defines =========================================
 

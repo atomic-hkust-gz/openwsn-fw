@@ -9,14 +9,11 @@
 * Author: Lan HUANG (YelloooBlue@Outlook.com) Apr 2024
 */
 
+#include "radio.h"
 #include "nrf51.h"
 #include "nrf51_bitfields.h"
-#include "board_info.h"
-#include "sctimer.h"
 #include "debugpins.h"
 #include "leds.h"
-#include "radio.h"
-
 
 //=========================== defines =========================================
 
@@ -75,16 +72,9 @@ static radio_vars_t radio_vars;
 
 //=========================== prototypes ======================================
 
-static uint32_t swap_bits(uint32_t inp);
-static uint32_t bytewise_bitswap(uint32_t inp);
 static uint8_t  ble_channel_to_frequency(uint8_t channel);
 
-static void hfclock_start(void);
-static void hfclock_stop(void);
-
-
 //=========================== public ==========================================
-
 
 void radio_init(void) {
 
@@ -157,34 +147,6 @@ void radio_init(void) {
    NVIC_EnableIRQ(RADIO_IRQn);
 }
 
-void radio_ble_init(void){
-
-   NRF_RADIO->PCNF0 =   (((1UL) << RADIO_PCNF0_S0LEN_Pos) & RADIO_PCNF0_S0LEN_Msk) | 
-                        (((0UL) << RADIO_PCNF0_S1LEN_Pos) & RADIO_PCNF0_S1LEN_Msk) |
-                        (((8UL) << RADIO_PCNF0_LFLEN_Pos) & RADIO_PCNF0_LFLEN_Msk);
-
-   NRF_RADIO->PCNF1 =   (((RADIO_PCNF1_ENDIAN_Little)    << RADIO_PCNF1_ENDIAN_Pos)  & RADIO_PCNF1_ENDIAN_Msk)  |
-                        (((3UL)                          << RADIO_PCNF1_BALEN_Pos)   & RADIO_PCNF1_BALEN_Msk)   |
-                        (((0UL)                          << RADIO_PCNF1_STATLEN_Pos) & RADIO_PCNF1_STATLEN_Msk) |
-                        ((((uint32_t)MAX_PAYLOAD_LENGTH) << RADIO_PCNF1_MAXLEN_Pos)  & RADIO_PCNF1_MAXLEN_Msk)  |
-                        ((RADIO_PCNF1_WHITEEN_Enabled    << RADIO_PCNF1_WHITEEN_Pos) & RADIO_PCNF1_WHITEEN_Msk);
-   
-   NRF_RADIO->CRCPOLY      = RADIO_CRCPOLY_24BIT;
-   NRF_RADIO->CRCCNF       = (
-                               ((RADIO_CRCCNF_SKIPADDR_Skip) << RADIO_CRCCNF_SKIPADDR_Pos) & RADIO_CRCCNF_SKIPADDR_Msk) |
-                               (((RADIO_CRCCNF_LEN_Three)    << RADIO_CRCCNF_LEN_Pos)      & RADIO_CRCCNF_LEN_Msk
-                             );
-   NRF_RADIO->CRCINIT      = RADIO_CRCINIT_24BIT;
-
-   NRF_RADIO->TXADDRESS    = 0;
-   NRF_RADIO->RXADDRESSES  = 1;
-
-   NRF_RADIO->MODE         = ((RADIO_MODE_MODE_Ble_1Mbit) << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
-   NRF_RADIO->TIFS         = INTERFRAM_SPACING;
-   NRF_RADIO->PREFIX0      = ((BLE_ACCESS_ADDR & 0xff000000) >> 24);
-   NRF_RADIO->BASE0        = ((BLE_ACCESS_ADDR & 0x00ffffff) << 8 );
-}
-
 
 void radio_setStartFrameCb(radio_capture_cbt cb) {
 
@@ -221,13 +183,6 @@ void radio_setFrequency(uint8_t frequency, radio_freq_t tx_or_rx) {
    // =====BLE_END============================================================================================================
 }
 
-void radio_ble_setFrequency(uint8_t channel) {
-
-   NRF_RADIO->FREQUENCY   = ble_channel_to_frequency(channel);
-   NRF_RADIO->DATAWHITEIV = channel; 
-
-   radio_vars.state  = RADIOSTATE_FREQUENCY_SET;
-}
 
 int8_t radio_getFrequencyOffset(void){
  
@@ -270,21 +225,6 @@ void radio_loadPacket(uint8_t* packet, uint16_t len) {
    if ((len > 0) && (len <= MAX_PACKET_SIZE)) {
        radio_vars.payload[0]= len;
        memcpy(&radio_vars.payload[1], packet, len);
-   }
-
-   // (re)set payload pointer
-   NRF_RADIO->PACKETPTR = (uint32_t)(radio_vars.payload);
-
-   radio_vars.state  = RADIOSTATE_PACKET_LOADED;
-}
-
-void radio_ble_loadPacket(uint8_t* packet, uint16_t len) {
-   radio_vars.state  = RADIOSTATE_LOADING_PACKET;
-
-   ///< note: 1st byte should be the payload size (for Nordic), and
-   ///   the two last bytes are used by the MAC layer for CRC
-   if ((len > 0) && (len <= MAX_PACKET_SIZE)) {
-       memcpy(&radio_vars.payload[0], packet, len);
    }
 
    // (re)set payload pointer
@@ -385,65 +325,7 @@ void radio_getReceivedFrame(uint8_t* pBufRead,
 
 }
 
-void radio_ble_getReceivedFrame(uint8_t* pBufRead,
-                       uint8_t* pLenRead,
-                       uint8_t  maxBufLen,
-                        int8_t* pRssi,
-                       uint8_t* pLqi,
-                          bool* pCrc) 
-{
-   // check for length parameter; if too long, payload won't fit into memory
-   uint8_t len;
-
-   len = radio_vars.payload[1];
-
-   if (len == 0) {
-       return; 
-   }
-
-   if (len > MAX_PACKET_SIZE) {
-       len = MAX_PACKET_SIZE; 
-   }
-
-   if (len > maxBufLen) {
-       len = maxBufLen; 
-   }
-
-   // copy payload
-   memcpy(pBufRead, &radio_vars.payload[0], len+2);
-
-   // store other parameters
-   *pLenRead = len+2;
-
-   *pCrc = (NRF_RADIO->CRCSTATUS == 1U);
-
-}
-
-
 //=========================== private =========================================
-
-static uint32_t swap_bits(uint32_t inp) {
-
-   uint32_t i;
-   uint32_t retval = 0;
-
-   inp = (inp & 0x000000FFUL);
-
-   for (i = 0; i < 8; i++) {
-       retval |= ((inp >> i) & 0x01) << (7 - i);
-   }
-
-   return retval;
-}
-
-
-static uint32_t bytewise_bitswap(uint32_t inp) {
-
-   return (swap_bits(inp >> 24) << 24)
-         | (swap_bits(inp >> 16) << 16)
-         | (swap_bits(inp >> 8) << 8)
-         | (swap_bits(inp));
-}
 
 static uint8_t ble_channel_to_frequency(uint8_t channel) {
 
@@ -478,29 +360,7 @@ static uint8_t ble_channel_to_frequency(uint8_t channel) {
    return frequency;
 }
 
-static void hfclock_start(void) {
-   
-   NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
-   NRF_CLOCK->TASKS_HFCLKSTART    = 1;
-   while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
-}
-
-static void hfclock_stop(void) {
-   
-   // check clock source
-   if((NRF_CLOCK->HFCLKSTAT & 0x00000001) != 0) {
-       
-       // clock running?
-       if((NRF_CLOCK->HFCLKSTAT & 0x00010000) != 0) {
-           
-           NRF_CLOCK->TASKS_HFCLKSTOP = 1;
-           while((NRF_CLOCK->HFCLKSTAT & 0x00000001) != 0);
-       }
-   }
-}
-
 //=========================== callbacks =======================================
-
 
 kick_scheduler_t radio_isr(void){
 
