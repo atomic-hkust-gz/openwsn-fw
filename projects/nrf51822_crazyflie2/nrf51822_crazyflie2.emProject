@@ -25,7 +25,7 @@
       arm_simulator_memory_simulation_parameter="RWX 00000000,00100000,FFFFFFFF;RWX 20000000,00010000,CDCDCDCD"
       arm_target_device_name="nRF51822_xxAA"
       arm_target_interface_type="SWD"
-      c_preprocessor_definitions="NO_VTOR_CONFIG;NRF51822;BSP_DEFINES_ONLY;NRF51;SWI_DISABLE0;WIN32"
+      c_preprocessor_definitions="NO_VTOR_CONFIG;NRF51822;BSP_DEFINES_ONLY;NRF51;SWI_DISABLE0;WIN32;CRAZYFLIE_NRF51822"
       c_user_include_directories="../../bsp/boards;../../bsp/boards/nrf51822_crazyflie2;../../bsp/boards/nrf51822_crazyflie2/sdk;../../bsp/boards/nrf51822_crazyflie2/crazyflie/interface;../../bsp/boards/nrf51822_crazyflie2/crazyflie/ow/interface;../../inc"
       debug_additional_load_file=""
       debug_register_definition_file=""
@@ -434,7 +434,7 @@
   </project>
   <project Name="03oos_openwsn">
     <configuration
-      LIBRARY_IO_TYPE="None"
+      LIBRARY_IO_TYPE="RTT"
       Name="Common"
       arm_architecture="v6M"
       arm_core_type="Cortex-M0"
@@ -448,8 +448,8 @@
       arm_simulator_memory_simulation_parameter="RWX 00000000,00100000,FFFFFFFF;RWX 20000000,00010000,CDCDCDCD"
       arm_target_device_name="nRF51822_xxAA"
       arm_target_interface_type="SWD"
-      c_preprocessor_definitions="NRF51822;BOARD_CRAZYFLIE_NRF;BSP_DEFINES_ONLY;NRF51;SWI_DISABLE0;CRAZYFLIE_NRF51822;__WIN32__;OPENWSN_UDP_C;OPENWSN_UINJECT_C"
-      c_user_include_directories="../../bsp/boards;../../bsp/boards/nrf51822_crazyflie2;../../bsp/boards/nrf51822_crazyflie2/sdk;../../bsp/boards/nrf51822_crazyflie2/crazyflie;../../inc;../../drivers/common;../../drivers/common/crypto;../../kernel;../../openstack;../../openstack/02a-MAClow;../../openstack/02b-MAChigh;../../openstack/03a-IPHC;../../openstack/03b-IPv6;../../openstack/04-TRAN;../../openstack/04-TRAN/sock;../../openstack/cross-layers;../../openweb/;../../openweb/opencoap;../../openapps;../../openapps/uinject;../../openapps/cinfo;../../openapps/cjoin;../../openapps/cled;../../openapps/cweelknown;../../openapps/uecho"
+      c_preprocessor_definitions="NRF51822;BOARD_CRAZYFLIE_NRF;BSP_DEFINES_ONLY;NRF51;SWI_DISABLE0;CRAZYFLIE_NRF51822;__WIN32__;OPENWSN_UDP_C;BAN_OPENWSN_UINJECT_C"
+      c_user_include_directories="../../bsp/boards;../../bsp/boards/nrf51822_crazyflie2;../../bsp/boards/nrf51822_crazyflie2/sdk;../../bsp/boards/nrf51822_crazyflie2/crazyflie/interface;../../bsp/boards/nrf51822_crazyflie2/crazyflie/ow/interface;../../inc;../../drivers/common;../../drivers/common/crypto;../../kernel;../../openstack;../../openstack/02a-MAClow;../../openstack/02b-MAChigh;../../openstack/03a-IPHC;../../openstack/03b-IPv6;../../openstack/04-TRAN;../../openstack/04-TRAN/sock;../../openstack/cross-layers;../../openweb/;../../openweb/opencoap;../../openapps;../../openapps/uinject;../../openapps/cinfo;../../openapps/cjoin;../../openapps/cled;../../openapps/cweelknown;../../openapps/uecho"
       debug_additional_load_file=""
       debug_register_definition_file=""
       debug_start_from_entry_point_symbol="No"
@@ -462,7 +462,7 @@
       linker_scanf_fmt_level="long"
       linker_section_placement_file="flash_placement.xml"
       linker_section_placement_macros="FLASH_START=0x000;SRAM_START=0x20000000"
-      linker_section_placements_segments="FLASH RX 0x00000000 0x00040000;RAM RWX 0x20000000 0x00004000"
+      linker_section_placements_segments="FLASH RX 0x00000000 0x00040000;RAM RWX 0x20000000 0x00008000"
       macros=""
       project_directory=""
       project_type="Executable" />
@@ -474,6 +474,7 @@
       arm_fpu_type=""
       arm_target_device_name="nRF51822_xxAC"
       debug_additional_load_file=""
+      gcc_optimization_level="None"
       linker_section_placements_segments="FLASH RX 0x00000000 0x00040000;RAM RWX 0x20000000 0x00004000" />
     <folder
       Name="application"
@@ -506,22 +507,10 @@
       path="../../kernel"
       recurse="Yes" />
     <folder
-      Name="openapps"
-      exclude=""
-      filter="*.h;*.c"
-      path="../../openapps"
-      recurse="Yes" />
-    <folder
       Name="openstack"
       exclude=""
       filter="*.h;*.c"
       path="../../openstack"
-      recurse="Yes" />
-    <folder
-      Name="openweb"
-      exclude=""
-      filter="*.h;*.c"
-      path="../../openweb"
       recurse="Yes" />
   </project>
 </solution>

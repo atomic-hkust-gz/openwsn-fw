@@ -361,7 +361,7 @@
  *
  */
 #ifndef PACKETQUEUE_LENGTH
-#define PACKETQUEUE_LENGTH              20
+#define PACKETQUEUE_LENGTH              10
 #endif
 
 /**
@@ -371,7 +371,7 @@
  *
  */
 #ifndef DAGROOT
-#define DAGROOT (0)
+#define DAGROOT (1)
 #endif
 
 /**

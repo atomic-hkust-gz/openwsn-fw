@@ -20,7 +20,10 @@
 #include "msf.h"
 
 //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+#include "cf_api_commander_high_level.h"
 #include "cf_crazyflie.h"
+#include "cf_param.h"
+#define bool uint8_t
 asn_t target_asn;
 PORT_TIMER_WIDTH asn_diff;
 //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
@@ -177,7 +180,7 @@ void ieee154e_init(void) {
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
     target_asn.byte4 = 0x00;
     target_asn.bytes2and3 = 0x0000;
-    target_asn.bytes0and1 = 0x1000;
+    target_asn.bytes0and1 = 0x01f4;
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
 
     // initialize variables
@@ -2274,13 +2277,27 @@ port_INLINE void incrementAsnOffset(void) {
 
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
     asn_diff = ieee154e_asnDiff(&target_asn);
-    if (asn_diff > 0 && asn_diff < 200 && ieee154e_vars.isSync){ //000
-        test_changeThrust(20000);
-        test_sendSyslinkPkg();
-    }
-    else{
-        test_changeThrust(0);
-        test_sendSyslinkPkg();
+    if (ieee154e_vars.isSync){
+        if (asn_diff == 0)
+        {
+            high_level_enable();
+            leds_all_on();
+        }
+        if (asn_diff == 50)
+        {
+            high_level_takeoff(0.5, 1.0, 0.0);
+            //param_read(10);
+        }
+        if (asn_diff == 150)
+        {
+            //high_level_land(0.5, 1.0, 0.0);
+            //high_level_goto(-0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
+        }
+        if (asn_diff >= 250 && asn_diff < 9999999)
+        {
+            EmergencyStop(); 
+            leds_all_off();
+        }
     }
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
 
