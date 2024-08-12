@@ -1,7 +1,7 @@
 /**
  * 
- * @file single_status_led.c
- * @brief A simple interface for controlling the status LED on the nRF51822 Crazyflie 2.X.
+ * @file single_status_led.h
+ * @brief Because the nRF51822 on Crazyflie 2.X has only one LED, this interface is designed to control it.
  *          The status LED is used to indicate the status of the Crazyflie 2.X and the OpenWSN stack.
  * @author Lan HUANG (YelloooBlue@outlook.com)
  * @date Aug 2024
@@ -36,38 +36,40 @@ void status_led_handle() {
         case LED_ON:
             leds_all_on();
             break;
-        case LED_BLINK:
+        case LED_BLINK: //default blink (1s on, 1s off)
             if (tick_ms % 2000 < 1000) {
                 leds_all_on();
             } else {
                 leds_all_off();
             }
             break;
-        case LED_BLINK_FAST:
+        case LED_BLINK_FAST: //（0.5s on, 0.5s off)
             if (tick_ms % 1000 < 500) {
                 leds_all_on();
             } else {
                 leds_all_off();
             }
             break;
-        case LED_BLINK_SLOW:
+        case LED_BLINK_SLOW: // (2s on, 2s off)
             if (tick_ms % 4000 < 2000) {
                 leds_all_on();
             } else {
                 leds_all_off();
             }
             break;
-        case LED_BLINK_LSS:
-            if (tick_ms % 2000 < 1000) {
+        case LED_BLINK_LSS: //long-short-short (0.5s on, 0.25s off, 0.25s on, 0.25s off, 0.25s on, 0.5s off)
+            if (tick_ms % 2000 < 500) {
+                leds_all_on();
+            } else if (tick_ms % 2000 < 750) {
+                leds_all_off();
+            } else if (tick_ms % 2000 < 1000) {
                 leds_all_on();
             } else if (tick_ms % 2000 < 1250) {
                 leds_all_off();
             } else if (tick_ms % 2000 < 1500) {
                 leds_all_on();
-            } else if (tick_ms % 2000 < 1750) {
-                leds_all_off();
             } else {
-                leds_all_on();
+                leds_all_off();
             }
             break;
         default:

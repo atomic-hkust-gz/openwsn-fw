@@ -1,7 +1,7 @@
 /**
  * 
  * @file single_status_led.h
- * @brief A simple interface for controlling the status LED on the nRF51822 Crazyflie 2.X.
+ * @brief Because the nRF51822 on Crazyflie 2.X has only one LED, this interface is designed to control it.
  *          The status LED is used to indicate the status of the Crazyflie 2.X and the OpenWSN stack.
  * @author Lan HUANG (YelloooBlue@outlook.com)
  * @date Aug 2024
