@@ -119,14 +119,16 @@ void radio_init(void) {
    NRF_GPIO->DIRSET = 1<<RADIO_PA_MODE;
    NRF_GPIO->DIRSET = 1<<RADIO_PA_ANT_SW;
 
+   // Enable PA
+   NRF_GPIO->OUTSET = 1<<RADIO_PA_RX_EN;
+
    // Select antenna
-   NRF_GPIO->OUTSET = 1<<RADIO_PA_ANT_SW; //chip
+   NRF_GPIO->OUTSET = 1<<RADIO_PA_ANT_SW;    //chip antenna A
+   //NRF_GPIO->OUTCLR = 1<<RADIO_PA_ANT_SW;  //extra antenna B
 
    // Selecte mode
-   NRF_GPIO->OUTSET = 1<<RADIO_PA_RX_EN;
-   NRF_GPIO->OUTCLR = 1<<RADIO_PA_MODE; //Disable BYPASS mode
-   
-   //NRF_GPIO->OUTSET = 1<<RADIO_PA_MODE; //Enable BYPASS mode
+   NRF_GPIO->OUTCLR = 1<<RADIO_PA_MODE;    //Disable BYPASS mode
+   //NRF_GPIO->OUTSET = 1<<RADIO_PA_MODE;  //Enable BYPASS mode
 
 
    // ===============

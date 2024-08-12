@@ -1,19 +1,18 @@
 <!DOCTYPE CrossStudio_Session_File>
 <session>
  <Bookmarks>
-  <BookmarkItem objectName="" line="106" column="-1" path="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/leds.c" number="3" extra="leds_error_toggle();" color="5"/>
-  <BookmarkItem objectName="" line="36" column="-1" path="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/leds.c" number="1" extra="void leds_error_toggle(void) {" color="5"/>
   <BookmarkItem objectName="" line="93" column="-1" path="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/leds.c" number="2" extra="leds_error_toggle();" color="5"/>
+  <BookmarkItem objectName="" line="36" column="-1" path="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/leds.c" number="1" extra="void leds_error_toggle(void) {" color="5"/>
+  <BookmarkItem objectName="" line="106" column="-1" path="D:/Projects/Atomic/swarm/openwsn-fw_atomic/bsp/boards/nrf51822_crazyflie2/leds.c" number="3" extra="leds_error_toggle();" color="5"/>
  </Bookmarks>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
-  <BreakpointListItem trigger="" line="193" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../common/01bsp_radio/01bsp_radio.c" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="206" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../common/01bsp_radio/01bsp_radio.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="" line="344" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="01bsp_rtt/01bsp_rtt.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="Execute" line="0" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="0x6b0" group="Breakpoints" type="Breakpoint" state="3" filename="../nrf51822_crazyflie2" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="78" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../../bsp/boards/nrf51822_crazyflie2/crazyflie/src/cf_crazyflie.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="78" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../../bsp/boards/nrf51822_crazyflie2/crazyflie/src/cf_crazyflie.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="" line="64" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../../bsp/boards/nrf51822_crazyflie2/cf_syslink.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="" line="202" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../../openstack/02a-MAClow/IEEE802154E.h" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="167" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../../drivers/common/openserial.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="167" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../../drivers/common/openserial.c" useHWbreakpoint="false"/>
+  <Exceptions set="HardFault"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
  <FrameBufferWindow>
@@ -81,12 +80,15 @@
  </Memory4>
  <Project>
   <ProjectSessionItem path="nrf51822_crazyflie2"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;01bsp_radio"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;01bsp_radio;application"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;01bsp_radio;bsp"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;01bsp_radio;bsp;crazyflie"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;01bsp_radio;bsp;crazyflie;ow"/>
+  <ProjectSessionItem path="nrf51822_crazyflie2;01bsp_radio;bsp;crazyflie;src"/>
   <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn"/>
   <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;application"/>
   <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;bsp"/>
-  <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;bsp;crazyflie"/>
-  <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;bsp;crazyflie;interface"/>
-  <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;bsp;crazyflie;src"/>
   <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;bsp;sdk"/>
   <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;inc"/>
   <ProjectSessionItem path="nrf51822_crazyflie2;03oos_openwsn;kernel"/>
@@ -175,6 +177,8 @@
    <Watchpoint expression="data" name="data" radix="-1" linenumber="741" filename="../../bsp/boards/nrf51822_crazyflie2/cf_crazyflie.c"/>
    <Watchpoint expression="values" name="values" radix="-1" linenumber="745" filename="../../bsp/boards/nrf51822_crazyflie2/cf_crazyflie.c"/>
    <Watchpoint expression="syslink_pk" name="syslink_pk" radix="-1" linenumber="730" filename="../../bsp/boards/nrf51822_crazyflie2/cf_crazyflie.c"/>
+   <Watchpoint expression="ieee154e_vars" name="ieee154e_vars" radix="-1" linenumber="2741" filename="../../openstack/02a-MAClow/IEEE802154E.c"/>
+   <Watchpoint expression="app_vars" name="app_vars" radix="-1" linenumber="74" filename="../common/01bsp_radio/01bsp_radio.c"/>
   </Watches>
  </Watch1>
  <Watch2>
@@ -188,12 +192,16 @@
  </Watch4>
  <Files>
   <SessionOpenFile windowGroup="DockEditLeft" x="7" y="19" useTextEdit="1" path="../common/03oos_openwsn/03oos_openwsn.c" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="25" y="2315" useTextEdit="1" path="../../openstack/02a-MAClow/IEEE802154E.c" left="0" top="2279" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="14" y="2740" useTextEdit="1" path="../../openstack/02a-MAClow/IEEE802154E.c" left="0" top="2723" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="2" y="52" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/projects/common/03oos_openwsn/03oos_openwsn.c" path="../../bsp/boards/nrf51822_crazyflie2/crazyflie/src/cf_crazyflie.c" left="0" top="33" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="22" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/board.c" left="0" top="0" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="22" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/board.c" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="25" y="45" useTextEdit="1" openedFrom="D:/Projects/Atomic/swarm/openwsn-fw_atomic/projects/common/03oos_openwsn/03oos_openwsn.c" path="../../kernel/openos/scheduler.c" left="0" top="12" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="4" y="120" useTextEdit="1" path="../common/01bsp_crazyflie/01bsp_crazyflie.c" left="0" top="85" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="18" y="373" useTextEdit="1" path="../../inc/config.h" left="0" selected="1" top="345" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="4" y="120" useTextEdit="1" path="../common/01bsp_crazyflie/01bsp_crazyflie.c" left="0" top="64" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="18" y="373" useTextEdit="1" path="../../inc/config.h" left="4" top="345" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="62" y="130" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/radio.c" left="0" selected="1" top="99" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="9" y="30" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/crazyflie/ow/src/cf_crcutil.c" left="0" top="15" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="192" useTextEdit="1" path="../common/01bsp_radio/01bsp_radio.c" left="0" top="162" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="../../bsp/boards/nrf51822_crazyflie2/uart.c" left="0" top="0" codecName="Default"/>
  </Files>
- <EMStudioWindow activeProject="03oos_openwsn" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3199"/>
+ <EMStudioWindow activeProject="01bsp_radio" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>
