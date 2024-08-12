@@ -23,6 +23,7 @@
 #include "cf_api_commander_high_level.h"
 #include "cf_crazyflie.h"
 #include "cf_param.h"
+#include "single_status_led.h"
 #define bool uint8_t
 asn_t target_asn;
 PORT_TIMER_WIDTH asn_diff;
@@ -2278,47 +2279,48 @@ port_INLINE void incrementAsnOffset(void) {
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
     asn_diff = ieee154e_asnDiff(&target_asn);
     if (ieee154e_vars.isSync){
-        if (asn_diff == 0)
-        {
-            high_level_enable();
-            leds_all_on();
-        }
-        if (asn_diff == 50)
-        {
-            high_level_takeoff(0.5, 1.0, 0.0);
-            //param_read(10);
-        }
-        if (asn_diff == 100)
-        {
-            high_level_goto(0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
-        }
+        //status_led_set(LED_BLINK_LSS);
+        //if (asn_diff == 0)
+        //{
+        //    high_level_enable();
+        //    //leds_all_on();
+        //}
+        //if (asn_diff == 50)
+        //{
+        //    high_level_takeoff(0.5, 1.0, 0.0);
+        //    //param_read(10);
+        //}
+        //if (asn_diff == 100)
+        //{
+        //    high_level_goto(0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
+        //}
         
-        if (asn_diff == 200)
-        {
-            high_level_goto(0.0, 0.5, 0.0, 0.0, 1.0, TRUE);
-        }
+        //if (asn_diff == 200)
+        //{
+        //    high_level_goto(0.0, 0.5, 0.0, 0.0, 1.0, TRUE);
+        //}
 
-        if (asn_diff == 300)
-        {
-            high_level_goto(-0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
-        }
+        //if (asn_diff == 300)
+        //{
+        //    high_level_goto(-0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
+        //}
         
-        if (asn_diff == 400)
-        {
-            high_level_goto(0.0, -0.5, 0.0, 0.0, 1.0, TRUE);
-        }
+        //if (asn_diff == 400)
+        //{
+        //    high_level_goto(0.0, -0.5, 0.0, 0.0, 1.0, TRUE);
+        //}
 
-        if (asn_diff == 500)
-        {
-            high_level_land(0.0, 1.0, 0.0);
-            //high_level_goto(-0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
-        }
-        if (asn_diff >= 600 && asn_diff < 9999999)
-        {
-            EmergencyStop(); 
-            leds_all_off();
-            crazyflieShutdown();
-        }
+        //if (asn_diff == 500)
+        //{
+        //    high_level_land(0.0, 1.0, 0.0);
+        //    //high_level_goto(-0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
+        //}
+        //if (asn_diff >= 600 && asn_diff < 9999999)
+        //{
+        //    crazyflieEmergencyStop(); 
+        //    //leds_all_off();
+        //    crazyflieShutdown();
+        //}
     }
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
 
@@ -2739,10 +2741,12 @@ void changeIsSync(bool newIsSync) {
     ieee154e_vars.isSync = newIsSync;
 
     if (ieee154e_vars.isSync == TRUE) {
-        leds_sync_on();
+        //leds_sync_on();
+        status_led_set(LED_BLINK_LSS);
         resetStats();
     } else {
-        leds_sync_off();
+        //leds_sync_off();
+        status_led_set(LED_OFF);
         schedule_resetBackoff();
     }
 }

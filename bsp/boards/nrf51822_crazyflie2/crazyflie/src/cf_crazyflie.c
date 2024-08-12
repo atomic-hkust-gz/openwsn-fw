@@ -23,6 +23,8 @@
 #include "cf_syslink.h"
 #include "cf_ctrp.h"
 
+#include "single_status_led.h"
+
 //=========================== defines =========================================
 
 #ifdef BLE
@@ -41,6 +43,8 @@ static struct syslinkPacket slTxPacket;
 
 //=========================== prototypes ======================================
 
+void _syslinkHandle();
+
 //=========================== public ==========================================
 
 void crazyflieInit()
@@ -51,6 +55,8 @@ void crazyflieInit()
   pmInit();
   //pm_boot_all(); // boot STM32
   pmSetState(pmSysRunning);
+
+  status_led_init();
 }
 
 void crazyflieShutdown()
@@ -62,7 +68,22 @@ void crazyflieShutdown()
   pmSetState(pmAllOff);
 }
 
-void syslinkHandle()
+void crazyflieHandle()
+{
+  _syslinkHandle();
+  status_led_handle();
+  pmProcess();
+}
+
+void crazyflieEmergencyStop()
+{
+  uint8_t data[1] = {0x03}; // 0x03:EMERGENCY_STOP
+  CTRPSend(data, 1, CRTP_PORT_LOCALIZATION, 1);
+}
+
+//=========================== private =========================================
+
+void _syslinkHandle()
 {
 
   if (syslinkReceive(&slRxPacket)) // try to receive
@@ -259,13 +280,5 @@ void syslinkHandle()
     @Author Lan HUANG(YelloooBlue@outlook.com) June 2024
   */
 }
-
-void EmergencyStop()
-{
-  uint8_t data[1] = {0x03}; // 0x03:EMERGENCY_STOP
-  CTRPSend(data, 1, CRTP_PORT_LOCALIZATION, 1);
-}
-
-//=========================== private =========================================
 
 //=========================== interrup handlers ===============================

@@ -112,7 +112,7 @@ void mainloop()
 
     if (tick >= 17000 && tick < 23000)
     {
-        EmergencyStop();
+        crazyflieEmergencyStop();
         leds_all_off();
         crazyflieShutdown();
     }

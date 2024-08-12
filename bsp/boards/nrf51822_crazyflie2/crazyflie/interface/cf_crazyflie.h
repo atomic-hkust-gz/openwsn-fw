@@ -29,8 +29,9 @@
 
 void crazyflieInit();
 void crazyflieShutdown();
-void syslinkHandle();
-void EmergencyStop();
+void crazyflieHandle();
+//void syslinkHandle();// move into crazyflieHandle
+void crazyflieEmergencyStop();
 
 #endif // __CF_CRAZYFLIE_H__
 
