@@ -151,13 +151,24 @@ static void pmNrfPower(bool enable)
     //stop NRF
     //LED_OFF();
     // Turn off PA
-    if (platformHasRfx2411n()) {
-      nrf_gpio_pin_clear(RADIO_PA_RX_EN);
-      nrf_gpio_pin_clear(RADIO_PA_MODE);
-      nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
-    } else {
-      nrf_gpio_pin_clear(RADIO_PAEN_PIN);
-    }
+    
+    /**
+     * PA func baned by Lan HUANG，Because these pins operation base on MBS config
+     * In this OpenWSN project, we don't have MBS config, so we INIT it in the 'radio' bsp.
+     */ 
+
+    // if (platformHasRfx2411n()) {
+    //   nrf_gpio_pin_clear(RADIO_PA_RX_EN); 
+    //   nrf_gpio_pin_clear(RADIO_PA_MODE);
+    //   nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
+    // } else {
+    //   nrf_gpio_pin_clear(RADIO_PAEN_PIN);
+    // }
+
+    /**
+     * END ==============================================================================
+     */
+
     // Disable 1-wire pull-up
     nrf_gpio_pin_clear(OW_PULLUP_PIN);
     // CE, EN1 and EN2 externally pulled low. Put low to not draw any current.
@@ -290,37 +301,47 @@ static void pmRunSystem(bool enable)
     }
 
     //======================================================PA
-    if (platformHasRfx2411n()) {
-      // Enable RF power amplifier
-      nrf_gpio_cfg_output(RADIO_PA_RX_EN);
-      nrf_gpio_cfg_output(RADIO_PA_MODE);
-      nrf_gpio_cfg_output(RADIO_PA_ANT_SW);
-    #ifdef USE_EXT_ANTENNA
-      // Select u.FL antenna
-      nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
-    #else
-      // Select chip antenna
-      nrf_gpio_pin_set(RADIO_PA_ANT_SW);
-    #endif
+    
+    /**
+     * PA func baned by Lan HUANG，Because these pins operation base on MBS config
+     * In this OpenWSN project, we don't have MBS config, so we INIT it in the 'radio' bsp.
+     */
 
-    #ifdef RFX2411N_BYPASS_MODE
-        nrf_gpio_pin_set(RADIO_PA_MODE);
-    #else
-        nrf_gpio_pin_set(RADIO_PA_RX_EN);
-        nrf_gpio_pin_clear(RADIO_PA_MODE);
-    #endif
-    } else {
-        // Enable RF power amplifier
-        nrf_gpio_cfg_output(RADIO_PAEN_PIN);
+    // if (platformHasRfx2411n()) {
+    //   // Enable RF power amplifier
+    //   nrf_gpio_cfg_output(RADIO_PA_RX_EN);
+    //   nrf_gpio_cfg_output(RADIO_PA_MODE);
+    //   nrf_gpio_cfg_output(RADIO_PA_ANT_SW);
+    // #ifdef USE_EXT_ANTENNA
+    //   // Select u.FL antenna
+    //   nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
+    // #else
+    //   // Select chip antenna
+    //   nrf_gpio_pin_set(RADIO_PA_ANT_SW);
+    // #endif
 
-    #ifdef DISABLE_PA
-        nrf_gpio_pin_clear(RADIO_PAEN_PIN);
-        nrf_gpio_cfg_output(RADIO_PATX_DIS_PIN);
-        nrf_gpio_pin_clear(RADIO_PATX_DIS_PIN);
-    #else
-        nrf_gpio_pin_set(RADIO_PAEN_PIN);
-    #endif
-    }
+    // #ifdef RFX2411N_BYPASS_MODE
+    //     nrf_gpio_pin_set(RADIO_PA_MODE);
+    // #else
+    //     nrf_gpio_pin_set(RADIO_PA_RX_EN);
+    //     nrf_gpio_pin_clear(RADIO_PA_MODE);
+    // #endif
+    // } else {
+    //     // Enable RF power amplifier
+    //     nrf_gpio_cfg_output(RADIO_PAEN_PIN);
+
+    // #ifdef DISABLE_PA
+    //     nrf_gpio_pin_clear(RADIO_PAEN_PIN);
+    //     nrf_gpio_cfg_output(RADIO_PATX_DIS_PIN);
+    //     nrf_gpio_pin_clear(RADIO_PATX_DIS_PIN);
+    // #else
+    //     nrf_gpio_pin_set(RADIO_PAEN_PIN);
+    // #endif
+    // }
+
+    /**
+     * END ==============================================================================
+     */
 
     //======================================================
     if (pmConfig->hasVbatSink) {

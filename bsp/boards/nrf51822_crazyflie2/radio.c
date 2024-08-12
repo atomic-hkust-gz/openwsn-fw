@@ -176,6 +176,14 @@ void radio_setFrequency(uint8_t frequency, radio_freq_t tx_or_rx) {
 
    // =====BLE================================================================================================================
    // BRIEF: Since nRF51 does not support ieee802.15.4, radio is implemented using the physical layer of BLE
+
+   // OpenWSN calls this function with frequency between 11 and 26, But BLE uses 0-36 (37-39 are advertising channels)
+   // MAYBE BETTER? , but not tested
+   //frequency = (frequency - 11) * 2;  
+   /*
+      // Channels: IEEE802.15.4(11-26) => (0-15) => BLE(0,2,4...30)
+      // Step: IEEE802.15.4(5) => BLE(2)*2 = 4 MHz
+   */
    
    NRF_RADIO->FREQUENCY   = ble_channel_to_frequency(frequency);//TODO: convert radio freq 2 ble freq
    NRF_RADIO->DATAWHITEIV = frequency; 
