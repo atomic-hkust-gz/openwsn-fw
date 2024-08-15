@@ -448,7 +448,7 @@
       arm_simulator_memory_simulation_parameter="RWX 00000000,00100000,FFFFFFFF;RWX 20000000,00010000,CDCDCDCD"
       arm_target_device_name="nRF51822_xxAA"
       arm_target_interface_type="SWD"
-      c_preprocessor_definitions="NRF51822;BOARD_CRAZYFLIE_NRF;BSP_DEFINES_ONLY;NRF51;SWI_DISABLE0;CRAZYFLIE_NRF51822;__WIN32__;OPENWSN_UDP_C;BAN_OPENWSN_UINJECT_C"
+      c_preprocessor_definitions="NRF51822;BOARD_CRAZYFLIE_NRF;BSP_DEFINES_ONLY;NRF51;SWI_DISABLE0;CRAZYFLIE_NRF51822;__WIN32__;OPENWSN_UDP_C;BAN_OPENWSN_UINJECT_C;OPENWSN_COAP_C;OPENWSN_CCRAZYFLIE_C"
       c_user_include_directories="../../bsp/boards;../../bsp/boards/nrf51822_crazyflie2;../../bsp/boards/nrf51822_crazyflie2/sdk;../../bsp/boards/nrf51822_crazyflie2/crazyflie/interface;../../bsp/boards/nrf51822_crazyflie2/crazyflie/ow/interface;../../inc;../../drivers/common;../../drivers/common/crypto;../../kernel;../../openstack;../../openstack/02a-MAClow;../../openstack/02b-MAChigh;../../openstack/03a-IPHC;../../openstack/03b-IPv6;../../openstack/04-TRAN;../../openstack/04-TRAN/sock;../../openstack/cross-layers;../../openweb/;../../openweb/opencoap;../../openapps;../../openapps/uinject;../../openapps/cinfo;../../openapps/cjoin;../../openapps/cled;../../openapps/cweelknown;../../openapps/uecho"
       debug_additional_load_file=""
       debug_register_definition_file=""
@@ -511,6 +511,18 @@
       exclude=""
       filter="*.h;*.c"
       path="../../openstack"
+      recurse="Yes" />
+    <folder
+      Name="openapps"
+      exclude=""
+      filter="*.h;*.c"
+      path="../../openapps"
+      recurse="Yes" />
+    <folder
+      Name="openweb"
+      exclude=""
+      filter="*.h;*.c"
+      path="../../openweb"
       recurse="Yes" />
   </project>
 </solution>

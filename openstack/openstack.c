@@ -98,7 +98,7 @@ void openstack_init(void) {
 #endif
 
     //===== application-layer
-    //openweb_init();
+    openweb_init();
 
     //===== applications
     //openapps_init();
