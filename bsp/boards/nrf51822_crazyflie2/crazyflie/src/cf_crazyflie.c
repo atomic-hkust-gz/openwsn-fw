@@ -22,6 +22,7 @@
 #include "cf_uart.h"
 #include "cf_syslink.h"
 #include "cf_ctrp.h"
+#include "cf_multiranger.h"
 
 #include "single_status_led.h"
 
@@ -116,6 +117,25 @@ void _syslinkHandle()
         int a;
         a++;
       }
+
+      // log setting result
+      if (port == 5 && channel == 1)
+      {
+        int a;
+        a++;
+      }
+
+
+      // message route
+      if (port == 5 && channel == 2) //Log Data
+      {
+        //ctrp data
+        uint8_t *ctrp_data = slRxPacket.data + 1;
+
+        mutiranger_handle(ctrp_data, slRxPacket.length - 1);
+      }
+
+
 
       break;
 

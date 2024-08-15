@@ -31,6 +31,7 @@
 #include "cf_pm.h"
 #include "cf_systick.h"
 #include "cf_api_commander_high_level.h"
+#include "cf_multiranger.h"
 
 //=========================== defines =========================================
 
@@ -48,7 +49,7 @@ void _east_go_to(float x, float y, float z);
 */
 int mote_main(void)
 {
-    board_init(); // initialize the board
+    board_init();    // initialize the board
     crazyflieInit(); // Crazyflie init
 
     while (1)
@@ -78,37 +79,45 @@ void mainloop()
         high_level_enable();
         enHighLevel = true;
         leds_all_on();
+          mutiranger_init();
     }
 
-    if (tick == 10000 && a)
+    if (mutiranger_up_isClose())
     {
-        high_level_takeoff(0.5, 1.0, 0.0);
-        a = false;
+        leds_all_on();
+    }else{
+        leds_all_off();
     }
 
-    if (tick == 11000 && b)
-    {
-        _east_go_to(0.5, 0.0, 0.0);
-        b = false;
-    }
+    // if (tick == 10000 && a)
+    //{
+    //    high_level_takeoff(0.5, 1.0, 0.0);
+    //    a = false;
+    // }
 
-    if (tick == 12000 && c)
-    {
-        _east_go_to(0.0, 0.5, 0.0);
-        c = false;
-    }
+    // if (tick == 11000 && b)
+    //{
+    //     _east_go_to(0.5, 0.0, 0.0);
+    //     b = false;
+    // }
 
-    if (tick == 13000 && d)
-    {
-        _east_go_to(-0.5, -0.5, 0.0);
-        d = false;
-    }
+    // if (tick == 12000 && c)
+    //{
+    //     _east_go_to(0.0, 0.5, 0.0);
+    //     c = false;
+    // }
 
-    if (tick == 14000 && e)
-    {
-        high_level_land(0.0, 1.0, 0.0);
-        e = false;
-    }
+    // if (tick == 13000 && d)
+    //{
+    //     _east_go_to(-0.5, -0.5, 0.0);
+    //     d = false;
+    // }
+
+    // if (tick == 14000 && e)
+    //{
+    //     high_level_land(0.0, 1.0, 0.0);
+    //     e = false;
+    // }
 
     if (tick >= 17000 && tick < 23000)
     {
@@ -117,8 +126,7 @@ void mainloop()
         crazyflieShutdown();
     }
 
-    syslinkHandle();
-    pmProcess();
+    crazyflieHandle();
 }
 
 //=========================== private =========================================
