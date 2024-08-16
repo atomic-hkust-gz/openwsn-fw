@@ -3,7 +3,7 @@
 #include <string.h>
 #include <nrf.h>
 
-static const char *defaultDeviceType = "0;CF20;R=D";
+static const char *defaultDeviceType = "0;CF21;R=D"; // Modefied by Lan HUANG, Sometimes we do not need mbs, so we set it CF21.
 
 static char *deviceTypeStringLocation = (void*)PLATFORM_DEVICE_DATA_FLASH_POS;
 

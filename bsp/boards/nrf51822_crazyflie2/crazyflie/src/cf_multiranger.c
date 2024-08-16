@@ -62,6 +62,8 @@ void log_startLogBlock(int id, uint8_t period);
 
 void mutiranger_init()
 {
+    //TODO: Check mutiranger deck is connected
+
     // create log block
     struct ops_setting_v2 ops[6];
     for (int i = 0; i < 6; i++)

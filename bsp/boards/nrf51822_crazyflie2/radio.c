@@ -114,6 +114,12 @@ void radio_init(void) {
 
    // =====BLE_END============================================================================================================
 
+   // =====RFX2411N===========================================================================================================
+   /** 
+    * The following operations will be done in the powermanager(pm.c) too.
+    * But sometimes, the radio will be used without the pm.c file, so it is necessary to enable the PA here.
+    */
+
    // RFX2411N pins
    NRF_GPIO->DIRSET = 1<<RADIO_PA_RX_EN;
    NRF_GPIO->DIRSET = 1<<RADIO_PA_MODE;
@@ -130,6 +136,7 @@ void radio_init(void) {
    NRF_GPIO->OUTCLR = 1<<RADIO_PA_MODE;    //Disable BYPASS mode
    //NRF_GPIO->OUTSET = 1<<RADIO_PA_MODE;  //Enable BYPASS mode
 
+   // =====RFX2411N_END=======================================================================================================
 
    // ===============
 
@@ -185,7 +192,7 @@ void radio_setFrequency(uint8_t frequency, radio_freq_t tx_or_rx) {
       // Step: IEEE802.15.4(5) => BLE(2)*2 = 4 MHz
    */
    
-   NRF_RADIO->FREQUENCY   = ble_channel_to_frequency(frequency);//TODO: convert radio freq 2 ble freq
+   NRF_RADIO->FREQUENCY   = ble_channel_to_frequency(frequency);
    NRF_RADIO->DATAWHITEIV = frequency; 
 
    radio_vars.state  = RADIOSTATE_FREQUENCY_SET;

@@ -50,6 +50,7 @@ void _syslinkHandle();
 
 void crazyflieInit()
 {
+  platformInit();
   //uartInit(); // move to pm
   systickInit();
   memoryInit();
