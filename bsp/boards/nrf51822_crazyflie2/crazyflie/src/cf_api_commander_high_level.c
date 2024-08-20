@@ -12,11 +12,11 @@
 /*
  * HighLevel Coordinate System:
  *
- *              ^ Y+
+ *              ^ X+
  *              |
  *              |
  *              |
- *    X+ <------+
+ *    Y+ <------+
  *             (0,0)
  *
  */

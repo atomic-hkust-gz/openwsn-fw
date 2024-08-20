@@ -23,6 +23,7 @@
 #include "cf_syslink.h"
 #include "cf_ctrp.h"
 #include "cf_multiranger.h"
+#include "cf_movement_queue.h"
 
 #include "single_status_led.h"
 
@@ -59,6 +60,7 @@ void crazyflieInit()
   pmSetState(pmSysRunning);
 
   status_led_init();
+  cf_movement_queue_init();
 }
 
 void crazyflieShutdown()

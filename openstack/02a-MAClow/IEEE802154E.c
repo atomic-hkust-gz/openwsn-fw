@@ -24,6 +24,7 @@
 #include "cf_crazyflie.h"
 #include "cf_param.h"
 #include "single_status_led.h"
+#include "cf_movement_queue.h"
 #define bool uint8_t
 asn_t target_asn;
 PORT_TIMER_WIDTH asn_diff;
@@ -181,7 +182,7 @@ void ieee154e_init(void) {
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
     target_asn.byte4 = 0x00;
     target_asn.bytes2and3 = 0x0000;
-    target_asn.bytes0and1 = 0x0400;
+    target_asn.bytes0and1 = 0x0300;
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
 
     // initialize variables
@@ -2279,17 +2280,24 @@ port_INLINE void incrementAsnOffset(void) {
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
     asn_diff = ieee154e_asnDiff(&target_asn);
     if (ieee154e_vars.isSync){
+        
+        // new scheduling
+        INTERRUPT_DECLARATION();
+        DISABLE_INTERRUPTS();
+        cf_movement_queue_handle(&ieee154e_vars.asn);
+        ENABLE_INTERRUPTS();
+        
         //status_led_set(LED_BLINK_LSS);
-        //if (asn_diff == 0)
-        //{
-        //    high_level_enable();
-        //    //leds_all_on();
-        //}
-        //if (asn_diff == 50)
-        //{
-        //    high_level_takeoff(0.5, 1.0, 0.0);
-        //    //param_read(10);
-        //}
+        if (asn_diff == 0)
+        {
+           high_level_enable();
+           //leds_all_on();
+        }
+        if (asn_diff == 50)
+        {
+           high_level_takeoff(0.5, 1.0, 0.0);
+           //param_read(10);
+        }
         //if (asn_diff == 100)
         //{
         //    high_level_goto(0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
@@ -2315,12 +2323,12 @@ port_INLINE void incrementAsnOffset(void) {
         //    high_level_land(0.0, 1.0, 0.0);
         //    //high_level_goto(-0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
         //}
-        //if (asn_diff >= 600 && asn_diff < 9999999)
-        //{
-        //    crazyflieEmergencyStop(); 
-        //    //leds_all_off();
-        //    crazyflieShutdown();
-        //}
+        if (asn_diff >= 600 && asn_diff < 9999999)
+        {
+           crazyflieEmergencyStop(); 
+           //leds_all_off();
+           crazyflieShutdown();
+        }
     }
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
 
