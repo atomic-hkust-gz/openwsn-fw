@@ -10,13 +10,18 @@
 #include "openstack.h"
 #include "opendefs.h"
 
+#include "cf_crazyflie.h"
+
 int mote_main(void) {
    
    // initialize
    board_init();
+   // crazyflie
+   crazyflieInit();
+
    scheduler_init();
    openstack_init();
-   
+
    // start
    scheduler_start();
    return 0; // this line should never be reached

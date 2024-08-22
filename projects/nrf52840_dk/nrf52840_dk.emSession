@@ -26,19 +26,8 @@
  </Memory4>
  <Project>
   <ProjectSessionItem path="nrf52840-dk"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_bmx160"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_bmx160;application"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_ppi"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_ppi;application"/>
   <ProjectSessionItem path="nrf52840-dk;01bsp_radio"/>
   <ProjectSessionItem path="nrf52840-dk;01bsp_radio;application"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_rtt"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_rtt;application"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_rtt;bsp"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_rtt;bsp;sdk"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_timer"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_timer;application"/>
-  <ProjectSessionItem path="nrf52840-dk;01bsp_timer;bsp"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/MSP;CPU/PSP;CPU/PRIMASK;CPU/BASEPRI;CPU/FAULTMASK;CPU/CONTROL;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="01bsp_rtt" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -80,28 +69,28 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="57" useTextEdit="1" path="01bsp_timer/01bsp_timer.c" left="0" top="23" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="580" useTextEdit="1" path="nrf52840_dk.emProject" left="0" top="553" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="24" y="398" useTextEdit="1" path="01bsp_rtt/01bsp_rtt.c" left="0" selected="1" top="379" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="61" useTextEdit="1" path="01bsp_ppi/01bsp_ppi.c" left="0" top="23" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="1" y="58" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/ppi.c" left="0" top="30" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="24" y="285" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/work_nrf52840/openwsn-fw/projects/nrf52840_dk/01bsp_rtt/01bsp_rtt.c" path="../../bsp/boards/nrf52840_dk/radio.c" left="0" top="263" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="57" useTextEdit="1" path="01bsp_timer/01bsp_timer.c" left="0" top="43" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="580" useTextEdit="1" path="nrf52840_dk.emProject" left="0" top="566" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="24" y="398" useTextEdit="1" path="01bsp_rtt/01bsp_rtt.c" left="17" selected="1" top="384" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="61" useTextEdit="1" path="01bsp_ppi/01bsp_ppi.c" left="0" top="47" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="1" y="58" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/ppi.c" left="0" top="44" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="24" y="285" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/work_nrf52840/openwsn-fw/projects/nrf52840_dk/01bsp_rtt/01bsp_rtt.c" path="../../bsp/boards/nrf52840_dk/radio.c" left="0" top="272" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="67" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/work_nrf52840/openwsn-fw/projects/nrf52840_dk/01bsp_timer/01bsp_timer.c" path="../../bsp/boards/nrf52840_dk/timer.c" left="0" top="67" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="319" useTextEdit="1" path="../common/01bsp_radio/01bsp_radio.c" left="0" top="285" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="83" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/uart.c" left="0" top="43" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="319" useTextEdit="1" path="../common/01bsp_radio/01bsp_radio.c" left="0" top="306" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="83" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/uart.c" left="0" top="70" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="42" useTextEdit="1" path="01bsp_bmx160/01bsp_bmx160.c" left="0" top="30" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="31" y="48" useTextEdit="1" path="../../bsp/boards/uart.h" left="0" top="7" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="58" y="60" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/work_nrf52840/openwsn-fw/bsp/boards/nrf52840_dk/radio.c" path="../../bsp/boards/radio.h" left="0" top="30" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="31" y="48" useTextEdit="1" path="../../bsp/boards/uart.h" left="0" top="35" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="58" y="60" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/work_nrf52840/openwsn-fw/bsp/boards/nrf52840_dk/radio.c" path="../../bsp/boards/radio.h" left="10" top="47" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1140" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/work_nrf52840/openwsn-fw/bsp/boards/nrf52840_dk/ppi.c" path="../../bsp/boards/nrf52840_dk/sdk/nrf52840.h" left="0" top="1135" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="29" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/board.c" left="0" top="27" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="38" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/eui64.c" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="44" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/leds.c" left="0" top="23" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="331" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/sdk/thumb_crt0.s" left="0" top="311" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="138" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/debugpins.c" left="0" top="107" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="78" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/sctimer.c" left="0" top="38" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1686" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/sdk/core_cm4.h" left="0" top="1659" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="38" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/eui64.c" left="0" top="27" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="44" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/leds.c" left="0" top="33" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="331" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/sdk/thumb_crt0.s" left="0" top="320" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="138" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/debugpins.c" left="0" top="127" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="78" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/sctimer.c" left="0" top="68" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1686" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/sdk/core_cm4.h" left="0" top="1676" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="935" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/sdk/cmsis_gcc.h" left="0" top="925" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="83" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/i2c.c" left="0" top="62" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="83" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/i2c.c" left="0" top="73" codecName="Default"/>
  </Files>
- <EMStudioWindow activeProject="01bsp_rtt" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <EMStudioWindow activeProject="01bsp_rtt" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

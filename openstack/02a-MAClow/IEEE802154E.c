@@ -19,6 +19,17 @@
 #include "openrandom.h"
 #include "msf.h"
 
+//#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+#include "cf_api_commander_high_level.h"
+#include "cf_crazyflie.h"
+#include "cf_param.h"
+#include "single_status_led.h"
+#include "cf_movement_queue.h"
+#define bool uint8_t
+asn_t target_asn;
+PORT_TIMER_WIDTH asn_diff;
+//#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+
 //=========================== definition ======================================
 
 //=========================== variables =======================================
@@ -167,6 +178,12 @@ Call this function once before any other function in this module, possibly
 during boot-up.
 */
 void ieee154e_init(void) {
+
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+    target_asn.byte4 = 0x00;
+    target_asn.bytes2and3 = 0x0000;
+    target_asn.bytes0and1 = 0x0800;
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
 
     // initialize variables
     memset(&ieee154e_vars, 0, sizeof(ieee154e_vars_t));
@@ -680,6 +697,12 @@ port_INLINE void activity_synchronize_newSlot(void) {
     // increment dummy ASN to trigger debugprint every now and then
     ieee154e_vars.asn.bytes0and1++;
 
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+    // if we need to schedule some commands while in the "un-synchronized" state,
+    // please put it here.
+    // otherwise, command scheduling in the "synchronized" state will be done in activity_ti1ORri1 => incrementAsnOffset()
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+
     opentimers_scheduleAbsolute(
             ieee154e_vars.serialInhibitTimerId,     // timerId
             DURATION_si,                            // duration
@@ -986,7 +1009,7 @@ port_INLINE void activity_ti1ORri1(void) {
 
             //increase ASN by numOfSleepSlots-1 slots as at this slot is already incremented by 1
             for (i = 0; i < ieee154e_vars.numOfSleepSlots - 1; i++) {
-                incrementAsnOffset();
+                incrementAsnOffset(); // TODO: Waking from sleep can result in intensive calls of multiple commands, which may lead to some blocking.
             }
         }
     } else {
@@ -2253,6 +2276,68 @@ port_INLINE void incrementAsnOffset(void) {
         }
     }
 
+
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+    asn_diff = ieee154e_asnDiff(&target_asn);
+    if (ieee154e_vars.isSync){
+        
+        // new scheduling
+        //INTERRUPT_DECLARATION();
+        //DISABLE_INTERRUPTS();
+        //cf_movement_queue_handle(&ieee154e_vars.asn);
+        //ENABLE_INTERRUPTS();
+        
+        //status_led_set(LED_BLINK_LSS);
+        if (asn_diff == 0)
+        {
+           high_level_enable();
+           //leds_all_on();
+        }
+        if (asn_diff == 50)
+        {
+           high_level_takeoff(0.7, 1.0, 0.0);
+           //param_read(10);
+        }
+
+        if (asn_diff > 50 && asn_diff < 600)
+        {
+           cf_movement_queue_handle(&ieee154e_vars.asn);
+        }
+        //if (asn_diff == 100)
+        //{
+        //    high_level_goto(0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
+        //}
+        
+        //if (asn_diff == 200)
+        //{
+        //    high_level_goto(0.0, 0.5, 0.0, 0.0, 1.0, TRUE);
+        //}
+
+        //if (asn_diff == 300)
+        //{
+        //    high_level_goto(-0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
+        //}
+        
+        //if (asn_diff == 400)
+        //{
+        //    high_level_goto(0.0, -0.5, 0.0, 0.0, 1.0, TRUE);
+        //}
+
+        //if (asn_diff == 500)
+        //{
+        //    high_level_land(0.0, 1.0, 0.0);
+        //    //high_level_goto(-0.5, 0.0, 0.0, 0.0, 1.0, TRUE);
+        //}
+        if (asn_diff >= 600 && asn_diff < 9999999)
+        {
+           crazyflieEmergencyStop(); 
+           //leds_all_off();
+           crazyflieShutdown();
+        }
+    }
+    //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+
+
     // increment the offsets
     frameLength = schedule_getFrameLength();
     if (frameLength == 0) {
@@ -2669,10 +2754,12 @@ void changeIsSync(bool newIsSync) {
     ieee154e_vars.isSync = newIsSync;
 
     if (ieee154e_vars.isSync == TRUE) {
-        leds_sync_on();
+        //leds_sync_on();
+        status_led_set(LED_BLINK_LSS);
         resetStats();
     } else {
-        leds_sync_off();
+        //leds_sync_off();
+        status_led_set(LED_OFF);
         schedule_resetBackoff();
     }
 }

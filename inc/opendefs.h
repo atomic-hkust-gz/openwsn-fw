@@ -188,6 +188,7 @@ enum {
    COMPONENT_UEXPIRATION               = 0x2b,
    COMPONENT_UMONITOR                  = 0x2c,
    COMPONENT_CINFRARED                 = 0x2d,
+   COMPONENT_CCRAZYFLIE                = 0x30, //Lan HUANG Aug 2024 add
 };
 
 /**
