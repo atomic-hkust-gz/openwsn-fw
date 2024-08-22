@@ -182,7 +182,7 @@ void ieee154e_init(void) {
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
     target_asn.byte4 = 0x00;
     target_asn.bytes2and3 = 0x0000;
-    target_asn.bytes0and1 = 0x0300;
+    target_asn.bytes0and1 = 0x0800;
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
 
     // initialize variables
@@ -2282,10 +2282,10 @@ port_INLINE void incrementAsnOffset(void) {
     if (ieee154e_vars.isSync){
         
         // new scheduling
-        INTERRUPT_DECLARATION();
-        DISABLE_INTERRUPTS();
-        cf_movement_queue_handle(&ieee154e_vars.asn);
-        ENABLE_INTERRUPTS();
+        //INTERRUPT_DECLARATION();
+        //DISABLE_INTERRUPTS();
+        //cf_movement_queue_handle(&ieee154e_vars.asn);
+        //ENABLE_INTERRUPTS();
         
         //status_led_set(LED_BLINK_LSS);
         if (asn_diff == 0)
@@ -2295,8 +2295,13 @@ port_INLINE void incrementAsnOffset(void) {
         }
         if (asn_diff == 50)
         {
-           high_level_takeoff(0.5, 1.0, 0.0);
+           high_level_takeoff(0.7, 1.0, 0.0);
            //param_read(10);
+        }
+
+        if (asn_diff > 50 && asn_diff < 600)
+        {
+           cf_movement_queue_handle(&ieee154e_vars.asn);
         }
         //if (asn_diff == 100)
         //{

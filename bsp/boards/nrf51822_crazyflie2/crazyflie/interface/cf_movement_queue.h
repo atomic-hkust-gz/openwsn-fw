@@ -32,6 +32,7 @@ struct simple_trajectory
     int num_steps;
     uint32_t total_duration_asn;
     bool is_closed; // TODO: support open trajectory
+    bool is_relative;
 } __attribute__((packed));
 
 //=========================== typedef =========================================

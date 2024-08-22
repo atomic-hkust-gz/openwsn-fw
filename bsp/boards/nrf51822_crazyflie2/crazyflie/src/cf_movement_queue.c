@@ -34,22 +34,23 @@ typedef struct
 
 // === Trajectory ===
 
-// Closed octagon
+//Closed octagon
 // #define NUM_STEPS 8
 // #define TOTAL_DURATION_ASN 400
 // struct simple_trajectory_point test_points[NUM_STEPS] = {
-//     {1.5, 0.5, 0.5, 0, 1.0, 50},
-//     {1.5, -0.5, 0.5, 0, 1.0, 50},
+//    {0.75, 0.25, 0.5, 0, 1.0, 50},
+//    {0.75, -0.25, 0.5, 0, 1.0, 50},
 
-//     {0.5, -1.5, 0.5, 0, 1.0, 50},
-//     {-0.5, -1.5, 0.5, 0, 1.0, 50},
+//    {0.25, -0.75, 0.5, 0, 1.0, 50},
+//    {-0.25, -0.75, 0.5, 0, 1.0, 50},
 
-//     {-1.5, -0.5, 0.5, 0, 1.0, 50},
-//     {-1.5, 0.5, 0.5, 0, 1.0, 50},
+//    {-0.75, -0.25, 0.5, 0, 1.0, 50},
+//    {-0.75, 0.25, 0.5, 0, 1.0, 50},
 
-//     {-0.5, 1.5, 0.5, 0, 1.0, 50},
-//     {0.5, 1.5, 0.5, 0, 1.0, 50},
+//    {-0.25, 0.75, 0.5, 0, 1.0, 50},
+//    {0.25, 0.75, 0.5, 0, 1.0, 50},
 // };
+// struct simple_trajectory test_trajectory = {test_points, NUM_STEPS, TOTAL_DURATION_ASN, true, false};
 
 // Line
 // #define NUM_STEPS 2
@@ -58,23 +59,44 @@ typedef struct
 //     {0.5, 0.0, 0.0, 0, 1.0, 50},
 //     {-0.5, -0.0, 0.0, 0, 1.0, 50},
 // };
+// struct simple_trajectory test_trajectory = {test_points, NUM_STEPS, TOTAL_DURATION_ASN, true, true};
 
-// Rectangle
+// // Rectangle
+// #define NUM_STEPS 4
+// #define TOTAL_DURATION_ASN 200
+// struct simple_trajectory_point test_points[NUM_STEPS] = {
+//    {0.5, 0.0, 0.0, 0, 1.0, 50},
+//    {0.0, 0.5, 0.0, 0, 1.0, 50},
+//    {-0.5, 0.0, 0.0, 0, 1.0, 50},
+//    {0.0, -0.5, 0.0, 0, 1.0, 50},
+// };
+// struct simple_trajectory test_trajectory = {test_points, NUM_STEPS, TOTAL_DURATION_ASN, true, true};
+
+// Absolute Rectangle
+// #define NUM_STEPS 4
+// #define TOTAL_DURATION_ASN 200
+// struct simple_trajectory_point test_points[NUM_STEPS] = {
+//     {0.25, 0.25, 0.5, 0, 1.0, 50},
+//     {-0.25, 0.25, 0.5, 0, 1.0, 50},
+//     {-0.25, -0.25, 0.5, 0, 1.0, 50},
+//     {0.25, -0.25, 0.5, 0, 1.0, 50},
+// };
+// struct simple_trajectory test_trajectory = {test_points, NUM_STEPS, TOTAL_DURATION_ASN, true, false};
+
+// Absolute 3D Rectangle
 #define NUM_STEPS 4
 #define TOTAL_DURATION_ASN 200
 struct simple_trajectory_point test_points[NUM_STEPS] = {
-    {0.5, 0.0, 0.0, 0, 1.0, 50},
-    {0.0, 0.5, 0.0, 0, 1.0, 50},
-    {-0.5, 0.0, 0.0, 0, 1.0, 50},
-    {0.0, -0.5, 0.0, 0, 1.0, 50},
+    {0.25, 0.25, 1.0, 0, 1.0, 50},
+    {-0.25, 0.25, 0.5, 0, 1.0, 50},
+    {-0.25, -0.25, 1.0, 0, 1.0, 50},
+    {0.25, -0.25, 0.5, 0, 1.0, 50},
 };
+struct simple_trajectory test_trajectory = {test_points, NUM_STEPS, TOTAL_DURATION_ASN, true, false};
 
 //=========================== variables =======================================
 
 uint16_t slotDuration = 20; // ms
-
-struct simple_trajectory test_trajectory = {test_points, NUM_STEPS, TOTAL_DURATION_ASN, true};
-
 Drone Drone1;
 uint32_t last_asn = 0;
 
@@ -91,14 +113,14 @@ int _calculate_index_offset(int drone_id, int num_drones, int num_points);
 
 void cf_movement_queue_init()
 {
-  Drone1.drone_id = 1;
+  Drone1.drone_id = 2;
   Drone1.drone_num = 4;
   Drone1.trajectory = &test_trajectory;
   Drone1.current_step_index = _calculate_index_offset(Drone1.drone_id, Drone1.drone_num, Drone1.trajectory->num_steps);
   Drone1.current_step_start_ASN = 0;
   Drone1.current_step_end_ASN = Drone1.trajectory->points[0].duration_asn;
 
-  Drone1.movement_start_asn = 1000;
+  Drone1.movement_start_asn = 2100;
 }
 
 void cf_movement_queue_handle(asn_t *now_asn)
@@ -166,7 +188,7 @@ int _execute_current_step(Drone *drone, uint32_t now_asn)
 {
   // GoTo
   struct simple_trajectory_point *point = &drone->trajectory->points[drone->current_step_index];
-  high_level_goto(point->x, point->y, point->z, point->yaw, point->duration, true);
+  high_level_goto(point->x, point->y, point->z, point->yaw, point->duration, drone->trajectory->is_relative);
 
   // Pop next step
   drone->current_step_index = (drone->current_step_index + 1) % drone->trajectory->num_steps;
@@ -187,7 +209,7 @@ int _execute_next_step(Drone *drone, uint32_t now_asn)
 
   // GoTo
   struct simple_trajectory_point *point = &drone->trajectory->points[drone->current_step_index];
-  high_level_goto(point->x, point->y, point->z, point->yaw, point->duration, true);
+  high_level_goto(point->x, point->y, point->z, point->yaw, point->duration, drone->trajectory->is_relative);
 
   return 0;
 }
