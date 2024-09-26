@@ -128,6 +128,7 @@ int mote_main(void) {
     board_init();
 
 #if ENABLE_DF == 1
+    antenna_CHW_tx_switch_init();
     radio_configure_direction_finding_CHW_antenna_switch();
 
 #endif
@@ -155,7 +156,7 @@ int mote_main(void) {
     radio_setFrequency(CHANNEL, FREQ_RX);
 
 #if ENABLE_DF == 1
-    radio_configure_direction_finding_manual();
+    radio_configure_direction_finding_manual_AoD();
 #endif
 
     // switch in RX by default

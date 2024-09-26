@@ -26,7 +26,7 @@
 #define STATE_TX                    11
 #define STATE_TXDIABLE              12
 
-#define MAX_PACKET_SIZE           (256)       ///< maximal size of radio packet (one more byte at the beginning needed to store the length)
+#define MAX_PACKET_SIZE           (255)       ///< maximal size of radio packet (one more byte at the beginning needed to store the length)
 #define CRC_POLYNOMIAL            (0x11021)   ///< polynomial used for CRC calculation in 802.15.4 frames (x^16 + x^12 + x^5 + 1)
 
 #define WAIT_FOR_RADIO_DISABLE    (0)         ///< whether the driver shall wait until the radio is disabled upon calling radio_rfOff()
@@ -42,7 +42,7 @@
 #define RADIO_TXPOWER             0 // in 2-compilant format
 
 // the maxmium should be ((1<<14)-1), but need larger .bss size
-#define MAX_IQSAMPLES            0x240 //used to be ((1<<8)-1) 0x140 == 320 0x440 = 1088
+#define MAX_IQSAMPLES            0x58 //used to be ((1<<8)-1) 0x140 == 320 0x440 = 1088 0x240 = 576   1us=0x48
 
 //=========================== variables =======================================
 
@@ -330,6 +330,7 @@ void radio_get_crc(uint8_t* crc24){
 
 //  0: 0.0V to 0.2V, 1: 2.5V to 5.0V
 
+/*
 #define ANT_SWITCH_PORT           1
 #define ANT_SWITCH_PIN0           6 // DIO27
 #define ANT_SWITCH_PIN1           7 // DIO28
@@ -399,21 +400,21 @@ void radio_configure_direction_finding_antenna_switch(void) {
         NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_3);
     }
 }
-
+*/
 
 // DFECTRL1 register values
 
-#define NUMBEROF8US         10  // in unit of 8 us //used to be 3
+#define NUMBEROF8US         12  // in unit of 8 us //used to be 3
 #define DFEINEXTENSION      1  // 1:crc  0:payload
 #define TSWITCHSPACING      2  // 1:4us 2:2us 3: 1us
-#define TSAMPLESPACINGREF   6  // 1:4us 2:2us 3: 1us 4:500ns 5:250ns 6:125ns
-#define SAMPLETYPE          1  // 0: IQ  1: magPhase
-#define TSAMPLESPACING      6  // 1:4us 2:2us 3: 1us 4:500ns 5:250ns 6:125ns
+#define TSAMPLESPACINGREF   3  // 1:4us 2:2us 3: 1us 4:500ns 5:250ns 6:125ns // used to 6
+#define SAMPLETYPE          0  // 0: IQ  1: magPhase
+#define TSAMPLESPACING      3  // 1:4us 2:2us 3: 1us 4:500ns 5:250ns 6:125ns // used to 6
 
 // DFECTRL2 register values
 
 #define TSWITCHOFFSET             0 // 
-#define TSAMPLEOFFSET             3 //
+#define TSAMPLEOFFSET             0 //
  
 // DFEMODE
 
@@ -421,7 +422,7 @@ void radio_configure_direction_finding_antenna_switch(void) {
 #define DFEOPMODE_AOD             2 //
 #define DFEOPMODE_AOA             3 //
 
-void radio_configure_direction_finding_manual(void) {
+void radio_configure_direction_finding_manual_AoA(void) {
 
     // enable direction finding in AoA mode
     NRF_RADIO_NS->DFEMODE = (uint32_t)DFEOPMODE_AOA;
@@ -443,7 +444,30 @@ void radio_configure_direction_finding_manual(void) {
     NRF_RADIO_NS->DFEPACKET.PTR     = (uint32_t)(&radio_vars.df_samples[0]);
 }
 
-#define CTEINLINECTRLEN     1 // 1: enabled 0: disabled
+void radio_configure_direction_finding_manual_AoD(void) {
+
+    // enable direction finding in AoD mode
+    NRF_RADIO_NS->DFEMODE = (uint32_t)DFEOPMODE_AOD;
+
+    NRF_RADIO_NS->CTEINLINECONF     = (uint32_t)0;
+
+    NRF_RADIO_NS->DFECTRL1          = (uint32_t)(NUMBEROF8US        << 0)  | 
+                                      (uint32_t)(DFEINEXTENSION     << 7)  |
+                                      (uint32_t)(TSWITCHSPACING     << 8)  |
+                                      (uint32_t)(TSAMPLESPACINGREF  << 12) |
+                                      (uint32_t)(SAMPLETYPE         << 15) |
+                                      (uint32_t)(TSAMPLESPACING     << 16);
+
+    NRF_RADIO_NS->DFECTRL2          = (uint32_t)(TSWITCHOFFSET      << 0)  |
+                                      (uint32_t)(TSAMPLEOFFSET      << 0);
+  
+
+    NRF_RADIO_NS->DFEPACKET.MAXCNT  = MAX_IQSAMPLES;
+    NRF_RADIO_NS->DFEPACKET.PTR     = (uint32_t)(&radio_vars.df_samples[0]);
+}
+
+
+#define CTEINLINECTRLEN     0 // 1: enabled 0: disabled
 #define CTEINFOINS1         1 // 1: data channel PDU  0: advertising channel PDU
 #define CTEERRORHANDLING    0 // 1: sampling and antenna switch when crc is not OK, 0: no sampling and antenna ...
 #define CTETIMEVALIDRANGE   0 // 0: 20, 1: 31, 2: 63 (in uint of 8 us)
@@ -481,6 +505,7 @@ void radio_configure_direction_finding_inline(void) {
     NRF_RADIO_NS->DFEPACKET.MAXCNT  = MAX_IQSAMPLES;
     NRF_RADIO_NS->DFEPACKET.PTR     = (uint32_t)(&radio_vars.df_samples[0]);
 }
+
 
 uint16_t radio_get_df_samples(uint32_t* sample_buffer, uint16_t length) {
 

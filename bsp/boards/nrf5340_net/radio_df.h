@@ -25,7 +25,7 @@
 
 // set this value according to the direction finding configurations
 // e.g. if 
-#define SAMPLE_MAXCNT       (0x240)
+#define SAMPLE_MAXCNT       (0x58)
 
 //=========================== typedef =========================================
 

@@ -14,29 +14,31 @@ This file is driver of using CHW antenna board for AoA/AoD
 //=========================== define ==========================================
 
 
-#define SAMPLE_MAXCNT       (0x240)
-#define MAX_IQSAMPLES            0x240 //((1<<8)-1)
+#define SAMPLE_MAXCNT       (0x58)    //0x58 == 1 us 1 sample for 88 us    0x2c0 == 1 us 8 samples for 88us
+#define MAX_IQSAMPLES            0x58 //((1<<8)-1)
 
-#define MAX_PACKET_SIZE           (256)       ///< maximal size of radio packet (one more byte at the beginning needed to store the length)
+#define MAX_PACKET_SIZE           (255)       ///< maximal size of radio packet (one more byte at the beginning needed to store the length)
 
 // CHW antenna pin mapping
 
-//  VALUE   Pin5    Pin6    Pin7    Pin8    Antenna
+//have problems in mapping 
+
+//  VALUE   Pin8    Pin7    Pin6    Pin5    Antenna
 //  0x0     0       0       0       0       ANT3.2
-//  0x1     1       0       0       0       ANT3.1
-//  0x2     0       1       0       0       ANT4.3
-//  0x3     1       1       0       0       ANT3.3
-//  0x4     0       0       1       0       ANT4.1
-//  0x5     1       0       1       0       ANT4.3
+//  0x1     0       0       0       1       ANT3.1
+//  0x2     0       0       1       0       ANT4.3
+//  0x3     0       0       1       1       ANT3.3
+//  0x4     0       1       0       0       ANT4.1
+//  0x5     0       1       0       1       ANT4.2
 //  0x6     0       1       1       0       ANT4.4
-//  0x7     1       1       1       0       ANT3.4
-//  0x8     0       0       0       1       ANT2.4
+//  0x7     0       1       1       1       ANT3.4
+//  0x8     1       0       0       0       ANT2.4
 //  0x9     1       0       0       1       ANT1.4
-//  0xa     0       1       0       1       ANT1.2
-//  0xb     1       1       0       1       ANT1.1
-//  0xc     0       0       1       1       ANT2.3
-//  0xd     1       0       1       1       ANT1.3
-//  0xe     0       1       1       1       ANT2.1
+//  0xa     1       0       1       0       ANT1.2
+//  0xb     1       0       1       1       ANT1.1
+//  0xc     1       1       0       0       ANT2.3
+//  0xd     1       1       0       1       ANT1.3
+//  0xe     1       1       1       0       ANT2.1
 //  0xf     1       1       1       1       ANT2.2
 
 //  The antenna in the upper left corner is numbered ANT1.1
@@ -77,7 +79,7 @@ This file is driver of using CHW antenna board for AoA/AoD
 void nrf_gpio_cfg_output(uint8_t port_number, uint32_t pin_number);
 //===========================public============================================
 
-void antenna_CHW_switch_init(void) {
+void antenna_CHW_rx_switch_init(void) {
     nrf_gpio_cfg_output(ANT_SWITCH_PORT, ANT_SWITCH_PIN0);
     nrf_gpio_cfg_output(ANT_SWITCH_PORT, ANT_SWITCH_PIN1);
     nrf_gpio_cfg_output(ANT_SWITCH_PORT, ANT_SWITCH_PIN2);
@@ -88,13 +90,30 @@ void antenna_CHW_switch_init(void) {
 
     NRF_P1_NS->OUTSET =  1 << ANT_ENABLE_PIN;
     NRF_P1_NS->OUTCLR =  1 << ANT_DIGITAL_CONTROL_INPUT_PIN;
+    //NRF_P1_NS->OUTSET =  1 << ANT_DIGITAL_CONTROL_INPUT_PIN;
+
+}
+
+void antenna_CHW_tx_switch_init(void) {
+    nrf_gpio_cfg_output(ANT_SWITCH_PORT, ANT_SWITCH_PIN0);
+    nrf_gpio_cfg_output(ANT_SWITCH_PORT, ANT_SWITCH_PIN1);
+    nrf_gpio_cfg_output(ANT_SWITCH_PORT, ANT_SWITCH_PIN2);
+    nrf_gpio_cfg_output(ANT_SWITCH_PORT, ANT_SWITCH_PIN3);
+
+    nrf_gpio_cfg_output(ANT_SWITCH_PORT, ANT_ENABLE_PIN);
+    nrf_gpio_cfg_output(ANT_SWITCH_PORT, ANT_DIGITAL_CONTROL_INPUT_PIN);
+
+    NRF_P1_NS->OUTSET =  1 << ANT_ENABLE_PIN;
+    //NRF_P1_NS->OUTCLR =  1 << ANT_DIGITAL_CONTROL_INPUT_PIN;
+    NRF_P1_NS->OUTSET =  1 << ANT_DIGITAL_CONTROL_INPUT_PIN;
 
 }
 
 void set_antenna_CHW_switches(void) {
-    //NRF_P1_NS->OUTSET =  1 << ANT_DIGITAL_CONTROL_INPUT_PIN;
+    
+    NRF_P1_NS->OUTCLR =  1 << ANT_DIGITAL_CONTROL_INPUT_PIN;
     uint8_t value;
-    value = 0x0f;
+    value = 0xe;
     if (value & 0x01) {
         NRF_P1_NS->OUTSET =  1 << ANT_SWITCH_PIN0;
     } else {
@@ -118,6 +137,12 @@ void set_antenna_CHW_switches(void) {
     } else {
         NRF_P1_NS->OUTCLR =  1 << ANT_SWITCH_PIN3;
     }
+    
+    //NRF_P1_NS->OUTSET =  1 << ANT_SWITCH_PIN0;
+    //NRF_P1_NS->OUTCLR =  1 << ANT_SWITCH_PIN1;
+    //NRF_P1_NS->OUTCLR =  1 << ANT_SWITCH_PIN2;
+    //NRF_P1_NS->OUTCLR =  1 << ANT_SWITCH_PIN3;
+
     //NRF_P1_NS->OUTSET =  1 << ANT_DIGITAL_CONTROL_INPUT_PIN;
     //NRF_P1_NS->OUTCLR =  1 << ANT_DIGITAL_CONTROL_INPUT_PIN;
     //NRF_P1_NS->OUTSET =  1 << ANT_DIGITAL_CONTROL_INPUT_PIN;
@@ -169,29 +194,34 @@ void radio_configure_direction_finding_CHW_antenna_switch(void) {
     NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
     NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
 
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_2);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_3);
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_2);
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_3);
+
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
     //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
 
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_3);
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_4);
+
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_1);
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_1);
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
+
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_4);
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
+
+    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
     NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
     NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_3);
     NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_4);
-
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_1);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_1);
     NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
 
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_4);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
 
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_2);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_3);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_2);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_3);
-
-  
+    // ANT1.1 and ANT2.3 can be used for x direction angle estimation
+    // ANT2.1 and ANT3.1 can be used for y direction angle estimation
 
 }
 

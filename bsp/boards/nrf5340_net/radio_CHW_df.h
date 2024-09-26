@@ -11,7 +11,7 @@ This file is driver of using CHW antenna board for AoA/AoD
 
 // set this value according to the direction finding configurations
 // e.g. if 
-#define SAMPLE_MAXCNT       (0x240)
+#define SAMPLE_MAXCNT       (0x58)
 
 //=========================== typedef =========================================
 
@@ -31,7 +31,8 @@ void     radio_get_crc(uint8_t* crc24);
 // return in MHz
 uint32_t radio_get_frequency(void);
 
-void antenna_CHW_switch_init(void);
+void antenna_CHW_rx_switch_init(void);
+void antenna_CHW_tx_switch_init(void);
 void set_antenna_CHW_switches(void);
 /**
 \}
