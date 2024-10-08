@@ -34,7 +34,7 @@ direction finding with coreHW antenna board
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
 #define CHANNEL         0              ///< 0~39
-#define TIMER_PERIOD    (0xffff>>2)     ///< 0xffff = 2s@32kHz
+#define TIMER_PERIOD    16000//(0xffff>>2)     ///< 0xffff = 2s@32kHz
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
@@ -138,7 +138,7 @@ int mote_main(void) {
     board_init();
 
 #if ENABLE_DF == 1
-    antenna_CHW_switch_init();
+    antenna_CHW_rx_switch_init();
     radio_configure_direction_finding_CHW_antenna_switch();
     //set_antenna_CHW_switches();
 
@@ -167,7 +167,7 @@ int mote_main(void) {
     radio_setFrequency(CHANNEL, FREQ_RX);
 
 #if ENABLE_DF == 1
-    radio_configure_direction_finding_manual();
+    radio_configure_direction_finding_manual_AoA();
 #endif
 
     // switch in RX by default

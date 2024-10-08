@@ -14,8 +14,7 @@ Every TIMER_PERIOD, it will also send a packet containing LENGTH_PACKET bytes
 set to ID. While sending a packet (i.e. from the start of frame event to the
 end of frame event), it will turn on its error LED.
 
-This program is edited from 01bsp_radio_ble_rx. This program implement a ble 
-Channel Sounding ranging
+This program is edited from 01bsp_radio_ble_rx. This program implement a ble tx side with direction finding.
 
 \author Tengfei Chang <tengfei.chang@inria.fr>, August 2020.
 \author Manjiang Cao <mcao999@connect.hkust-gz.edu.cn>, June 2024.
@@ -34,12 +33,12 @@ Channel Sounding ranging
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
 #define CHANNEL         0              ///< 0~39
-#define TIMER_PERIOD    (0xffff>>2)     ///< 0xffff = 2s@32kHz
+#define TIMER_PERIOD    1200 //(0xffff>>2)     ///< 0xffff = 2s@32kHz   32==1ms
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 #define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
-#define LENGTH_SERIAL_FRAME  127            // length of the serial frame
+#define LENGTH_SERIAL_FRAME  127              // length of the serial frame
 
 #define ENABLE_DF       1
 
@@ -58,17 +57,6 @@ const static uint8_t ble_uuid[16]       = {
 
 //=========================== variables =======================================
 
-enum {
-    APP_FLAG_START_FRAME = 0x01,
-    APP_FLAG_END_FRAME   = 0x02,
-    APP_FLAG_TIMER       = 0x04,
-};
-
-typedef enum {
-    APP_STATE_TX         = 0x01,
-    APP_STATE_RX         = 0x02,
-} app_state_t;
-
 typedef struct {
     uint8_t              num_startFrame;
     uint8_t              num_endFrame;
@@ -79,7 +67,6 @@ app_dbg_t app_dbg;
 
 typedef struct {
                 uint8_t         flags;
-                app_state_t     state;
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
                 int8_t          rxpk_rssi;
@@ -90,12 +77,13 @@ typedef struct {
                 uint8_t         uart_buffer_to_send[LEN_UART_BUFFER];
                 uint16_t        uart_lastTxByteIndex;
      volatile   uint8_t         uartDone;
-                uint8_t         rxpk_done;
-                uint8_t         rxpk_buf[LENGTH_PACKET];
-                uint8_t         rxpk_freq_offset;
-                uint8_t         rxpk_len;
-                uint8_t         rxpk_num;
-
+                //uint8_t         rxpk_done;
+                //uint8_t         rxpk_buf[LENGTH_PACKET];
+                //uint8_t         rxpk_freq_offset;
+                //uint8_t         rxpk_len;
+                //uint8_t         rxpk_num;
+                uint8_t         txpk_txNow;
+                uint8_t         packet_counter;
 
 
                 uint8_t         uart_txFrame[LENGTH_SERIAL_FRAME];
@@ -114,7 +102,7 @@ uint8_t  cb_uartRxCb(void);
 void     send_string(const char* str);
 
 
-void     assemble_ibeacon_packet(void);
+void     assemble_ibeacon_packet(uint8_t);
 
 //=========================== main ============================================
 
@@ -129,7 +117,9 @@ int mote_main(void) {
     uint8_t read;
     
     uint8_t current_time;
-    uint8_t antenna_id;
+
+    uint8_t packet_counter;
+    packet_counter = 0;
 
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
@@ -138,28 +128,26 @@ int mote_main(void) {
     board_init();
 
 #if ENABLE_DF == 1
-    antenna_CHW_switch_init();
-    //radio_configure_direction_finding_CHW_antenna_switch();
-    //set_antenna_CHW_switches();
+    radio_configure_direction_finding_CHW_antenna_switch();
 
 #endif
 
-    uart_setCallbacks(cb_uartTxDone,cb_uartRxCb);
-    uart_enableInterrupts();
+    //antenna_CHW_switch_init();
+    // set_antenna_CHW_switches();
+    //uart_setCallbacks(cb_uartTxDone,cb_uartRxCb);
+    //uart_enableInterrupts();
 
     // add callback functions radio
     radio_setStartFrameCb(cb_startFrame);
     radio_setEndFrameCb(cb_endFrame);
-    
-    //antenna_CHW_switch_init();
-    //set_antenna_CHW_switches();
+
     // prepare packet
     app_vars.packet_len = sizeof(app_vars.packet);
 
     // start bsp timer
-    // sctimer_set_callback(cb_timer);
-    // sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
-    // sctimer_enable();
+     sctimer_set_callback(cb_timer);
+     sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
+     sctimer_enable();
 
     // prepare radio
     radio_rfOn();
@@ -167,12 +155,12 @@ int mote_main(void) {
     radio_setFrequency(CHANNEL, FREQ_RX);
 
 #if ENABLE_DF == 1
-    radio_configure_direction_finding_manual();
+    radio_configure_direction_finding_manual_AoA();
 #endif
 
     // switch in RX by default
-    radio_txEnable();
-    radio_txNow();
+    //radio_txEnable();
+    //radio_rxNow();
     //app_vars.state = APP_STATE_RX;
 
     // start by a transmit
@@ -182,78 +170,25 @@ int mote_main(void) {
 
         // sleep while waiting for at least one of the rxpk_done to be set
 
-        app_vars.rxpk_done = 0;
-        while (app_vars.rxpk_done==0) {
+        app_vars.txpk_txNow = 0;
+        while (app_vars.txpk_txNow==0) {
             board_sleep();
         }
-        
-        // if I get here, I just received a packet
-
-        //===== send notification over serial port
 
         // led
         //leds_error_on();
         leds_error_toggle();
+        // prepare packet
+        app_vars.packet_len = sizeof(app_vars.packet);
+        
+        assemble_ibeacon_packet(packet_counter);
 
-        // done receiving a packet
-        //app_vars.packet_len = sizeof(app_vars.packet);
+        // start transmitting packet
+        radio_loadPacket(app_vars.packet,LENGTH_PACKET);
 
-        //radio_getReceivedFrame(
-        //                    app_vars.packet,
-        //                    &app_vars.packet_len,
-        //                    sizeof(app_vars.packet),
-        //                    &app_vars.rxpk_rssi,
-        //                    &app_vars.rxpk_lqi,
-        //                    &app_vars.rxpk_crc
-        //                );
-
-        //send_string("PACK: ");
-        if (app_vars.rxpk_crc && ENABLE_DF) {
-            
-            app_vars.num_samples = radio_get_df_samples(app_vars.sample_buffer,NUM_SAMPLES);
-
-            // record the samples
-            for (i=0;i<app_vars.num_samples;i++) {
-                app_vars.uart_buffer_to_send[4*i+0] = (app_vars.sample_buffer[i] >>24) & 0x000000ff;
-                app_vars.uart_buffer_to_send[4*i+1] = (app_vars.sample_buffer[i] >>16) & 0x000000ff;
-                app_vars.uart_buffer_to_send[4*i+2] = (app_vars.sample_buffer[i] >> 8) & 0x000000ff;
-                app_vars.uart_buffer_to_send[4*i+3] = (app_vars.sample_buffer[i] >> 0) & 0x000000ff;
-            }
-
-            // recoard rssi
-
-            sign = (app_vars.rxpk_rssi & 0x80) >> 7;
-                if (sign){
-                    read = 0xff - (uint8_t)(app_vars.rxpk_rssi) + 1;
-                } else {
-                    read = app_vars.rxpk_rssi;
-                }
-
-                if (sign) {
-                    app_vars.uart_buffer_to_send[4*i+0] = '-';
-                } else {
-                    app_vars.uart_buffer_to_send[4*i+0] = '+';
-                }
-            app_vars.uart_buffer_to_send[4*i+1] = '0'+read/100;
-            app_vars.uart_buffer_to_send[4*i+2] = '0'+read/10;
-            app_vars.uart_buffer_to_send[4*i+3] = '0'+read%10;
-
-            //app_vars.uart_buffer_to_send[4*i+0]     = app_vars.rxpk_rssi;
-            // record scum settings for transmitting
-            //app_vars.uart_buffer_to_send[4*i+1]     = app_vars.packet[3];
-            //app_vars.uart_buffer_to_send[4*i+2]     = app_vars.packet[4];
-            //app_vars.uart_buffer_to_send[4*i+3]     = app_vars.packet[5];
-            // frame split identifier
-            app_vars.uart_buffer_to_send[4*i+4]     = app_vars.rxpk_buf[33];
-            app_vars.uart_buffer_to_send[4*i+5]     = 0xff;
-            app_vars.uart_buffer_to_send[4*i+6]     = 0xff;
-            app_vars.uart_buffer_to_send[4*i+7]     = 0xff;
-
-            app_vars.uart_lastTxByteIndex = 0;
-            uart_writeByte(app_vars.uart_buffer_to_send[0]);
-
-        }
-
+        radio_txEnable();
+        radio_txNow();
+        packet_counter++;
         // led
         //leds_error_off();
     }
@@ -262,7 +197,7 @@ int mote_main(void) {
 
 //=========================== private =========================================
 
-void assemble_ibeacon_packet(void) {
+void assemble_ibeacon_packet(uint8_t packet_counter) {
 
     uint8_t i;
     i=0;
@@ -290,7 +225,7 @@ void assemble_ibeacon_packet(void) {
     app_vars.packet[i++]  = 0x00;               // major
     app_vars.packet[i++]  = 0xff;
     app_vars.packet[i++]  = 0x00;               // minor
-    app_vars.packet[i++]  = 0x0f;
+    app_vars.packet[i++] = packet_counter;
     app_vars.packet[i++]  = TXPOWER;            // power level
 }
 
@@ -314,44 +249,6 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
     // update debug stats
     app_dbg.num_endFrame++;
-
-    memset(&app_vars.rxpk_buf[0],0,LENGTH_PACKET);
-    
-    app_vars.rxpk_len = sizeof(app_vars.rxpk_buf);
-
-    radio_getReceivedFrame(
-        app_vars.rxpk_buf,
-        &app_vars.rxpk_len,
-        sizeof(app_vars.rxpk_buf),
-        &app_vars.rxpk_rssi,
-        &app_vars.rxpk_lqi,
-        &app_vars.rxpk_crc
-    );
-
-    // check the frame is sent by radio_tx project
-    expectedFrame = TRUE;
-
-    if (app_vars.rxpk_len>LENGTH_PACKET){
-        expectedFrame = FALSE;
-    } else {
-
-        if(app_vars.rxpk_buf[0]!=0x42){
-            expectedFrame = FALSE;
-        }
-    }
-    
-    if (expectedFrame){
-        app_vars.rxpk_done = 1;
-    }
-    //leds_debug_toggle();
-
-    // keep listening (needed for at86rf215 radio)
-    radio_rxEnable();
-    radio_rxNow();
-
-    // led
-    //leds_sync_off();
-
 }
 
 void cb_timer(void) {
@@ -360,6 +257,7 @@ void cb_timer(void) {
 
     // update debug stats
     app_dbg.num_timer++;
+    app_vars.txpk_txNow = 1;
 
     sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
 }

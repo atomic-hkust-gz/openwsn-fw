@@ -36,7 +36,9 @@
 
 // admin
 void     radio_configure_direction_finding_antenna_switch(void);
-void     radio_configure_direction_finding_manual(void);
+void     radio_configure_direction_finding_manual_AoA(void);
+void     radio_configure_direction_finding_manual_AoD(void);
+
 void     radio_configure_direction_finding_inline(void);
 void     radio_configure_switch_antenna_array(void);
 uint8_t  radio_get_antenna_array_id(void);
