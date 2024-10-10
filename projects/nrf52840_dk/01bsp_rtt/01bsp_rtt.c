@@ -21,10 +21,10 @@
 #define NUM_PPI_CHANNEL_USED  4
 
 //#define TIMER_PERIOD          (0xffff>>4)    ///< 0xffff = 2s@32kHz
-#define TIMER_PERIOD          0xA4    /// 5ms
+#define TIMER_PERIOD          48    /// 1ms 0x20 = 32
 
-#define SENDER_ID_LAST_BYTE   0xad            //board id ---707
-#define RECEIVER_ID_LAST_BYTE 0xac            //board id ---014
+#define SENDER_ID_LAST_BYTE   0x7f            //board id ---226
+#define RECEIVER_ID_LAST_BYTE 0x7a            //board id ---553
 //#define RECEIVER_ID_LAST_BYTE 0x01            //board id ---376
 //#define RECEIVER_ID_LAST_BYTE 0x9e            //board id ---265
 
@@ -33,8 +33,8 @@
 
 //-------radio define-------
 #define CHANNEL               16
-#define LENGTH_PACKET         20+LENGTH_CRC   //maximum length is 127 bytes
-#define LEN_PKT_TO_SEND       20+LENGTH_CRC
+#define LENGTH_PACKET         1+LENGTH_CRC   //maximum length is 127 bytes
+#define LEN_PKT_TO_SEND       1+LENGTH_CRC
 
 
 //-------PPI define-------
@@ -44,8 +44,9 @@
 
 //------- timer define -------
 #define TIMER_COMPARE_ID      0
-#define RESPONSE_DELAY        16000
+#define RESPONSE_DELAY       4000//16000
            // 16000@16MHz = 1ms
+           // 4000@16MHz = 0.25ms
 
 //------
 
