@@ -249,7 +249,7 @@ void radio_rxEnable(void) {
 
     radio_vars.state  = RADIOSTATE_ENABLING_RX;
 
-    if (NRF_RADIO_NS->STATE != STATE_RX){
+    if (NRF_RADIO_NS->STATE != STATE_RXIDLE){
 
        // turn off radio first
        radio_rfOff();
