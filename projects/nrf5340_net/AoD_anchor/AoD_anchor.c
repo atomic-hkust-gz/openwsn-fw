@@ -116,8 +116,8 @@ int mote_main(void) {
     sctimer_set_callback(app_vars.inner_timerId, cb_inner_slot_timer);
     app_vars.time_slotStartAt = sctimer_readCounter()+SLOTDURATION;
     sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
-    sctimer_enable(app_vars.slot_timerId);
-    sctimer_enable(app_vars.inner_timerId);
+
+    sctimer_enable();
 
     // sleep
     while (1){
@@ -172,7 +172,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_slot_timer(void) {
-
+      leds_error_toggle();
       // update slot offset
       app_vars.slot_offset = (app_vars.slot_offset+1)%NUM_SLOTS;
 

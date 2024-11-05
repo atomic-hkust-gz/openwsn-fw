@@ -528,7 +528,7 @@
       path="../../../inc"
       recurse="Yes" />
   </project>
-  <project Name="AoD_anchor">
+  <project Name="aod_anchor">
     <configuration
       Name="Common"
       arm_architecture="v8M_Mainline"
@@ -547,7 +547,7 @@
       link_linker_script_file="../../../bsp/boards/nrf5340_net/sdk/nrf5340_xxaa_network.ld"
       linker_output_format="hex"
       linker_section_placements_segments="FLASH1 RX 0x00000000 0x00100000;RAM1 RWX 0x20000000 0x00040000"
-      project_directory="AoD_anchor"
+      project_directory="aod_anchor"
       project_type="Executable" />
     <configuration
       Name="Debug"
@@ -576,7 +576,7 @@
       Name="application"
       exclude=""
       filter="*.c"
-      path="AoD_anchor.c"
+      path="aod_anchor.c"
       recurse="No" />
     <folder Name="bsp">
       <folder Name="board">

@@ -41,8 +41,8 @@ enum radiotimer_action_enum {
 //=========================== prototypes ======================================
 
 void     sctimer_init(void);
-void     sctimer_setCompare(PORT_TIMER_WIDTH val);
-void     sctimer_set_callback(sctimer_cbt cb);
+void     sctimer_setCompare(uint8_t compare_ID, PORT_TIMER_WIDTH val);
+void     sctimer_set_callback(uint8_t compare_ID, sctimer_cbt cb);
 void     sctimer_setStartFrameCb(sctimer_capture_cbt cb);
 void     sctimer_setEndFrameCb(sctimer_capture_cbt cb);
 PORT_TIMER_WIDTH sctimer_readCounter(void);
