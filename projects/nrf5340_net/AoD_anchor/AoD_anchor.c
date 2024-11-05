@@ -42,7 +42,7 @@ const static uint8_t ble_uuid[16]       = {
 };
 
 #define NUM_SLOTS       5
-#define SLOTDURATION    (32768/200)  // 5ms@ (32768/200)
+#define SLOT_DURATION   (32768/200)  // 5ms@ (32768/200)
 #define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/200)
 
 //=========================== variables =======================================
@@ -114,10 +114,10 @@ int mote_main(void) {
     // start sctimer
     sctimer_set_callback(app_vars.slot_timerId, cb_slot_timer);
     sctimer_set_callback(app_vars.inner_timerId, cb_inner_slot_timer);
-    app_vars.time_slotStartAt = sctimer_readCounter()+SLOTDURATION;
+    app_vars.time_slotStartAt = sctimer_readCounter()+SLOT_DURATION;
     sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
 
-    sctimer_enable();
+    sctimer_enable(app_vars.slot_timerId);
 
     // sleep
     while (1){
@@ -172,12 +172,13 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_slot_timer(void) {
+
       leds_error_toggle();
       // update slot offset
       app_vars.slot_offset = (app_vars.slot_offset+1)%NUM_SLOTS;
 
       // schedule next slot
-      app_vars.time_slotStartAt += SLOTDURATION;
+      app_vars.time_slotStartAt += SLOT_DURATION;
       sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
 
       

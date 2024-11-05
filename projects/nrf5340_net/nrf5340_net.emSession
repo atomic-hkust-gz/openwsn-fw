@@ -29,20 +29,15 @@
  <Project>
   <ProjectSessionItem path="nrf5340_net"/>
   <ProjectSessionItem path="nrf5340_net;00std_leds"/>
-  <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CHW_df_tx"/>
-  <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CHW_df_tx;application"/>
-  <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CHW_df_tx;bsp"/>
-  <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CHW_df_tx;bsp;board"/>
-  <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CHW_df_tx;bsp;board;nrf5340_net"/>
   <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CS_rx"/>
   <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CS_rx;application"/>
-  <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CS_tx"/>
-  <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CS_tx;application"/>
-  <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CS_tx;bsp"/>
-  <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CS_tx;bsp;board"/>
-  <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_CS_tx;bsp;board;nrf5340_net"/>
   <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_tx"/>
   <ProjectSessionItem path="nrf5340_net;01bsp_radio_ble_tx;application"/>
+  <ProjectSessionItem path="nrf5340_net;AoD_anchor"/>
+  <ProjectSessionItem path="nrf5340_net;AoD_anchor;application"/>
+  <ProjectSessionItem path="nrf5340_net;AoD_anchor;bsp"/>
+  <ProjectSessionItem path="nrf5340_net;AoD_anchor;bsp;board"/>
+  <ProjectSessionItem path="nrf5340_net;AoD_anchor;bsp;board;nrf5340_net"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/MSP;CPU/PSP;CPU/PRIMASK;CPU/BASEPRI;CPU/FAULTMASK;CPU/CONTROL;CPU/MSPLIM;CPU/PSPLIM;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="01bsp_radio_ble_tx" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -92,15 +87,16 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="11" y="127" useTextEdit="1" path="01bsp_radio_ble_CS_tx/01bsp_radio_ble_CS_tx.c" left="0" selected="1" top="153" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="289" useTextEdit="1" path="01bsp_radio_ble_tx/01bsp_radio_ble_tx.c" left="0" top="229" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="151" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/projects/nrf5340_net/01bsp_radio_ble_CS_rx/01bsp_radio_ble_CS_rx.c" path="../../bsp/boards/nrf5340_net/radio_CHW_df.c" left="0" top="121" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="175" useTextEdit="1" path="01bsp_radio_ble_CHW_df_tx/01bsp_radio_ble_CHW_df_tx.c" left="0" top="120" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="43" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/projects/nrf5340_net/01bsp_radio_ble_CHW_df_tx/01bsp_radio_ble_CHW_df_tx.c" path="../../bsp/boards/nrf5340_net/board.c" left="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="11" y="127" useTextEdit="1" path="01bsp_radio_ble_CS_tx/01bsp_radio_ble_CS_tx.c" left="0" top="127" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="289" useTextEdit="1" path="01bsp_radio_ble_tx/01bsp_radio_ble_tx.c" left="0" top="261" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="151" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/projects/nrf5340_net/01bsp_radio_ble_CS_rx/01bsp_radio_ble_CS_rx.c" path="../../bsp/boards/nrf5340_net/radio_CHW_df.c" left="0" top="123" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="175" useTextEdit="1" path="01bsp_radio_ble_CHW_df_tx/01bsp_radio_ble_CHW_df_tx.c" left="0" top="147" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="43" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/projects/nrf5340_net/01bsp_radio_ble_CHW_df_tx/01bsp_radio_ble_CHW_df_tx.c" path="../../bsp/boards/nrf5340_net/board.c" left="0" top="15" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="../../bsp/boards/nrf5340_net/radio.c" left="0" top="540" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="53" y="39" useTextEdit="1" path="../../bsp/boards/nrf5340_net/radio_df.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="36" useTextEdit="1" path="01bsp_radio_ble_CS_rx/01bsp_radio_ble_CS_rx.c" left="0" top="129" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="44" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/bsp/boards/nrf5340_net/board.c" path="../../bsp/boards/nrf5340_net/sctimer.c" left="0" top="47" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="53" y="39" useTextEdit="1" path="../../bsp/boards/nrf5340_net/radio_df.h" left="0" top="11" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="36" useTextEdit="1" path="01bsp_radio_ble_CS_rx/01bsp_radio_ble_CS_rx.c" left="0" top="36" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="44" y="75" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/bsp/boards/nrf5340_net/board.c" path="../../bsp/boards/nrf5340_net/sctimer.c" left="0" top="66" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="42" y="118" useTextEdit="1" path="AoD_anchor/AoD_anchor.c" left="0" selected="1" top="76" codecName="Default"/>
  </Files>
- <EMStudioWindow activeProject="01bsp_radio_ble_CS_tx" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <EMStudioWindow activeProject="AoD_anchor" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

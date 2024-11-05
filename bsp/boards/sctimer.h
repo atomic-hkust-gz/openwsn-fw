@@ -41,13 +41,13 @@ enum radiotimer_action_enum {
 //=========================== prototypes ======================================
 
 void     sctimer_init(void);
-void     sctimer_setCompare(uint8_t compare_ID, PORT_TIMER_WIDTH val);
-void     sctimer_set_callback(uint8_t compare_ID, sctimer_cbt cb);
+void     sctimer_setCompare(uint8_t compare_id, PORT_TIMER_WIDTH val);
+void     sctimer_set_callback(uint8_t compare_id, sctimer_cbt cb);
 void     sctimer_setStartFrameCb(sctimer_capture_cbt cb);
 void     sctimer_setEndFrameCb(sctimer_capture_cbt cb);
 PORT_TIMER_WIDTH sctimer_readCounter(void);
-void     sctimer_enable(void);
-void     sctimer_disable(void);
+void     sctimer_enable(uint8_t compare_id);
+void     sctimer_disable(uint8_t compare_id);
 
 #ifdef SLOT_FSM_IMPLEMENTATION_MULTIPLE_TIMER_INTERRUPT
 void     sctimer_set_actionCallback(sctimer_cbt cb);
