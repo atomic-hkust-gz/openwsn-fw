@@ -16,55 +16,66 @@ Load this program on your boards. The LEDs should start blinking furiously.
 #include "board.h"
 #include "leds.h"
 
-void some_delay(void);
+#include "nRF5340_network.h"
+#include "nrf5340_network_bitfields.h"
 
+
+//define debug GPIO
+#define DEBUG_PORT           0
+#define DEBUG_PIN0           10
+
+void some_delay(void);
+void nrf_gpio_cfg_output(uint8_t port_number, uint32_t pin_number);
 /**
 \brief The program starts executing here.
 */
 int mote_main(void) {uint8_t i;
    
    board_init();
+   //initial debugs GPIO
+    nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_PIN0);
+    NRF_P0_NS->OUTSET =  1 << DEBUG_PIN0;
    
-   // error LED functions
+   //// error LED functions
    leds_error_on();          some_delay();
-   leds_error_off();         some_delay();
-   leds_error_toggle();      some_delay();
-   leds_error_blink();       some_delay();
+   //leds_error_off();         some_delay();
+   //leds_error_toggle();      some_delay();
+   //leds_error_blink();       some_delay();
    
-   // radio LED functions
-   leds_radio_on();          some_delay();
-   leds_radio_off();         some_delay();
-   leds_radio_toggle();      some_delay();
+   //// radio LED functions
+   //leds_radio_on();          some_delay();
+   //leds_radio_off();         some_delay();
+   //leds_radio_toggle();      some_delay();
    
-   // sync LED functions
-   leds_sync_on();           some_delay();
-   leds_sync_off();          some_delay();
-   leds_sync_toggle();       some_delay();
+   //// sync LED functions
+   //leds_sync_on();           some_delay();
+   //leds_sync_off();          some_delay();
+   //leds_sync_toggle();       some_delay();
    
-   // debug LED functions
-   leds_debug_on();          some_delay();
-   leds_debug_off();         some_delay();
-   leds_debug_toggle();      some_delay();
+   //// debug LED functions
+   //leds_debug_on();          some_delay();
+   //leds_debug_off();         some_delay();
+   //leds_debug_toggle();      some_delay();
    
-   // all LED functions
-   leds_all_off();           some_delay();
-   leds_all_on();            some_delay();
-   leds_all_off();           some_delay();
-   leds_all_toggle();        some_delay();
+   //// all LED functions
+   //leds_all_off();           some_delay();
+   //leds_all_on();            some_delay();
+   //leds_all_off();           some_delay();
+   //leds_all_toggle();        some_delay();
    
-   // LED increment function
-   leds_all_off();           some_delay();
-   for (i=0;i<9;i++) {
-      leds_increment();      some_delay();
-   }
+   //// LED increment function
+   //leds_all_off();           some_delay();
+   //for (i=0;i<9;i++) {
+   //   leds_increment();      some_delay();
+   //}
    
-   // LED circular shift function
-   leds_all_off();           some_delay();
-   leds_error_on();          some_delay();
-   for (i=0;i<9;i++) {
-      leds_circular_shift(); some_delay();
-   }
-   
+   //// LED circular shift function
+   //leds_all_off();           some_delay();
+   //leds_error_on();          some_delay();
+   //for (i=0;i<9;i++) {
+   //   leds_circular_shift(); some_delay();
+   //}
+   //NRF_P1_NS->OUTCLR =  1 << DEBUG_PIN0;
    // reset the board, so the program starts running again
    board_reset();
    

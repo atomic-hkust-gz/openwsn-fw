@@ -45,7 +45,18 @@ const static uint8_t ble_uuid[16]       = {
 #define SLOT_DURATION   (32768/200)  // 5ms@ (32768/200)
 #define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/200)
 
+
+//define debug GPIO
+#define DEBUG_PORT           1
+#define DEBUG_PIN0           10
+#define DEBUG_RADIO_PIN      11 
+
 //=========================== variables =======================================
+typedef enum {
+    APP_STATE_TX         = 0x01,
+    APP_STATE_RX         = 0x02,
+    APP_STATE_OFF        = 0x04,
+} app_state_t;
 
 typedef struct {
     uint8_t              num_startFrame;
@@ -60,6 +71,7 @@ typedef struct {
 
                 uint8_t         slot_timerId;
                 uint8_t         inner_timerId;
+                app_state_t     state;
 
                 uint8_t         slot_offset;
                 uint8_t         pkt_sqn;
@@ -80,7 +92,7 @@ void     cb_slot_timer(void);
 void     cb_inner_slot_timer(void);
 
 void     assemble_ibeacon_packet(uint8_t);
-
+void nrf_gpio_cfg_output(uint8_t port_number, uint32_t pin_number);
 //=========================== main ============================================
 
 /**
@@ -97,6 +109,7 @@ int mote_main(void) {
 
     // turn radio off
     radio_rfOff();
+    app_vars.state = APP_STATE_OFF;
 
 #if ENABLE_DF == 1
     antenna_CHW_tx_switch_init();
@@ -111,6 +124,11 @@ int mote_main(void) {
     app_vars.slot_timerId = 0;
     app_vars.inner_timerId = 1;
 
+    //initial debugs GPIO
+    nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_PIN0);
+    nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_RADIO_PIN);
+
+
     // start sctimer
     sctimer_set_callback(app_vars.slot_timerId, cb_slot_timer);
     sctimer_set_callback(app_vars.inner_timerId, cb_inner_slot_timer);
@@ -121,6 +139,18 @@ int mote_main(void) {
 
     // sleep
     while (1){
+        if (app_vars.slot_offset == 0) {
+            NRF_P1_NS->OUTSET =  1 << DEBUG_PIN0;
+        }
+        else {
+            NRF_P1_NS->OUTCLR =  1 << DEBUG_PIN0;
+        }
+
+        if (app_vars.state == APP_STATE_OFF) {
+            NRF_P1_NS->OUTCLR =  1 << DEBUG_RADIO_PIN;
+        } else {
+            NRF_P1_NS->OUTSET =  1 << DEBUG_RADIO_PIN;
+        }
         board_sleep();
     }
 }
@@ -176,7 +206,6 @@ void cb_slot_timer(void) {
       leds_error_toggle();
       // update slot offset
       app_vars.slot_offset = (app_vars.slot_offset+1)%NUM_SLOTS;
-
       // schedule next slot
       app_vars.time_slotStartAt += SLOT_DURATION;
       sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
@@ -188,7 +217,7 @@ void cb_slot_timer(void) {
       case 0:
      
           // set when to send packet out
-          sctimer_setCompare(app_vars.inner_timerId, app_vars.time_slotStartAt+SENDING_OFFSET);
+          sctimer_setCompare(app_vars.inner_timerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET);
           
           // prepare to send
           
@@ -198,6 +227,7 @@ void cb_slot_timer(void) {
 
           //prepare radio
           radio_rfOn();
+          app_vars.state = APP_STATE_TX;
           radio_setFrequency(CHANNEL, FREQ_RX);
           radio_loadPacket(app_vars.packet,LENGTH_PACKET);
           radio_txEnable();
@@ -207,11 +237,12 @@ void cb_slot_timer(void) {
       default:
       break;
       }
-
+   
 }
 
 void cb_inner_slot_timer(void) {
 
     radio_txNow();
+    app_vars.state = APP_STATE_OFF;
 }
 
