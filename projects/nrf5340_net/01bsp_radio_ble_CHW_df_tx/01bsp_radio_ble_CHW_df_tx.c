@@ -146,9 +146,9 @@ int mote_main(void) {
     app_vars.packet_len = sizeof(app_vars.packet);
 
     // start bsp timer
-     sctimer_set_callback(cb_timer);
-     sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
-     sctimer_enable();
+     sctimer_set_callback(0, cb_timer);
+     sctimer_setCompare(0, sctimer_readCounter()+TIMER_PERIOD);
+     sctimer_enable(0);
 
     // prepare radio
     radio_rfOn();
@@ -264,7 +264,7 @@ void cb_timer(void) {
     app_dbg.num_timer++;
     app_vars.txpk_txNow = 1;
 
-    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
+    sctimer_setCompare(0, sctimer_readCounter()+TIMER_PERIOD);
 }
 
 void cb_uartTxDone(void) {

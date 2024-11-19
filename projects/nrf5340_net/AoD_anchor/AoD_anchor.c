@@ -42,7 +42,7 @@ const static uint8_t ble_uuid[16]       = {
 };
 
 #define NUM_SLOTS       5
-#define SLOT_DURATION   (32768/200)  // 5ms@ (32768/200)
+#define SLOT_DURATION   (32768/200)*10  // 5ms@ (32768/200)
 #define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/200)
 
 

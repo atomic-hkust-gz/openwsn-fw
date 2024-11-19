@@ -211,7 +211,7 @@ int mote_main(void) {
         if (app_vars.rxpk_crc && ENABLE_DF) {
             
             app_vars.num_samples = radio_get_df_samples(app_vars.sample_buffer,NUM_SAMPLES);
-
+            
             // record the samples
             for (i=0;i<app_vars.num_samples;i++) {
                 app_vars.uart_buffer_to_send[4*i+0] = (app_vars.sample_buffer[i] >>24) & 0x000000ff;
@@ -361,7 +361,7 @@ void cb_timer(void) {
     // update debug stats
     app_dbg.num_timer++;
 
-    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
+    sctimer_setCompare(0, sctimer_readCounter()+TIMER_PERIOD);
 }
 
 void cb_uartTxDone(void) {

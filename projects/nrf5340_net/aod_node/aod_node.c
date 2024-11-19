@@ -17,12 +17,14 @@ when send the packet in one slot.
 #include "radio_df.h"
 #include "radio_CHW_df.h"
 #include "timer.h"
+#include "aod.h"
 
 //=========================== defines =========================================
 
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
 #define CHANNEL         0              ///< 0~39
+#define BEACON_CHANNEL  37
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 #define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
@@ -42,9 +44,9 @@ const static uint8_t ble_uuid[16]       = {
 };
 
 #define NUM_SLOTS       5
-#define SLOT_DURATION   (32768/200)  // 5ms@ (32768/200)
-#define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/200)
-#define TURNON_OFFSET   (32768/2000) // 0.5ms@ (32768/2000)
+#define SLOT_DURATION   (32768/200)*50  // 5ms@ (32768/200)
+#define SENDING_OFFSET  (32768/1000)*10 // 1ms@ (32768/200)
+#define TURNON_OFFSET   (32768/2000)*10 // 0.5ms@ (32768/2000)
 
 //define debug GPIO
 #define DEBUG_PORT           1
@@ -98,6 +100,8 @@ typedef struct {
 
                 uint8_t         uart_txFrame[LENGTH_SERIAL_FRAME];
 
+                uint8_t         estimate_angle;
+
 } app_vars_t;
 
 app_vars_t app_vars;
@@ -111,7 +115,8 @@ void     cb_slot_timer(void);
 void     cb_inner_slot_timer(void);
 
 void     assemble_ibeacon_packet(uint8_t);
-void     cal_angle(void);
+
+uint16_t cal_angle(sample_array_int_t sample_array_int);
 
 //=========================== main ============================================
 
@@ -132,7 +137,8 @@ int mote_main(void) {
 
     //set slot offset to any value untill sync
     app_vars.slot_offset = 10;
-
+    
+    sample_array_int_t sample_array_int;
     // initialize board
     board_init();
 
@@ -224,8 +230,45 @@ void assemble_ibeacon_packet(uint8_t sqn) {
     app_vars.packet[i++]  = 0x00;               // power level
 }
 
-void cal_angle(void) {
-    app_vars.angle = 0;
+//sample_array_int_t get_sample_array(sample_array_int_t sample_array_int, uint32_t app_vars.sample, uint8_t sample_num) {
+//    uint8_t i=0;
+//    for (i;i<8;i++) {
+//        sample_array_int.ref_Q[i] = (sample_buffer[i] >> 16) & 0x0000FFFF;
+//        sample_array_int.ref_I[i] = (sample_buffer[i]) & 0x0000FFFF;
+//    }
+    
+//    for (i = 9;i<sample_num;i+=8) {
+//        sample_array_int.ant0_Q[i] = (sample_buffer[i] >> 16) & 0x0000FFFF;
+//        sample_array_int.ant0_I[i] = (sample_buffer[i]) & 0x0000FFFF;
+//    }
+
+//    for (i = 11;i<sample_num;i+=8) {
+//        sample_array_int.ant1_Q[i] = (sample_buffer[i] >> 16) & 0x0000FFFF;
+//        sample_array_int.ant1_I[i] = (sample_buffer[i]) & 0x0000FFFF;
+//    }
+
+//    for (i = 13;i<sample_num;i+=8) {
+//        sample_array_int.ant2_Q[i] = (sample_buffer[i] >> 16) & 0x0000FFFF;
+//        sample_array_int.ant2_I[i] = (sample_buffer[i]) & 0x0000FFFF;
+//    }
+
+//    for (i = 15;i<sample_num;i+=8) {
+//        sample_array_int.ant3_Q[i] = (sample_buffer[i] >> 16) & 0x0000FFFF;
+//        sample_array_int.ant3_I[i] = (sample_buffer[i]) & 0x0000FFFF;
+//    }
+
+//    return sample_array_int;
+//}
+
+int16_t recover_12_bit_value(int16_t extended_value) {
+    int32_t recovered_value;
+
+    if (extended_value & 0x8000) {
+        recovered_value = (extended_value + 0x1000) & 0x0FFF;
+    } else {
+        recovered_value = extended_value & 0x0FFF;
+    }
+    return (int16_t)recovered_value;
 }
 
 //=========================== callbacks =======================================
@@ -259,6 +302,38 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             &app_vars.rxpk_crc
         );
 
+        app_vars.num_samples = radio_get_df_samples(app_vars.sample_buffer,NUM_SAMPLES);
+        sample_array_int_t sample_array_int;
+        memset( &sample_array_int, 0, sizeof(sample_array_int) );
+
+        uint8_t i=0;
+        for (i;i<8;i++) {
+            sample_array_int.ref_Q[i] = (int16_t)((app_vars.sample_buffer[i] >> 16) & 0x0000FFFF);
+            sample_array_int.ref_I[i] = (int16_t)(app_vars.sample_buffer[i]) & 0x0000FFFF;
+        }
+    
+        for (i = 0;(9+i*8)<NUM_SAMPLES;i++) {
+            sample_array_int.ant0_Q[i] = (int16_t)(app_vars.sample_buffer[9+i*8] >> 16) & 0x0000FFFF;
+            sample_array_int.ant0_I[i] = (int16_t)(app_vars.sample_buffer[9+i*8]) & 0x0000FFFF;
+        }
+
+        for (i = 0;(11+i*8)<NUM_SAMPLES;i++) {
+            sample_array_int.ant1_Q[i] = (int16_t)(app_vars.sample_buffer[11+i*8] >> 16) & 0x0000FFFF;
+            sample_array_int.ant1_I[i] = (int16_t)(app_vars.sample_buffer[11+i*8]) & 0x0000FFFF;
+        }
+
+        for (i = 0;(13+i*8)<NUM_SAMPLES;i++) {
+            sample_array_int.ant2_Q[i] = (int16_t)(app_vars.sample_buffer[13+i*8] >> 16) & 0x0000FFFF;
+            sample_array_int.ant2_I[i] = (int16_t)(app_vars.sample_buffer[13+i*8]) & 0x0000FFFF;
+        }
+
+        for (i = 0;(15+i*8)<NUM_SAMPLES;i++) {
+            sample_array_int.ant3_Q[i] = (int16_t)(app_vars.sample_buffer[15+i*8] >> 16) & 0x0000FFFF;
+            sample_array_int.ant3_I[i] = (int16_t)(app_vars.sample_buffer[15+i*8]) & 0x0000FFFF;
+        }
+        
+        //sample_array_int = get_sample_array(sample_array_int, app_vars.sample_buffer, NUM_SAMPLES);
+
         // check if the frame is target one
         if (app_vars.packet[0] == 0x42 & app_vars.packet[1] == 0x21)
             app_vars.isTargetPkt = TRUE;
@@ -267,15 +342,16 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         // is is target pkt, check if synced. if not, sync
         if (app_vars.isTargetPkt) {
             if (app_vars.isSynced) {
-                app_vars.period_sqn += 1;
-                cal_angle();
+                app_vars.time_slotStartAt = app_vars.capture_time + SLOT_DURATION - SENDING_OFFSET;
+                sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
+                app_vars.estimate_angle = cal_angle(sample_array_int);
             } else {
         
                 app_vars.slot_offset = 0;
                 app_vars.time_slotStartAt = app_vars.capture_time + SLOT_DURATION - SENDING_OFFSET;
                 sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
                 app_vars.isSynced = TRUE;
-                cal_angle();
+                app_vars.estimate_angle = cal_angle(sample_array_int);
             }
             
 
@@ -291,7 +367,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         }
     }
     // if Radio in Tx state, do nothing
-    else {
+    if (app_vars.state == APP_STATE_TX) {
         radio_rfOff();
         return;
     }
@@ -305,26 +381,11 @@ void cb_slot_timer(void) {
     app_vars.slot_offset = (app_vars.slot_offset+1)%NUM_SLOTS;
 
     // schedule next slot
-    if (app_vars.period_sqn < 10) {
-        app_vars.time_slotStartAt += SLOT_DURATION;
-        sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
+
+    app_vars.time_slotStartAt += SLOT_DURATION;
+    sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
     
-    } else {
-        app_vars.isSynced = FALSE;
-        app_vars.period_sqn = 0;
-        app_vars.slot_offset = 10;
-
-        radio_rfOn();
-        app_vars.state = APP_STATE_RX;
-        // freq type only effects on scum port
-        radio_setFrequency(CHANNEL, FREQ_RX);
-        radio_rxEnable();
-        app_vars.state = APP_STATE_RX;
-        radio_rxNow();
-        return;
-
-    }
-
+   
     // check which slotoffset is right now
 
     switch(app_vars.slot_offset) {
@@ -346,15 +407,13 @@ void cb_slot_timer(void) {
         //prepare radio
         radio_rfOn();
         app_vars.state = APP_STATE_TX;
-        radio_setFrequency(CHANNEL, FREQ_RX);
+        radio_setFrequency(BEACON_CHANNEL, FREQ_RX);
         radio_loadPacket(app_vars.packet,LENGTH_PACKET);
         radio_txEnable();
 
         // no need to schedule a time
         radio_txNow();
 
-        radio_rfOff();
-        app_vars.state = APP_STATE_OFF;
     break;
     default:
         radio_rfOff();
