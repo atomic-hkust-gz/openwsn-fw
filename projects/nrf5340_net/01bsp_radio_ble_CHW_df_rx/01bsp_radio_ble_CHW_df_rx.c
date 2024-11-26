@@ -28,6 +28,7 @@ direction finding with coreHW antenna board
 #include "uart.h"
 #include "radio_df.h"
 #include "radio_CHW_df.h"
+#include "aod.h"
 
 //=========================== defines =========================================
 
@@ -95,6 +96,8 @@ typedef struct {
                 uint8_t         rxpk_freq_offset;
                 uint8_t         rxpk_len;
                 uint8_t         rxpk_num;
+
+                int8_t         estimate_angle;
 
 
 
@@ -212,6 +215,38 @@ int mote_main(void) {
             
             app_vars.num_samples = radio_get_df_samples(app_vars.sample_buffer,NUM_SAMPLES);
             
+            sample_array_int_t sample_array_int;
+
+            memset( &sample_array_int, 0, sizeof(sample_array_int) );
+
+            uint8_t i=0;
+            for (i;i<8;i++) {
+                sample_array_int.ref_Q[i] = (int16_t)((app_vars.sample_buffer[i] >> 16) & 0x0000FFFF);
+                sample_array_int.ref_I[i] = (int16_t)(app_vars.sample_buffer[i]) & 0x0000FFFF;
+            }
+    
+            for (i = 0;(9+i*8)<NUM_SAMPLES;i++) {
+                sample_array_int.ant0_Q[i] = (int16_t)(app_vars.sample_buffer[9+i*8] >> 16) & 0x0000FFFF;
+                sample_array_int.ant0_I[i] = (int16_t)(app_vars.sample_buffer[9+i*8]) & 0x0000FFFF;
+            }
+
+            for (i = 0;(11+i*8)<NUM_SAMPLES;i++) {
+                sample_array_int.ant1_Q[i] = (int16_t)(app_vars.sample_buffer[11+i*8] >> 16) & 0x0000FFFF;
+                sample_array_int.ant1_I[i] = (int16_t)(app_vars.sample_buffer[11+i*8]) & 0x0000FFFF;
+            }
+
+            for (i = 0;(13+i*8)<NUM_SAMPLES;i++) {
+                sample_array_int.ant2_Q[i] = (int16_t)(app_vars.sample_buffer[13+i*8] >> 16) & 0x0000FFFF;
+                sample_array_int.ant2_I[i] = (int16_t)(app_vars.sample_buffer[13+i*8]) & 0x0000FFFF;
+            }
+
+            for (i = 0;(15+i*8)<NUM_SAMPLES;i++) {
+                sample_array_int.ant3_Q[i] = (int16_t)(app_vars.sample_buffer[15+i*8] >> 16) & 0x0000FFFF;
+                sample_array_int.ant3_I[i] = (int16_t)(app_vars.sample_buffer[15+i*8]) & 0x0000FFFF;
+            }
+
+            app_vars.estimate_angle = cal_angle(sample_array_int);
+
             // record the samples
             for (i=0;i<app_vars.num_samples;i++) {
                 app_vars.uart_buffer_to_send[4*i+0] = (app_vars.sample_buffer[i] >>24) & 0x000000ff;

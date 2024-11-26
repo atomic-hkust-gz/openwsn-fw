@@ -126,7 +126,7 @@ float angle_diff_per_us(sample_array_float_t sample_array_float) {
     for (uint8_t i=0;i<4;i++) {
         theta_sum += ref_theta_array[i];
     }
-    return theta_sum/4;
+    return (theta_sum/4)/4;
 }
 
 IQ_sturcture rotate_vector(float I, float Q, float theta) {
@@ -207,7 +207,7 @@ Complex* steering_vector(float alpha) {
     steer_vector[2] = complex_exponential(-2*acos(-1)*FREQUENCY*(2*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
 }
 
-uint16_t DoA_algorithm(ant_mean_t ant_mean) {
+int8_t DoA_algorithm(ant_mean_t ant_mean) {
     float ant0_theta, ant1_theta, ant2_theta;
     ant0_theta = atan2(ant_mean.ant0_Q, ant_mean.ant0_I);
     ant1_theta = atan2(ant_mean.ant1_Q, ant_mean.ant1_I);
@@ -232,7 +232,7 @@ uint16_t DoA_algorithm(ant_mean_t ant_mean) {
     double y_alpha_list[ANGLE_RANGE];
     for (int i = 0; i < ANGLE_RANGE; i++) {
         double alpha = angle_list[i];
-        
+        alpha = alpha *(acos(-1) / 180);
         Complex steer_vector[3];
         steer_vector[0].real = 1;
         steer_vector[0].imag = 0;
@@ -252,14 +252,14 @@ uint16_t DoA_algorithm(ant_mean_t ant_mean) {
 
     // 找到 y_alpha_list 中的最大值的索引
     double max_value = y_alpha_list[0];
-    int best_angle_index = 0;
+    int8_t best_angle_index = 0;
     for (int i = 1; i < ANGLE_RANGE; i++) {
         if (y_alpha_list[i] > max_value) {
             max_value = y_alpha_list[i];
             best_angle_index = i;
         }
     }
-    return best_angle_index;
+    return best_angle_index - 90;
 }
 
 
@@ -334,7 +334,7 @@ uint16_t cal_angle(sample_array_int_t sample_array_int) {
     float angle_change_us;
     angle_change_us = angle_diff_per_us(sample_array_float);
 
-    sample_array_float = compensate_phase(sample_array_float, angle_change_us);
+    //sample_array_float = compensate_phase(sample_array_float, angle_change_us);
 
     ant_mean = cal_mean_phase(sample_array_float);
     
@@ -364,7 +364,7 @@ uint16_t cal_angle(sample_array_int_t sample_array_int) {
     ant_mean.ant2_I = IQ_sample.I;
     ant_mean.ant2_Q = IQ_sample.Q;
 
-    uint16_t estimate_angle;
+    int8_t estimate_angle;
     estimate_angle = DoA_algorithm(ant_mean);
 
     return estimate_angle;

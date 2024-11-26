@@ -44,9 +44,9 @@ const static uint8_t ble_uuid[16]       = {
 };
 
 #define NUM_SLOTS       5
-#define SLOT_DURATION   (32768/200)*50  // 5ms@ (32768/200)
-#define SENDING_OFFSET  (32768/1000)*10 // 1ms@ (32768/200)
-#define TURNON_OFFSET   (32768/2000)*10 // 0.5ms@ (32768/2000)
+#define SLOT_DURATION   (32768/200)*20  // 5ms@ (32768/200)
+#define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/200)
+#define TURNON_OFFSET   (32768/2000) // 0.5ms@ (32768/2000)
 
 //define debug GPIO
 #define DEBUG_PORT           1
@@ -74,8 +74,10 @@ app_dbg_t app_dbg;
 typedef struct {
                 bool            isSynced;
                 bool            isTargetPkt;
+                bool            got_sample;
                 app_state_t     state;
                 uint8_t         period_sqn;
+                uint8_t         node_id;
 
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
@@ -100,7 +102,7 @@ typedef struct {
 
                 uint8_t         uart_txFrame[LENGTH_SERIAL_FRAME];
 
-                uint8_t         estimate_angle;
+                int8_t         estimate_angle;
 
 } app_vars_t;
 
@@ -114,7 +116,7 @@ void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
 void     cb_slot_timer(void);
 void     cb_inner_slot_timer(void);
 
-void     assemble_ibeacon_packet(uint8_t);
+void     assemble_ibeacon_packet(uint8_t, int8_t);
 
 uint16_t cal_angle(sample_array_int_t sample_array_int);
 
@@ -134,9 +136,10 @@ int mote_main(void) {
 
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
-
+    app_vars.got_sample = FALSE;
     //set slot offset to any value untill sync
     app_vars.slot_offset = 10;
+    app_vars.node_id = 1;
     
     sample_array_int_t sample_array_int;
     // initialize board
@@ -176,6 +179,7 @@ int mote_main(void) {
     app_vars.state = APP_STATE_RX;
     radio_rxNow();
     
+    memset( &sample_array_int, 0, sizeof(sample_array_int) );
 
     // sleep
     while (1){
@@ -191,6 +195,38 @@ int mote_main(void) {
         } else {
             NRF_P1_NS->OUTSET =  1 << DEBUG_RADIO_PIN;
         }
+
+        if (app_vars.got_sample == TRUE) {
+
+            uint8_t i=0;
+            for (i;i<8;i++) {
+                sample_array_int.ref_Q[i] = (int16_t)((app_vars.sample_buffer[i] >> 16) & 0x0000FFFF);
+                sample_array_int.ref_I[i] = (int16_t)(app_vars.sample_buffer[i]) & 0x0000FFFF;
+            }
+    
+            for (i = 0;(9+i*8)<NUM_SAMPLES;i++) {
+                sample_array_int.ant0_Q[i] = (int16_t)(app_vars.sample_buffer[9+i*8] >> 16) & 0x0000FFFF;
+                sample_array_int.ant0_I[i] = (int16_t)(app_vars.sample_buffer[9+i*8]) & 0x0000FFFF;
+            }
+
+            for (i = 0;(11+i*8)<NUM_SAMPLES;i++) {
+                sample_array_int.ant1_Q[i] = (int16_t)(app_vars.sample_buffer[11+i*8] >> 16) & 0x0000FFFF;
+                sample_array_int.ant1_I[i] = (int16_t)(app_vars.sample_buffer[11+i*8]) & 0x0000FFFF;
+            }
+
+            for (i = 0;(13+i*8)<NUM_SAMPLES;i++) {
+                sample_array_int.ant2_Q[i] = (int16_t)(app_vars.sample_buffer[13+i*8] >> 16) & 0x0000FFFF;
+                sample_array_int.ant2_I[i] = (int16_t)(app_vars.sample_buffer[13+i*8]) & 0x0000FFFF;
+            }
+
+            for (i = 0;(15+i*8)<NUM_SAMPLES;i++) {
+                sample_array_int.ant3_Q[i] = (int16_t)(app_vars.sample_buffer[15+i*8] >> 16) & 0x0000FFFF;
+                sample_array_int.ant3_I[i] = (int16_t)(app_vars.sample_buffer[15+i*8]) & 0x0000FFFF;
+            }
+
+            app_vars.estimate_angle = cal_angle(sample_array_int);
+            app_vars.got_sample = FALSE;
+        }
         board_sleep();
     }
 }
@@ -198,7 +234,7 @@ int mote_main(void) {
 
 //=========================== private =========================================
 
-void assemble_ibeacon_packet(uint8_t sqn) {
+void assemble_ibeacon_packet(uint8_t node_id, int8_t estimate_angle) {
 
     uint8_t i;
     i=0;
@@ -226,7 +262,8 @@ void assemble_ibeacon_packet(uint8_t sqn) {
     app_vars.packet[i++]  = 0x00;               // major
     app_vars.packet[i++]  = 0xff;
     app_vars.packet[i++]  = 0x00;               // minor
-    app_vars.packet[i++]  = sqn;
+    app_vars.packet[i++]  = node_id;
+    app_vars.packet[i++]  = estimate_angle;
     app_vars.packet[i++]  = 0x00;               // power level
 }
 
@@ -260,16 +297,16 @@ void assemble_ibeacon_packet(uint8_t sqn) {
 //    return sample_array_int;
 //}
 
-int16_t recover_12_bit_value(int16_t extended_value) {
-    int32_t recovered_value;
+//int16_t recover_12_bit_value(int16_t extended_value) {
+//    int32_t recovered_value;
 
-    if (extended_value & 0x8000) {
-        recovered_value = (extended_value + 0x1000) & 0x0FFF;
-    } else {
-        recovered_value = extended_value & 0x0FFF;
-    }
-    return (int16_t)recovered_value;
-}
+//    if (extended_value & 0x8000) {
+//        recovered_value = (extended_value + 0x1000) & 0x0FFF;
+//    } else {
+//        recovered_value = extended_value & 0x0FFF;
+//    }
+//    return (int16_t)recovered_value;
+//}
 
 //=========================== callbacks =======================================
 
@@ -303,40 +340,13 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         );
 
         app_vars.num_samples = radio_get_df_samples(app_vars.sample_buffer,NUM_SAMPLES);
-        sample_array_int_t sample_array_int;
-        memset( &sample_array_int, 0, sizeof(sample_array_int) );
 
-        uint8_t i=0;
-        for (i;i<8;i++) {
-            sample_array_int.ref_Q[i] = (int16_t)((app_vars.sample_buffer[i] >> 16) & 0x0000FFFF);
-            sample_array_int.ref_I[i] = (int16_t)(app_vars.sample_buffer[i]) & 0x0000FFFF;
-        }
-    
-        for (i = 0;(9+i*8)<NUM_SAMPLES;i++) {
-            sample_array_int.ant0_Q[i] = (int16_t)(app_vars.sample_buffer[9+i*8] >> 16) & 0x0000FFFF;
-            sample_array_int.ant0_I[i] = (int16_t)(app_vars.sample_buffer[9+i*8]) & 0x0000FFFF;
-        }
-
-        for (i = 0;(11+i*8)<NUM_SAMPLES;i++) {
-            sample_array_int.ant1_Q[i] = (int16_t)(app_vars.sample_buffer[11+i*8] >> 16) & 0x0000FFFF;
-            sample_array_int.ant1_I[i] = (int16_t)(app_vars.sample_buffer[11+i*8]) & 0x0000FFFF;
-        }
-
-        for (i = 0;(13+i*8)<NUM_SAMPLES;i++) {
-            sample_array_int.ant2_Q[i] = (int16_t)(app_vars.sample_buffer[13+i*8] >> 16) & 0x0000FFFF;
-            sample_array_int.ant2_I[i] = (int16_t)(app_vars.sample_buffer[13+i*8]) & 0x0000FFFF;
-        }
-
-        for (i = 0;(15+i*8)<NUM_SAMPLES;i++) {
-            sample_array_int.ant3_Q[i] = (int16_t)(app_vars.sample_buffer[15+i*8] >> 16) & 0x0000FFFF;
-            sample_array_int.ant3_I[i] = (int16_t)(app_vars.sample_buffer[15+i*8]) & 0x0000FFFF;
-        }
-        
         //sample_array_int = get_sample_array(sample_array_int, app_vars.sample_buffer, NUM_SAMPLES);
 
         // check if the frame is target one
         if (app_vars.packet[0] == 0x42 & app_vars.packet[1] == 0x21)
             app_vars.isTargetPkt = TRUE;
+            app_vars.got_sample = TRUE;
 
         
         // is is target pkt, check if synced. if not, sync
@@ -344,14 +354,14 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             if (app_vars.isSynced) {
                 app_vars.time_slotStartAt = app_vars.capture_time + SLOT_DURATION - SENDING_OFFSET;
                 sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
-                app_vars.estimate_angle = cal_angle(sample_array_int);
+                //app_vars.estimate_angle = cal_angle(sample_array_int);
             } else {
         
                 app_vars.slot_offset = 0;
                 app_vars.time_slotStartAt = app_vars.capture_time + SLOT_DURATION - SENDING_OFFSET;
                 sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
                 app_vars.isSynced = TRUE;
-                app_vars.estimate_angle = cal_angle(sample_array_int);
+                //app_vars.estimate_angle = cal_angle(sample_array_int);
             }
             
 
@@ -369,6 +379,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     // if Radio in Tx state, do nothing
     if (app_vars.state == APP_STATE_TX) {
         radio_rfOff();
+        app_vars.state = APP_STATE_OFF;
         return;
     }
 }
@@ -402,7 +413,7 @@ void cb_slot_timer(void) {
         
         // prepare packet
         app_vars.packet_len = sizeof(app_vars.packet);
-        assemble_ibeacon_packet(app_vars.pkt_sqn++);
+        assemble_ibeacon_packet(app_vars.node_id, app_vars.estimate_angle);
 
         //prepare radio
         radio_rfOn();
