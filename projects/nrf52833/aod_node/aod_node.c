@@ -22,7 +22,7 @@ when send the packet in one slot.
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
 #define CHANNEL         0              ///< 0~39
-#define BEACON_CHANNEL  10
+#define BEACON_CHANNEL  20
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 #define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
@@ -79,6 +79,8 @@ typedef struct {
 
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
+                uint8_t         rxpk_packet[LENGTH_PACKET];
+                uint8_t         rxpk_packet_len;
                 int8_t          rxpk_rssi;
                 uint8_t         rxpk_lqi;
                 bool            rxpk_crc;
@@ -274,9 +276,9 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         radio_rfOff();
         app_vars.state = APP_STATE_OFF;
         radio_getReceivedFrame(
-            app_vars.packet,
-            &app_vars.packet_len,
-            sizeof(app_vars.packet),
+            app_vars.rxpk_packet,
+            &app_vars.rxpk_packet_len,
+            sizeof(app_vars.rxpk_packet),
             &app_vars.rxpk_rssi,
             &app_vars.rxpk_lqi,
             &app_vars.rxpk_crc
@@ -287,7 +289,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         //sample_array_int = get_sample_array(sample_array_int, app_vars.sample_buffer, NUM_SAMPLES);
 
         // check if the frame is target one
-        if (app_vars.packet[0] == 0x42 & app_vars.packet[1] == 0x21)
+        if (app_vars.rxpk_packet[0] == 0x42 & app_vars.rxpk_packet[1] == 0x21)
             app_vars.isTargetPkt = TRUE;
             app_vars.got_sample = TRUE;
 
