@@ -30,10 +30,12 @@
 #define RTC_COMPARE2_SHIFT    18
 #define RTC_COMPARE3_SHIFT    19
 
+#define RTC_NUM_COMPARE       4
+
 // ========================== variable ========================================
 
 typedef struct {
-    sctimer_cbt         sctimer_cb;
+    sctimer_cbt         sctimer_cb[RTC_NUM_COMPARE];
     uint8_t             f_SFDreceived;
 } sctimer_vars_t;
 
@@ -107,32 +109,26 @@ void sctimer_init(void){
     NRF_RTC0->TASKS_START = (uint32_t)1;
 }
 
-void sctimer_set_callback(sctimer_cbt cb){
-    sctimer_vars.sctimer_cb = cb;
+void sctimer_set_callback(uint8_t compare_id, sctimer_cbt cb){
+    sctimer_vars.sctimer_cb[compare_id] = cb;
 }
 
-void sctimer_setCompare(PORT_TIMER_WIDTH val){
+void sctimer_setCompare(uint8_t compare_id, PORT_TIMER_WIDTH val){
     
     // enable interrupt
-     NRF_RTC0->INTENSET = 
-          ((uint32_t)0)<<RTC_TICK_SHIFT
-        | ((uint32_t)0)<<RTC_OVRFLW_SHIFT
-        | ((uint32_t)1)<<RTC_COMPARE0_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE1_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE2_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE3_SHIFT;
+    sctimer_enable(compare_id);
 
     if ( ((NRF_RTC0->COUNTER- val) & TIMERMASK) < TIMERLOOP_THRESHOLD){
         // the timer is already late, schedule the ISR right now manually
-        NRF_EGU0->TASKS_TRIGGER[0] = 0x01;
+        NRF_EGU0->TASKS_TRIGGER[compare_id] = 0x01;
     } else {
         if ( ((val-NRF_RTC0->COUNTER) & TIMERMASK) < MINIMUM_COMPAREVALE_ADVANCE){
             // there is hardware limitation to schedule the timer within TIMERTHRESHOLD ticks
             // schedule ISR right now manually
-            NRF_EGU0->TASKS_TRIGGER[0] = 0x01;
+            NRF_EGU0->TASKS_TRIGGER[compare_id] = 0x01;
         } else {
             // schedule the timer at val
-            NRF_RTC0->CC[0] = (uint32_t)val;
+            NRF_RTC0->CC[compare_id] = (uint32_t)val;
         }
     }
 }
@@ -142,58 +138,59 @@ PORT_TIMER_WIDTH sctimer_readCounter(void){
     return NRF_RTC0->COUNTER;
 }
 
-void sctimer_enable(void){
+void sctimer_enable(uint8_t compare_id){
 
     // enable interrupt
-     NRF_RTC0->INTENSET = 
-          ((uint32_t)0)<<RTC_TICK_SHIFT
-        | ((uint32_t)0)<<RTC_OVRFLW_SHIFT
-        | ((uint32_t)1)<<RTC_COMPARE0_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE1_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE2_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE3_SHIFT;
+     NRF_RTC0->INTENSET |=  ((uint32_t)1)<<(compare_id+RTC_COMPARE0_SHIFT);
 }
 
-void sctimer_disable(void){
+void sctimer_disable(uint8_t compare_id){
 
     // disable interrupt
-     NRF_RTC0->INTENSET = 
-          ((uint32_t)0)<<RTC_TICK_SHIFT
-        | ((uint32_t)0)<<RTC_OVRFLW_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE0_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE1_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE2_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE3_SHIFT;
+     NRF_RTC0->INTENSET |=  ((uint32_t)1)<<(compare_id+RTC_COMPARE0_SHIFT); 
 }
 
 // ========================== private =========================================
 
 
 void RTC0_IRQHandler(void){
-    if (NRF_RTC0->EVENTS_COMPARE[0]){
-        sctimer_isr();
+    uint8_t i;
+
+    for (i=0;i<RTC_NUM_COMPARE;i++) {
+        debugpins_isr_set();
+        NRF_RTC0->EVENTS_COMPARE[i] = (uint32_t)0;
+
+        if (sctimer_vars.sctimer_cb[i]!=NULL){
+            sctimer_vars.sctimer_cb[i]();
+        }
+        debugpins_isr_clr();
     }
+
 }
 
 void SWI0_EGU0_IRQHandler(void) {
-    debugpins_isr_set();
-    if (sctimer_vars.sctimer_cb!=NULL) {
-        NRF_EGU0->EVENTS_TRIGGERED[0] = (uint32_t)0;
-        sctimer_vars.sctimer_cb();
+    uint8_t i;
+
+    for (i=0;i<RTC_NUM_COMPARE;i++) {
+        debugpins_isr_set();
+        if (sctimer_vars.sctimer_cb[i]!=NULL) {
+            NRF_EGU0->EVENTS_TRIGGERED[i] = (uint32_t)0;
+            sctimer_vars.sctimer_cb[i]();
+        }
+        debugpins_isr_clr();
     }
-    debugpins_isr_clr();
 }
 
 //=========================== interrupt handlers ==============================
 
-kick_scheduler_t sctimer_isr(void) {
-    debugpins_isr_set();
-    if (sctimer_vars.sctimer_cb!=NULL) {
-        NRF_RTC0->EVENTS_COMPARE[0] = (uint32_t)0;
-        sctimer_vars.sctimer_cb();
-        debugpins_isr_clr();
-        return KICK_SCHEDULER;
-    }
-    debugpins_isr_clr();
-    return DO_NOT_KICK_SCHEDULER;
-}
+//kick_scheduler_t sctimer_isr(void) {
+//    debugpins_isr_set();
+//    if (sctimer_vars.sctimer_cb!=NULL) {
+//        NRF_RTC0->EVENTS_COMPARE[0] = (uint32_t)0;
+//        sctimer_vars.sctimer_cb();
+//        debugpins_isr_clr();
+//        return KICK_SCHEDULER;
+//    }
+//    debugpins_isr_clr();
+//    return DO_NOT_KICK_SCHEDULER;
+//}
