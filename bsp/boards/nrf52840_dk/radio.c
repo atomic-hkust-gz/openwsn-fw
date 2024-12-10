@@ -30,6 +30,8 @@
 #define STATE_TX                    11
 #define STATE_TXDIABLE              12
 
+#define NRFX_RADIO_CONFIG_IRQ_PRIORITY 2
+
 /* For calculating frequency */
 #define FREQUENCY_OFFSET  10
 #define FREQUENCY_STEP    5
@@ -56,7 +58,7 @@ typedef struct {
     radio_capture_cbt   endFrame_cb;
     radio_state_t       state; 
     uint8_t             payload[1+MAX_PACKET_SIZE] __attribute__ ((aligned));
-    int8_t              rssi_sample;
+    bool                hfc_started;
 //  volatile bool event_ready;
 } radio_vars_t;
 
@@ -67,10 +69,6 @@ static radio_vars_t radio_vars;
 static uint32_t swap_bits(uint32_t inp);
 static uint32_t bytewise_bitswap(uint32_t inp);
 static uint8_t  ble_channel_to_frequency(uint8_t channel);
-
-static void hfclock_start(void);
-static void hfclock_stop(void);
-
 
 //=========================== public ==========================================
 
@@ -123,11 +121,10 @@ void radio_init(void) {
     // set up interrupts
     // disable radio interrupt
     NVIC_DisableIRQ(RADIO_IRQn);
-
-    NRF_RADIO->INTENSET = (RADIO_INTENSET_FRAMESTART_Enabled << RADIO_INTENSET_FRAMESTART_Pos) |
-                          (RADIO_INTENSET_END_Enabled        << RADIO_INTENSET_END_Pos); 
-
-    NVIC_SetPriority(RADIO_IRQn, RADIO_PRIORITY);
+    NRF_RADIO->INTENSET = // RADIO_INTENSET_READY_Enabled << RADIO_INTENSET_READY_Pos | 
+                        RADIO_INTENSET_ADDRESS_Enabled << RADIO_INTENSET_ADDRESS_Pos |
+                        RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos; 
+    NVIC_SetPriority(RADIO_IRQn, NRFX_RADIO_CONFIG_IRQ_PRIORITY);
 
     NVIC_ClearPendingIRQ(RADIO_IRQn);
     NVIC_EnableIRQ(RADIO_IRQn);
@@ -273,6 +270,7 @@ void radio_txEnable(void) {
     NRF_RADIO->TASKS_TXEN = (uint32_t)1;
     while(NRF_RADIO->EVENTS_READY==0);
 
+
     // wiggle debug pin
     debugpins_radio_set();
     leds_radio_on();
@@ -349,17 +347,23 @@ void radio_getReceivedFrame(uint8_t* pBufRead,
     *pLenRead = len;
     *pLqi = radio_vars.payload[radio_vars.payload[0]-1];
 
-    *pRssi = (int8_t)(0-NRF_RADIO->RSSISAMPLE);
+    // For the RSSI calculation, see 
+    //
+    // - http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.nrf52840.ps/radio.html?cp=2_0_0_5_19_11_6#ieee802154_rx and
+    // - https://www.metageek.com/training/resources/understanding-rssi.html
+    //
+    // Our RSSI will be in the range -91 dB (worst) to 0 dB (best)
+    *pRssi = (*pLqi > 91)?(0):(((int8_t) *pLqi) - 91);
 
     *pCrc = (NRF_RADIO->CRCSTATUS == 1U);
 }
 
-void radio_ble_getReceivedFrame(uint8_t* pBufRead,
-                        uint8_t* pLenRead,
-                        uint8_t  maxBufLen,
-                         int8_t* pRssi,
-                        uint8_t* pLqi,
-                           bool* pCrc) 
+void                radio_ble_getReceivedFrame(uint8_t* pBufRead,
+                            uint8_t* pLenRead,
+                            uint8_t  maxBufLen,
+                             int8_t* pRssi,
+                            uint8_t* pLqi,
+                               bool* pCrc) 
 {
     // check for length parameter; if too long, payload won't fit into memory
     uint8_t len;
@@ -447,71 +451,28 @@ static uint8_t ble_channel_to_frequency(uint8_t channel) {
     return frequency;
 }
 
-static void hfclock_start(void) {
-    
-    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
-    NRF_CLOCK->TASKS_HFCLKSTART    = 1;
-    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
-}
-
-static void hfclock_stop(void) {
-    
-    // check clock source
-    if((NRF_CLOCK->HFCLKSTAT & 0x00000001) != 0) {
-        
-        // clock running?
-        if((NRF_CLOCK->HFCLKSTAT & 0x00010000) != 0) {
-            
-            NRF_CLOCK->TASKS_HFCLKSTOP = 1;
-            while((NRF_CLOCK->HFCLKSTAT & 0x00000001) != 0);
-        }
-    }
-}
 
 //=========================== callbacks =======================================
-
-
-kick_scheduler_t radio_isr(void){
-
-    uint32_t time_stampe;
-
-    time_stampe = NRF_RTC0->COUNTER;
-
-    // start of frame (payload)
-    if (NRF_RADIO->EVENTS_FRAMESTART){
-
-        // start sampling rssi
-        NRF_RADIO->TASKS_RSSISTART = (uint32_t)1;
-
-        if (radio_vars.startFrame_cb!=NULL){
-            radio_vars.startFrame_cb(time_stampe);
-        }
-        
-        NRF_RADIO->EVENTS_FRAMESTART = (uint32_t)0;
-        return KICK_SCHEDULER;
-    }
-
-    // END 
-    if (NRF_RADIO->EVENTS_END) {
-
-        if (radio_vars.endFrame_cb!=NULL){
-            radio_vars.endFrame_cb(time_stampe);
-        }
-        
-        NRF_RADIO->EVENTS_END = (uint32_t)0;
-        return KICK_SCHEDULER;
-    }
-
-    return DO_NOT_KICK_SCHEDULER;
-}
 
 //=========================== interrupt handlers ==============================
 
 void RADIO_IRQHandler(void) {
 
-    debugpins_isr_set();
+    if (NRF_RADIO->EVENTS_ADDRESS) {
 
-    radio_isr();
+        NRF_RADIO->EVENTS_ADDRESS = 0;
 
-    debugpins_isr_clr();
+        if (radio_vars.startFrame_cb) {
+            radio_vars.startFrame_cb(sctimer_readCounter());
+        }
+    }
+
+    if (NRF_RADIO->EVENTS_END) {
+
+        NRF_RADIO->EVENTS_END = 0;
+
+        if (radio_vars.endFrame_cb) {
+            radio_vars.endFrame_cb(sctimer_readCounter());
+        }
+    }
 }

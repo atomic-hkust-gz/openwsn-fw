@@ -57,12 +57,15 @@ typedef void  (*radio_capture_cbt)(PORT_TIMER_WIDTH timestamp);
 
 // admin
 void                radio_init(void);
+void                radio_ble_init(void);
 void                radio_setStartFrameCb(radio_capture_cbt cb);
 void                radio_setEndFrameCb(radio_capture_cbt cb);
 // reset
 void                radio_reset(void);
 // RF admin
 void                radio_setFrequency(uint8_t frequency, radio_freq_t tx_or_rx);
+void                radio_ble_setFrequency(uint8_t channel);
+
 //void                radio_setFrequency(uint8_t frequency);
 void                radio_rfOn(void);
 void                radio_rfOff(void);
@@ -72,6 +75,7 @@ int8_t              radio_getFrequencyOffset(void);
 void                radio_loadPacket_prepare(uint8_t* packet, uint16_t len);
 #endif
 void                radio_loadPacket(uint8_t* packet, uint16_t len);
+void                radio_ble_loadPacket(uint8_t* packet, uint16_t len);
 void                radio_txEnable(void);
 void                radio_txNow(void);
 // RX

@@ -59,7 +59,7 @@ void sctimer_init(void) {
     // configure the source
     NRF_CLOCK->LFCLKSRC = (1<<LFCLKSRC_SRC_POS);
 
-    // start LFCLK
+     // start LFCLK
     NRF_CLOCK->TASKS_LFCLKSTART = (uint32_t)1;
     while((NRF_CLOCK->LFCLKSTAT & (1<<LFCLKSTAT_STATE_POS)) == 0);
 
