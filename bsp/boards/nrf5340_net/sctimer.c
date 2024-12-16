@@ -141,9 +141,8 @@ void sctimer_disable(uint8_t compare_id){
 
 
 void RTC0_IRQHandler(void) {
-
     uint8_t i;
-    
+
     for(i=0;i<RTC_NUM_COMPARE;i++) {
         
         if (NRF_RTC0_NS->EVENTS_COMPARE[i]) {

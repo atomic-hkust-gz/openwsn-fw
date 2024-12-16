@@ -170,7 +170,7 @@ int mote_main(void) {
     radio_setFrequency(CHANNEL, FREQ_RX);
 
 #if ENABLE_DF == 1
-    radio_configure_direction_finding_manual_AoD();
+    radio_configure_direction_finding_manual_AoA();
 #endif
 
     // switch in RX by default

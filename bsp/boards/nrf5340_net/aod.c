@@ -102,6 +102,7 @@ IQ_sturcture  normalization(float ant_I, float ant_Q) {
 
 float calculate_angle(float I1, float Q1, float I2, float Q2) {
     float dot_product;
+    float cross_product;
     dot_product = I1*I2 + Q1*Q2;
 
     if (dot_product > 1) {
@@ -112,7 +113,12 @@ float calculate_angle(float I1, float Q1, float I2, float Q2) {
     
     float theta;
     theta = acos(dot_product);
-    
+    cross_product = I1 * Q2 - Q1 * I2;
+    if (cross_product > 0) {
+        theta = theta;
+    } else {
+        theta = -theta;
+    }
     return theta;
 }
 

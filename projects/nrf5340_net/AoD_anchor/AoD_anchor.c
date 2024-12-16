@@ -42,8 +42,8 @@ const static uint8_t ble_uuid[16]       = {
 };
 
 #define NUM_SLOTS       5
-#define SLOT_DURATION   (32768/200)*20  // 5ms@ (32768/200)
-#define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/200)
+#define SLOT_DURATION   (32768/200)  // 5ms@ (32768/200)
+#define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/1000)
 
 
 //define debug GPIO
@@ -199,6 +199,7 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
     radio_rfOff();
+    app_vars.state = APP_STATE_OFF;
 }
 
 void cb_slot_timer(void) {
@@ -243,6 +244,5 @@ void cb_slot_timer(void) {
 void cb_inner_slot_timer(void) {
 
     radio_txNow();
-    app_vars.state = APP_STATE_OFF;
 }
 

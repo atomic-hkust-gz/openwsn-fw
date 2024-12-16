@@ -24,7 +24,7 @@ when send the packet in one slot.
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
 #define CHANNEL         0              ///< 0~39
-#define BEACON_CHANNEL  37
+#define BEACON_CHANNEL  10
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 #define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
@@ -263,6 +263,7 @@ void assemble_ibeacon_packet(uint8_t node_id, int8_t estimate_angle) {
     app_vars.packet[i++]  = 0xff;
     app_vars.packet[i++]  = 0x00;               // minor
     app_vars.packet[i++]  = node_id;
+    //estimate_angle is a int8, need change int8 into uint8, haven't done
     app_vars.packet[i++]  = estimate_angle;
     app_vars.packet[i++]  = 0x00;               // power level
 }

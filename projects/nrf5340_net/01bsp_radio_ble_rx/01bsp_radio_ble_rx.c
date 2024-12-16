@@ -31,7 +31,7 @@ This program is edited from 01bsp_radio_ble_rx. This program implement a ble rx 
 
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
-#define CHANNEL         0              ///< 0~39
+#define CHANNEL         20              ///< 0~39
 #define TIMER_PERIOD    (0xffff>>2)     ///< 0xffff = 2s@32kHz
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
@@ -135,7 +135,7 @@ int mote_main(void) {
     board_init();
 
 #if ENABLE_DF == 1
-    radio_configure_direction_finding_antenna_switch();
+    //radio_configure_direction_finding_antenna_switch();
 
 #endif
     uart_setCallbacks(cb_uartTxDone,cb_uartRxCb);
@@ -159,7 +159,7 @@ int mote_main(void) {
     radio_setFrequency(CHANNEL, FREQ_RX);
 
 #if ENABLE_DF == 1
-    radio_configure_direction_finding_manual();
+    //radio_configure_direction_finding_manual();
 #endif
 
     // switch in RX by default
@@ -353,7 +353,7 @@ void cb_timer(void) {
     // update debug stats
     app_dbg.num_timer++;
 
-    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
+    sctimer_setCompare(0, sctimer_readCounter()+TIMER_PERIOD);
 }
 
 void cb_uartTxDone(void) {
