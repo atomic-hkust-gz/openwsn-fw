@@ -14,6 +14,7 @@
 #define ANGLE_RANGE         180
 #define FREQUENCY           2400000000
 #define ANT_INTERVAL        0.0375
+#define PI                  3.1415926
 
 //=========================== typedef =========================================
 typedef struct {
@@ -100,6 +101,7 @@ IQ_sturcture  normalization(float ant_I, float ant_Q) {
 
 float calculate_angle(float I1, float Q1, float I2, float Q2) {
     float dot_product;
+    float cross_product;
     dot_product = I1*I2 + Q1*Q2;
 
     if (dot_product > 1) {
@@ -111,6 +113,13 @@ float calculate_angle(float I1, float Q1, float I2, float Q2) {
     float theta;
     theta = acos(dot_product);
     
+    cross_product = I1 * Q2 - Q1 * I2;
+    if (cross_product > 0) {
+        theta = theta;
+    } else {
+        theta = -theta;
+    }
+
     return theta;
 }
 
@@ -201,8 +210,8 @@ Complex* steering_vector(float alpha) {
     steer_vector[0].real = 1;
     steer_vector[0].imag = 0;
 
-    steer_vector[1] = complex_exponential(-2*acos(-1)*FREQUENCY*(ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
-    steer_vector[2] = complex_exponential(-2*acos(-1)*FREQUENCY*(2*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
+    steer_vector[1] = complex_exponential(-2*PI*FREQUENCY*(ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
+    steer_vector[2] = complex_exponential(-2*PI*FREQUENCY*(2*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
 }
 
 int8_t DoA_algorithm(ant_mean_t ant_mean) {
@@ -230,13 +239,13 @@ int8_t DoA_algorithm(ant_mean_t ant_mean) {
     double y_alpha_list[ANGLE_RANGE];
     for (int i = 0; i < ANGLE_RANGE; i++) {
         double alpha = angle_list[i];
-        alpha = alpha *(acos(-1) / 180);
+        alpha = alpha *(PI / 180);
         Complex steer_vector[3];
         steer_vector[0].real = 1;
         steer_vector[0].imag = 0;
 
-        steer_vector[1] = complex_exponential(-2*acos(-1)*FREQUENCY*(ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
-        steer_vector[2] = complex_exponential(-2*acos(-1)*FREQUENCY*(2*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
+        steer_vector[1] = complex_exponential(-2*PI*FREQUENCY*(ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
+        steer_vector[2] = complex_exponential(-2*PI*FREQUENCY*(2*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
 
         Complex part1 = complex_multiply(steer_vector[0], received_signal[0]);
         Complex part2 = complex_multiply(steer_vector[1], received_signal[1]);
@@ -339,8 +348,8 @@ uint16_t cal_angle(sample_array_int_t sample_array_int) {
     float rotate_angle_1_0;
     float rotate_angle_2_0;
 
-    rotate_angle_1_0 = 2*(acos(-1)/2 + angle_change_us);
-    rotate_angle_2_0 = 4*(acos(-1)/2 + angle_change_us);
+    rotate_angle_1_0 = 2*(PI/2 + angle_change_us);
+    rotate_angle_2_0 = 4*(PI/2 + angle_change_us);
 
     IQ_sample = rotate_vector(ant_mean.ant1_I, ant_mean.ant1_Q, -rotate_angle_1_0);
     ant_mean.ant1_I = IQ_sample.I;

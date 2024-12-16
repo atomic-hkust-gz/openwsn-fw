@@ -1,5 +1,5 @@
 /**
-\brief This program is for AoD anchor
+\brief This program is for AoD node
 The AoD anchor will preiodicly send a packet to AoD nodes.
 
 Use one timer to schedule a periodic slot.
@@ -42,14 +42,14 @@ const static uint8_t ble_uuid[16]       = {
 };
 
 #define NUM_SLOTS       5
-#define SLOT_DURATION   (32768/200)*20  // 5ms@ (32768/200)
-#define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/200)
+#define SLOT_DURATION   (32768/200)  // 5ms@ (32768/200)
+#define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/1000)
 #define TURNON_OFFSET   (32768/2000) // 0.5ms@ (32768/2000)
 
 //define debug GPIO
 #define DEBUG_PORT           1
-#define DEBUG_SLOT_PIN       10
-#define DEBUG_RADIO_PIN      11 
+#define DEBUG_SLOT_PIN       7
+#define DEBUG_RADIO_PIN      8 
 
 //=========================== variables =======================================
 
@@ -79,6 +79,7 @@ typedef struct {
 
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
+
                 uint8_t         rxpk_packet[LENGTH_PACKET];
                 uint8_t         rxpk_packet_len;
                 int8_t          rxpk_rssi;
@@ -102,7 +103,7 @@ typedef struct {
 
                 uint8_t         uart_txFrame[LENGTH_SERIAL_FRAME];
 
-                int8_t         estimate_angle;
+                int8_t         estimate_angle;   
 
 } app_vars_t;
 
@@ -149,10 +150,10 @@ int mote_main(void) {
     radio_rfOff();
 
 #if ENABLE_DF == 1
-    //radio_configure_direction_finding_antenna_switch();
+    radio_configure_direction_finding_antenna_switch();
     radio_configure_direction_finding_manual_AoD();
 #endif
-
+    
     // add callback functions radio
     radio_setStartFrameCb(cb_startFrame);
     radio_setEndFrameCb(cb_endFrame);
@@ -163,6 +164,9 @@ int mote_main(void) {
     app_vars.slot_timerId = 0;
     app_vars.inner_timerId = 1;
     
+    //initial debugs GPIO
+    nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_SLOT_PIN);
+    nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_RADIO_PIN);
     // start sctimer
     sctimer_set_callback(app_vars.slot_timerId, cb_slot_timer);
     sctimer_set_callback(app_vars.inner_timerId, cb_inner_slot_timer);
@@ -179,6 +183,18 @@ int mote_main(void) {
 
     // sleep
     while (1){
+        
+        //if (app_vars.slot_offset == 0 | app_vars.slot_offset == 2) {
+        //    NRF_P1->OUTSET =  1 << DEBUG_SLOT_PIN;
+        //} else {
+        //    NRF_P1->OUTCLR =  1 << DEBUG_SLOT_PIN;
+        //}
+
+        //if (app_vars.state == APP_STATE_OFF) {
+        //    NRF_P1->OUTCLR =  1 << DEBUG_RADIO_PIN;
+        //} else {
+        //    NRF_P1->OUTSET =  1 << DEBUG_RADIO_PIN;
+        //}
 
         if (app_vars.got_sample == TRUE) {
 
@@ -220,6 +236,7 @@ int mote_main(void) {
 void assemble_ibeacon_packet(uint8_t node_id, int8_t estimate_angle) {
 
     uint8_t i;
+    uint8_t sign;
     i=0;
 
     memset( app_vars.packet, 0x00, sizeof(app_vars.packet) );
@@ -246,8 +263,21 @@ void assemble_ibeacon_packet(uint8_t node_id, int8_t estimate_angle) {
     app_vars.packet[i++]  = 0xff;
     app_vars.packet[i++]  = 0x00;               // minor
     app_vars.packet[i++]  = node_id;
-    //estimate_angle is a int8, need change int8 into uint8, haven't done
-    app_vars.packet[i++]  = estimate_angle;
+    
+    //sign = estimate_angle & 0x80 >> 7;
+    //if (sign) {
+    //    app_vars.angle = 0xff - (uint8_t)estimate_angle + 1;
+    //} else {
+    //    app_vars.angle = (uint8_t)estimate_angle;
+    //}
+    //if (sign) {
+    //    app_vars.packet[i++] = '-';
+    //} else {
+    //    app_vars.packet[i++] = '+';
+    //}
+    //app_vars.packet[i++]  = '0' + app_vars.angle/10;
+    //app_vars.packet[i++]  = '0' + app_vars.angle%10;
+    app_vars.packet[i++]  = app_vars.estimate_angle;
     app_vars.packet[i++]  = 0x00;               // power level
 }
 
@@ -364,6 +394,8 @@ void cb_slot_timer(void) {
         radio_rfOn();
         app_vars.state = APP_STATE_TX;
         radio_setFrequency(BEACON_CHANNEL, FREQ_RX);
+
+        radio_rfOff();
         radio_loadPacket(app_vars.packet,LENGTH_PACKET);
         radio_txEnable();
 

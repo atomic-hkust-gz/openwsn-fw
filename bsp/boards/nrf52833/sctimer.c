@@ -49,20 +49,20 @@ void sctimer_init(void){
 
     memset(&sctimer_vars, 0, sizeof(sctimer_vars_t));
 
-    // use EGU0 to manually trigger interrupt
-    NRF_EGU0->INTEN               = 0x01;
-    NRF_EGU0->EVENTS_TRIGGERED[0] = 0x00;
-    NRF_EGU0->INTENSET            = 0x01;
+    //// use EGU0 to manually trigger interrupt
+    //NRF_EGU0->INTEN               = 0x01;
+    //NRF_EGU0->EVENTS_TRIGGERED[0] = 0x00;
+    //NRF_EGU0->INTENSET            = 0x01;
 
-    // set priority and enable interrupt in NVIC
-    NVIC->IP[((uint32_t)SWI0_EGU0_IRQn)] = 
-        (uint8_t)(
-            (
-                EGU0_PRIORITY << (8 - __NVIC_PRIO_BITS)
-            ) & (uint32_t)0xff
-        );
-    NVIC->ISER[((uint32_t)SWI0_EGU0_IRQn)>>5] = 
-       ((uint32_t)1) << ( ((uint32_t)SWI0_EGU0_IRQn) & 0x1f);
+    //// set priority and enable interrupt in NVIC
+    //NVIC->IP[((uint32_t)SWI0_EGU0_IRQn)] = 
+    //    (uint8_t)(
+    //        (
+    //            EGU0_PRIORITY << (8 - __NVIC_PRIO_BITS)
+    //        ) & (uint32_t)0xff
+    //    );
+    //NVIC->ISER[((uint32_t)SWI0_EGU0_IRQn)>>5] = 
+    //   ((uint32_t)1) << ( ((uint32_t)SWI0_EGU0_IRQn) & 0x1f);
 
     // stop LFCLK
     NRF_CLOCK->TASKS_LFCLKSTOP     = 1;
@@ -71,7 +71,8 @@ void sctimer_init(void){
     );
 
     // configure the source
-    NRF_CLOCK->LFCLKSRC = (uint32_t)LFCLK_SRC_XTAL;
+    NRF_CLOCK->LFCLKSRC = (uint32_t)LFCLK_SRC_RC;
+    //NRF_CLOCK->LFCLKSRC = (uint32_t)LFCLK_SRC_XTAL;
 
     // start LFCLK
     NRF_CLOCK->TASKS_LFCLKSTART = (uint32_t)1;
@@ -87,9 +88,9 @@ void sctimer_init(void){
           ((uint32_t)0)<<RTC_TICK_SHIFT
         | ((uint32_t)0)<<RTC_OVRFLW_SHIFT
         | ((uint32_t)1)<<RTC_COMPARE0_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE1_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE2_SHIFT
-        | ((uint32_t)0)<<RTC_COMPARE3_SHIFT;
+        | ((uint32_t)1)<<RTC_COMPARE1_SHIFT
+        | ((uint32_t)1)<<RTC_COMPARE2_SHIFT
+        | ((uint32_t)1)<<RTC_COMPARE3_SHIFT;
 
     // set priority and enable interrupt in NVIC
     NVIC->IP[((uint32_t)RTC0_IRQn)] = 
@@ -120,12 +121,13 @@ void sctimer_setCompare(uint8_t compare_id, PORT_TIMER_WIDTH val){
 
     if ( ((NRF_RTC0->COUNTER- val) & TIMERMASK) < TIMERLOOP_THRESHOLD){
         // the timer is already late, schedule the ISR right now manually
-        NRF_EGU0->TASKS_TRIGGER[compare_id] = 0x01;
+        //NRF_EGU0->TASKS_TRIGGER[compare_id] = 0x01;
+        NRF_RTC0->EVENTS_COMPARE[compare_id] = (uint32_t)1;
     } else {
         if ( ((val-NRF_RTC0->COUNTER) & TIMERMASK) < MINIMUM_COMPAREVALE_ADVANCE){
             // there is hardware limitation to schedule the timer within TIMERTHRESHOLD ticks
             // schedule ISR right now manually
-            NRF_EGU0->TASKS_TRIGGER[compare_id] = 0x01;
+            NRF_RTC0->EVENTS_COMPARE[compare_id] = (uint32_t)1;
         } else {
             // schedule the timer at val
             NRF_RTC0->CC[compare_id] = (uint32_t)val;
@@ -157,29 +159,31 @@ void RTC0_IRQHandler(void){
     uint8_t i;
 
     for (i=0;i<RTC_NUM_COMPARE;i++) {
-        debugpins_isr_set();
-        NRF_RTC0->EVENTS_COMPARE[i] = (uint32_t)0;
 
-        if (sctimer_vars.sctimer_cb[i]!=NULL){
-            sctimer_vars.sctimer_cb[i]();
+        if (NRF_RTC0->EVENTS_COMPARE[i]) {
+            debugpins_isr_set();
+            NRF_RTC0->EVENTS_COMPARE[i] = (uint32_t)0;
+            if (sctimer_vars.sctimer_cb[i]!=NULL){
+                sctimer_vars.sctimer_cb[i]();
+            }
+            debugpins_isr_clr();
         }
-        debugpins_isr_clr();
     }
 
 }
 
-void SWI0_EGU0_IRQHandler(void) {
-    uint8_t i;
+//void SWI0_EGU0_IRQHandler(void) {
+//    uint8_t i;
 
-    for (i=0;i<RTC_NUM_COMPARE;i++) {
-        debugpins_isr_set();
-        if (sctimer_vars.sctimer_cb[i]!=NULL) {
-            NRF_EGU0->EVENTS_TRIGGERED[i] = (uint32_t)0;
-            sctimer_vars.sctimer_cb[i]();
-        }
-        debugpins_isr_clr();
-    }
-}
+//    for (i=0;i<RTC_NUM_COMPARE;i++) {
+//        debugpins_isr_set();
+//        if (sctimer_vars.sctimer_cb[i]!=NULL) {
+//            NRF_EGU0->EVENTS_TRIGGERED[i] = (uint32_t)0;
+//            sctimer_vars.sctimer_cb[i]();
+//        }
+//        debugpins_isr_clr();
+//    }
+//}
 
 //=========================== interrupt handlers ==============================
 
