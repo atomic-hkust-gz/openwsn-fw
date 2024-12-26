@@ -43,6 +43,8 @@ void board_init(void) {
 
 void board_sleep(void) {
     // todo
+    __WFE();
+    __WFE();
 }
 
 void board_reset(void) {

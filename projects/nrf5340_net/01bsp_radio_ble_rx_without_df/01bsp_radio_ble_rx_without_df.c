@@ -36,8 +36,8 @@ This program is edited from 01bsp_radio_ble_rx. This program implement a ble rx 
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
-#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
 #define LENGTH_SERIAL_FRAME  127              // length of the serial frame
+#define UART_LENGTH     6
 
 uint16_t length = 0;
 
@@ -78,7 +78,10 @@ typedef struct {
                 app_state_t     state;
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
-
+                
+                uint8_t         uart_buffer_to_send[UART_LENGTH];
+                uint16_t        uart_lastTxByteIndex;
+     volatile   uint8_t         uartDone;
 
                 uint8_t         rxpk_done;
                 uint8_t         rxpk_buf[LENGTH_PACKET];
@@ -88,6 +91,10 @@ typedef struct {
                 int8_t          rxpk_rssi;
                 uint8_t         rxpk_lqi;
                 bool            rxpk_crc;
+
+                int8_t          estimate_angle;
+                uint8_t         antenna_array_id;
+                uint8_t         node_id;
 
 
                 uint8_t         uart_txFrame[LENGTH_SERIAL_FRAME];
@@ -101,6 +108,8 @@ void     cb_startFrame(PORT_TIMER_WIDTH timestamp);
 void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
 void     cb_timer(void);
 
+void     cb_uartTxDone(void);
+uint8_t  cb_uartRxCb(void);
 
 //=========================== main ============================================
 
@@ -114,7 +123,7 @@ int mote_main(void) {
     uint8_t sign;
     uint8_t read;
     
-    uint8_t current_time;
+    //uint8_t current_time;
 
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
@@ -129,7 +138,8 @@ int mote_main(void) {
     // prepare packet
     app_vars.packet_len = sizeof(app_vars.packet);
 
-
+    uart_setCallbacks(cb_uartTxDone,cb_uartRxCb);
+    uart_enableInterrupts();
 
     // prepare radio
     radio_rfOn();
@@ -150,10 +160,10 @@ int mote_main(void) {
         }
         
         leds_error_toggle();
-
+        memset(&app_vars,0,sizeof(app_vars_t));
         // done receiving a packet
         app_vars.packet_len = sizeof(app_vars.packet);
-
+        
         radio_getReceivedFrame(
                             app_vars.packet,
                             &app_vars.packet_len,
@@ -163,9 +173,24 @@ int mote_main(void) {
                             &app_vars.rxpk_crc
                         );
 
-       
+        app_vars.node_id = app_vars.packet[32];
+        app_vars.estimate_angle = app_vars.packet[33];
+        app_vars.antenna_array_id = app_vars.packet[34];
+
         radio_rxEnable();
         radio_rxNow();
+        
+        uint8_t i;
+        i = 0;
+        app_vars.uart_buffer_to_send[i++] = app_vars.node_id;
+        app_vars.uart_buffer_to_send[i++] = app_vars.estimate_angle;
+        app_vars.uart_buffer_to_send[i++] = app_vars.antenna_array_id;
+        app_vars.uart_buffer_to_send[i++] = 0xff;
+        app_vars.uart_buffer_to_send[i++] = 0xff;
+        app_vars.uart_buffer_to_send[i++] = 0xff;
+
+        app_vars.uart_lastTxByteIndex = 0;
+        uart_writeByte(app_vars.uart_buffer_to_send[0]);
 
         // led
         //leds_error_off();
@@ -211,3 +236,24 @@ void cb_timer(void) {
 }
 
 
+void cb_uartTxDone(void) {
+
+   app_vars.uart_lastTxByteIndex++;
+   if (app_vars.uart_lastTxByteIndex<UART_LENGTH) {
+      uart_writeByte(app_vars.uart_buffer_to_send[app_vars.uart_lastTxByteIndex]);
+   } else {
+      app_vars.uartDone = 1;
+   }
+}
+
+uint8_t cb_uartRxCb(void) {
+   uint8_t byte;
+   
+   // read received byte
+   byte = uart_readByte();
+   
+   // echo that byte over serial
+   uart_writeByte(byte);
+   
+   return 0;
+}

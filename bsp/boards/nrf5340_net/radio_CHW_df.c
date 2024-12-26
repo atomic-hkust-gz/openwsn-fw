@@ -149,7 +149,7 @@ void set_antenna_CHW_switches(void) {
 }
 
 
-void radio_configure_direction_finding_CHW_antenna_switch(void) {
+void radio_configure_direction_finding_CHW_antenna_switch(uint8_t antenna_array_id) {
     
     uint8_t i;
 
@@ -191,36 +191,40 @@ void radio_configure_direction_finding_CHW_antenna_switch(void) {
     NRF_RADIO_NS->CLEARPATTERN  = (uint32_t)1;
     
     // set radio switch pattern
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+    if (antenna_array_id == 1) {
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
 
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_2);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_3);
-    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_2);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_3);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
+    
+    } else if (antenna_array_id == 2) {
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
 
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_3);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_4);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_1);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_1);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+    } else if (antenna_array_id == 3) {
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
 
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_1);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_1);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_3);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_4);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
+    } else if (antenna_array_id == 4) {
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
 
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_4);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
-
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_3);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_4);
-    //NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
-
-
-    // ANT1.1 and ANT2.3 can be used for x direction angle estimation
-    // ANT2.1 and ANT3.1 can be used for y direction angle estimation
-
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_4);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
+        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_4);
+    }
+    
 }
 

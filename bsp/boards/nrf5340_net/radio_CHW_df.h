@@ -21,7 +21,7 @@ This file is driver of using CHW antenna board for AoA/AoD
 //=========================== prototypes ======================================
 
 // admin
-void     radio_configure_direction_finding_CHW_antenna_switch(void);
+void     radio_configure_direction_finding_CHW_antenna_switch(uint8_t antenna_array_id);
 void     radio_configure_direction_finding_CHW_manual(void);
 //void     radio_configure_direction_finding_CHW_inline(void);
 //void     radio_configure_switch_CHW_antenna_array(void);

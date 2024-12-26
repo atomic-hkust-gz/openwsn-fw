@@ -42,8 +42,8 @@ const static uint8_t ble_uuid[16]       = {
 };
 
 #define NUM_SLOTS       5
-#define SLOT_DURATION   (32768/200)  // 5ms@ (32768/200)
-#define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/1000)
+#define SLOT_DURATION   (32768/200)*20  // 5ms@ (32768/200)
+#define SENDING_OFFSET  (32768/1000)*20 // 1ms@ (32768/1000)
 
 
 //define debug GPIO
@@ -79,6 +79,8 @@ typedef struct {
 
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
+
+                uint8_t         antenna_array_id;
 } app_vars_t;
 
 app_vars_t app_vars;
@@ -110,10 +112,13 @@ int mote_main(void) {
     // turn radio off
     radio_rfOff();
     app_vars.state = APP_STATE_OFF;
+    
+    //set antenna array id
+    app_vars.antenna_array_id = 1;
 
 #if ENABLE_DF == 1
     antenna_CHW_tx_switch_init();
-    radio_configure_direction_finding_CHW_antenna_switch();
+    radio_configure_direction_finding_CHW_antenna_switch(app_vars.antenna_array_id);
     radio_configure_direction_finding_manual_AoD();
 #endif
 
@@ -186,20 +191,31 @@ void assemble_ibeacon_packet(uint8_t sqn) {
     app_vars.packet[i++]  = 0x00;               // major
     app_vars.packet[i++]  = 0xff;
     app_vars.packet[i++]  = 0x00;               // minor
-    app_vars.packet[i++]  = sqn;
+    app_vars.packet[i++]  = sqn;                //34 byte
+    app_vars.packet[i++]  = app_vars.antenna_array_id;
     app_vars.packet[i++]  = 0x00;               // power level
 }
 
 //=========================== callbacks =======================================
 
 void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
-
+    app_dbg.num_startFrame++;
 }
 
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
     radio_rfOff();
     app_vars.state = APP_STATE_OFF;
+    
+    //reset antenna array and init
+    //app_vars.antenna_array_id = 1;
+    app_vars.antenna_array_id++;
+    if (app_vars.antenna_array_id == 5) {
+        app_vars.antenna_array_id = 1;
+    }
+    antenna_CHW_tx_switch_init();
+    radio_configure_direction_finding_CHW_antenna_switch(app_vars.antenna_array_id);
+    radio_configure_direction_finding_manual_AoD();
 }
 
 void cb_slot_timer(void) {
