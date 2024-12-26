@@ -42,9 +42,9 @@ const static uint8_t ble_uuid[16]       = {
 };
 
 #define NUM_SLOTS       5
-#define SLOT_DURATION   (32768/200)  // 5ms@ (32768/200)
-#define SENDING_OFFSET  (32768/1000) // 1ms@ (32768/1000)
-#define TURNON_OFFSET   (32768/2000) // 0.5ms@ (32768/2000)
+#define SLOT_DURATION   (32768/200)*20  // 5ms@ (32768/200)
+#define SENDING_OFFSET  (32768/1000)*20 // 1ms@ (32768/1000)
+#define TURNON_OFFSET   (32768/2000)*20 // 0.5ms@ (32768/2000)
 
 //define debug GPIO
 #define DEBUG_PORT           1
@@ -103,7 +103,10 @@ typedef struct {
 
                 uint8_t         uart_txFrame[LENGTH_SERIAL_FRAME];
 
-                int8_t         estimate_angle;   
+                int8_t          estimate_angle;
+                uint8_t         antenna_array_id;
+
+                uint8_t         current_time;
 
 } app_vars_t;
 
@@ -117,7 +120,7 @@ void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
 void     cb_slot_timer(void);
 void     cb_inner_slot_timer(void);
 
-void     assemble_ibeacon_packet(uint8_t, int8_t);
+void     assemble_ibeacon_packet(uint8_t, int8_t, uint8_t);
 
 uint16_t cal_angle(sample_array_int_t sample_array_int);
 
@@ -140,7 +143,7 @@ int mote_main(void) {
     app_vars.got_sample = FALSE;
     //set slot offset to any value untill sync
     app_vars.slot_offset = 10;
-    app_vars.node_id = 1;
+    app_vars.node_id = 2;
     
     sample_array_int_t sample_array_int;
     // initialize board
@@ -165,8 +168,8 @@ int mote_main(void) {
     app_vars.inner_timerId = 1;
     
     //initial debugs GPIO
-    nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_SLOT_PIN);
-    nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_RADIO_PIN);
+    //nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_SLOT_PIN);
+    //nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_RADIO_PIN);
     // start sctimer
     sctimer_set_callback(app_vars.slot_timerId, cb_slot_timer);
     sctimer_set_callback(app_vars.inner_timerId, cb_inner_slot_timer);
@@ -228,12 +231,13 @@ int mote_main(void) {
             app_vars.got_sample = FALSE;
         }
         board_sleep();
+        //app_vars.current_time = sctimer_readCounter();
     }
 }
 
 //=========================== private =========================================
 
-void assemble_ibeacon_packet(uint8_t node_id, int8_t estimate_angle) {
+void assemble_ibeacon_packet(uint8_t node_id, int8_t estimate_angle, uint8_t antenna_array_id) {
 
     uint8_t i;
     uint8_t sign;
@@ -261,23 +265,11 @@ void assemble_ibeacon_packet(uint8_t node_id, int8_t estimate_angle) {
     i                    += 16;
     app_vars.packet[i++]  = 0x00;               // major
     app_vars.packet[i++]  = 0xff;
-    app_vars.packet[i++]  = 0x00;               // minor
+    //app_vars.packet[i++]  = 0x00;               // minor
     app_vars.packet[i++]  = node_id;
     
-    //sign = estimate_angle & 0x80 >> 7;
-    //if (sign) {
-    //    app_vars.angle = 0xff - (uint8_t)estimate_angle + 1;
-    //} else {
-    //    app_vars.angle = (uint8_t)estimate_angle;
-    //}
-    //if (sign) {
-    //    app_vars.packet[i++] = '-';
-    //} else {
-    //    app_vars.packet[i++] = '+';
-    //}
-    //app_vars.packet[i++]  = '0' + app_vars.angle/10;
-    //app_vars.packet[i++]  = '0' + app_vars.angle%10;
-    app_vars.packet[i++]  = app_vars.estimate_angle;
+    app_vars.packet[i++]  = estimate_angle;
+    app_vars.packet[i++]  = antenna_array_id;
     app_vars.packet[i++]  = 0x00;               // power level
 }
 
@@ -315,6 +307,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         );
 
         app_vars.num_samples = radio_get_df_samples(app_vars.sample_buffer,NUM_SAMPLES);
+        app_vars.antenna_array_id = app_vars.rxpk_packet[34];
 
         //sample_array_int = get_sample_array(sample_array_int, app_vars.sample_buffer, NUM_SAMPLES);
 
@@ -382,35 +375,55 @@ void cb_slot_timer(void) {
         sctimer_setCompare(app_vars.inner_timerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET-TURNON_OFFSET);
         
     break;
-    case 2:
-        //// send packet 
-        //        // prepare to send
+    //case 2:
+        // send packet 
+        // prepare to send
         
         // prepare packet
-        app_vars.packet_len = sizeof(app_vars.packet);
-        assemble_ibeacon_packet(app_vars.node_id, app_vars.estimate_angle);
+        //app_vars.packet_len = sizeof(app_vars.packet);
+        //assemble_ibeacon_packet(app_vars.node_id, app_vars.estimate_angle, app_vars.antenna_array_id);
 
-        //prepare radio
-        radio_rfOn();
-        app_vars.state = APP_STATE_TX;
-        radio_setFrequency(BEACON_CHANNEL, FREQ_RX);
+        ////prepare radio
+        //radio_rfOn();
+        //app_vars.state = APP_STATE_TX;
+        //radio_setFrequency(BEACON_CHANNEL, FREQ_RX);
 
-        radio_rfOff();
-        radio_loadPacket(app_vars.packet,LENGTH_PACKET);
-        radio_txEnable();
+        //radio_loadPacket(app_vars.packet,LENGTH_PACKET);
+        //radio_txEnable();
 
-        // no need to schedule a time
-        radio_txNow();
+        //// no need to schedule a time
+        //radio_txNow();
 
-    break;
+    //break;
     default:
-        radio_rfOff();
-        app_vars.state = APP_STATE_OFF;
+        // choose slot to send the position information arrcording to node id
+        if (app_vars.slot_offset == app_vars.node_id + 1) {
+            app_vars.packet_len = sizeof(app_vars.packet);
+            assemble_ibeacon_packet(app_vars.node_id, app_vars.estimate_angle, app_vars.antenna_array_id);
+
+            //prepare radio
+            radio_rfOn();
+            app_vars.state = APP_STATE_TX;
+            radio_setFrequency(BEACON_CHANNEL, FREQ_RX);
+
+            radio_loadPacket(app_vars.packet,LENGTH_PACKET);
+            radio_txEnable();
+
+            // no need to schedule a time
+            radio_txNow();
+        } else {
+            //if not correct slot, turn off the radio and sleep
+            radio_rfOff();
+            app_vars.state = APP_STATE_OFF;
+        }
+       
     break;
     }
 }
 
 void cb_inner_slot_timer(void) {
+    
+    app_dbg.num_timer++;
 
     radio_rfOn();
     app_vars.state = APP_STATE_RX;

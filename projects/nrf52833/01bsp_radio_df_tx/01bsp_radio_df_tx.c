@@ -27,7 +27,7 @@ remainder of the packet contains an incrementing bytes.
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
 #define CHANNEL         0              ///< 0~39
-#define TIMER_PERIOD    (0xffff>>3)     ///< 0xffff = 2s@32kHz
+#define TIMER_PERIOD    (32768/200)*100      // 5ms@ (32768/200)
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
@@ -154,6 +154,7 @@ int mote_main(void) {
         // led
         //leds_error_on();
         leds_error_toggle();
+        radio_rfOn();
         // prepare packet
         app_vars.packet_len = sizeof(app_vars.packet);
         
@@ -223,6 +224,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
     // update debug stats
     app_dbg.num_endFrame++;
+    radio_rfOff();
 }
 
 void cb_timer(void) {
