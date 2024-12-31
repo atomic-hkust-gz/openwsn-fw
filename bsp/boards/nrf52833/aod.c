@@ -15,6 +15,9 @@
 #define FREQUENCY           2400000000
 #define ANT_INTERVAL        0.0375
 #define PI                  3.1415926
+#define ONE_ANT_CONSTANT    -1.89
+#define TWO_ANT_CONSTANT    -3.78
+
 
 //=========================== typedef =========================================
 typedef struct {
@@ -205,16 +208,22 @@ float complex_norm(Complex a) {
     return result;
 }
 
-Complex* steering_vector(float alpha) {
-    Complex steer_vector[3];
-    steer_vector[0].real = 1;
-    steer_vector[0].imag = 0;
-
-    steer_vector[1] = complex_exponential(-2*PI*FREQUENCY*(ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
-    steer_vector[2] = complex_exponential(-2*PI*FREQUENCY*(2*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
+Complex* update_steering_vector1(Complex* steer_vector_array1) {
+    for (int i = -90; i < 90; i++) {
+        steer_vector_array1[i+90] = complex_exponential(-2*PI*FREQUENCY*ANT_INTERVAL/SPEED_OF_LIGHT*sin(i*(PI/180)));
+    }
+    return steer_vector_array1;
 }
 
-int8_t DoA_algorithm(ant_mean_t ant_mean) {
+Complex* update_steering_vector2(Complex* steer_vector_array2) {
+    for (int i = -90; i < 90; i++) {
+        steer_vector_array2[i+90] = complex_exponential(-2*PI*FREQUENCY*2*ANT_INTERVAL/SPEED_OF_LIGHT*sin(i*(PI/180)));
+    }
+    return steer_vector_array2;
+}
+
+
+int8_t DoA_algorithm(ant_mean_t ant_mean, Complex* steer_vector_array1, Complex* steer_vector_array2) {
     float ant0_theta, ant1_theta, ant2_theta;
     ant0_theta = atan2(ant_mean.ant0_Q, ant_mean.ant0_I);
     ant1_theta = atan2(ant_mean.ant1_Q, ant_mean.ant1_I);
@@ -244,8 +253,16 @@ int8_t DoA_algorithm(ant_mean_t ant_mean) {
         steer_vector[0].real = 1;
         steer_vector[0].imag = 0;
 
-        steer_vector[1] = complex_exponential(-2*PI*FREQUENCY*(ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
-        steer_vector[2] = complex_exponential(-2*PI*FREQUENCY*(2*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT));
+        //steer_vector[1] = complex_exponential(-2*PI*FREQUENCY*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT);
+        //steer_vector[2] = complex_exponential(-2*PI*FREQUENCY*2*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT);
+
+
+        //没必要每个循环都计算steer vector， 可以打表
+
+
+        steer_vector[1] = steer_vector_array1[i];
+        steer_vector[2] = steer_vector_array2[i];
+
 
         Complex part1 = complex_multiply(steer_vector[0], received_signal[0]);
         Complex part2 = complex_multiply(steer_vector[1], received_signal[1]);
@@ -307,10 +324,10 @@ sample_array_float_t ant_IQ_norm(sample_array_int_t sample_array_int) {
 
 sample_array_float_t compensate_phase(sample_array_float_t sample_array_float, float angle_change_us) {
     float rotate_angle;
-    double pi = acos(-1.0);
+    //double pi = acos(-1.0);
 
     for (uint8_t i=0;i<10;i++) {
-        rotate_angle = i*(pi/2 + angle_change_us)*8;
+        rotate_angle = i*(PI/2 + angle_change_us)*8;
         //compensate ant0
         IQ_sample = rotate_vector(sample_array_float.ant0_I_f[i], sample_array_float.ant0_Q_f[i], -rotate_angle);
         sample_array_float.ant0_I_f[i] = IQ_sample.I;
@@ -327,21 +344,21 @@ sample_array_float_t compensate_phase(sample_array_float_t sample_array_float, f
         sample_array_float.ant2_Q_f[i] = IQ_sample.Q;
 
         //compensate ant3
-        IQ_sample = rotate_vector(sample_array_float.ant3_I_f[i], sample_array_float.ant3_Q_f[i], -rotate_angle);
-        sample_array_float.ant3_I_f[i] = IQ_sample.I;
-        sample_array_float.ant3_Q_f[i] = IQ_sample.Q;
+        //IQ_sample = rotate_vector(sample_array_float.ant3_I_f[i], sample_array_float.ant3_Q_f[i], -rotate_angle);
+        //sample_array_float.ant3_I_f[i] = IQ_sample.I;
+        //sample_array_float.ant3_Q_f[i] = IQ_sample.Q;
     }
     return sample_array_float;
 }
 
-uint16_t cal_angle(sample_array_int_t sample_array_int) {
+uint16_t cal_angle(sample_array_int_t sample_array_int, Complex* steer_vector_array1, Complex* steer_vector_array2) {
 
     sample_array_float = ant_IQ_norm(sample_array_int);
 
     float angle_change_us;
     angle_change_us = angle_diff_per_us(sample_array_float);
 
-    //sample_array_float = compensate_phase(sample_array_float, angle_change_us);
+    sample_array_float = compensate_phase(sample_array_float, angle_change_us);
 
     ant_mean = cal_mean_phase(sample_array_float);
     
@@ -372,7 +389,7 @@ uint16_t cal_angle(sample_array_int_t sample_array_int) {
     ant_mean.ant2_Q = IQ_sample.Q;
 
     int8_t estimate_angle;
-    estimate_angle = DoA_algorithm(ant_mean);
+    estimate_angle = DoA_algorithm(ant_mean, steer_vector_array1, steer_vector_array2);
 
     return estimate_angle;
 }

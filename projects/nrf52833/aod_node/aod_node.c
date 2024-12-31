@@ -16,6 +16,7 @@ when send the packet in one slot.
 #include "uart.h"
 #include "radio_df.h"
 #include "aod.h"
+#include "math.h"
 
 //=========================== defines =========================================
 
@@ -50,6 +51,9 @@ const static uint8_t ble_uuid[16]       = {
 #define DEBUG_PORT           1
 #define DEBUG_SLOT_PIN       7
 #define DEBUG_RADIO_PIN      8 
+
+#define ONE_ANT_CONSTANT    -1.89
+#define TWO_ANT_CONSTANT    -3.78
 
 //=========================== variables =======================================
 
@@ -112,6 +116,7 @@ typedef struct {
 
 app_vars_t app_vars;
 
+
 //=========================== prototypes ======================================
 
 void     cb_startFrame(PORT_TIMER_WIDTH timestamp);
@@ -122,7 +127,9 @@ void     cb_inner_slot_timer(void);
 
 void     assemble_ibeacon_packet(uint8_t, int8_t, uint8_t);
 
-uint16_t cal_angle(sample_array_int_t sample_array_int);
+Complex* update_steering_vector1(Complex* steer_vector_array1);
+Complex* update_steering_vector2(Complex* steer_vector_array2);
+uint16_t cal_angle(sample_array_int_t sample_array_int, Complex* steer_vector_array1, Complex* steer_vector_array2);
 
 //=========================== main ============================================
 
@@ -137,6 +144,12 @@ int mote_main(void) {
     uint8_t read;
 
     uint8_t current_time;
+    
+    Complex steer_vector_array1[180];
+    Complex steer_vector_array2[180];
+    
+    memcpy(steer_vector_array1, update_steering_vector1(steer_vector_array1), 180);
+    memcpy(steer_vector_array1, update_steering_vector1(steer_vector_array1), 180);
 
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
@@ -185,6 +198,7 @@ int mote_main(void) {
     memset( &sample_array_int, 0, sizeof(sample_array_int) );
 
     // sleep
+    //clocks_stop();
     while (1){
         
         //if (app_vars.slot_offset == 0 | app_vars.slot_offset == 2) {
@@ -227,10 +241,11 @@ int mote_main(void) {
                 sample_array_int.ant3_I[i] = (int16_t)(app_vars.sample_buffer[15+i*8]) & 0x0000FFFF;
             }
 
-            app_vars.estimate_angle = cal_angle(sample_array_int);
+            app_vars.estimate_angle = cal_angle(sample_array_int, steer_vector_array1, steer_vector_array2);
             app_vars.got_sample = FALSE;
         }
         board_sleep();
+        //clocks_stop();
         //app_vars.current_time = sctimer_readCounter();
     }
 }
@@ -273,7 +288,6 @@ void assemble_ibeacon_packet(uint8_t node_id, int8_t estimate_angle, uint8_t ant
     app_vars.packet[i++]  = 0x00;               // power level
 }
 
-
 //=========================== callbacks =======================================
 
 void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
@@ -305,7 +319,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             &app_vars.rxpk_lqi,
             &app_vars.rxpk_crc
         );
-
+        clocks_stop();
         app_vars.num_samples = radio_get_df_samples(app_vars.sample_buffer,NUM_SAMPLES);
         app_vars.antenna_array_id = app_vars.rxpk_packet[34];
 
@@ -332,7 +346,6 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
                 //app_vars.estimate_angle = cal_angle(sample_array_int);
             }
             
-
             return;
         }
 
@@ -344,10 +357,13 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             radio_rxNow();
         }
     }
+
     // if Radio in Tx state, do nothing
     if (app_vars.state == APP_STATE_TX) {
         radio_rfOff();
         app_vars.state = APP_STATE_OFF;
+        clocks_stop();
+
         return;
     }
 }
@@ -371,8 +387,9 @@ void cb_slot_timer(void) {
     case 0:
    
         // set when to turn on the radio
-        
+        //clocks_start();
         sctimer_setCompare(app_vars.inner_timerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET-TURNON_OFFSET);
+        //clocks_stop();
         
     break;
     //case 2:
@@ -398,6 +415,7 @@ void cb_slot_timer(void) {
     default:
         // choose slot to send the position information arrcording to node id
         if (app_vars.slot_offset == app_vars.node_id + 1) {
+            //clocks_start();
             app_vars.packet_len = sizeof(app_vars.packet);
             assemble_ibeacon_packet(app_vars.node_id, app_vars.estimate_angle, app_vars.antenna_array_id);
 

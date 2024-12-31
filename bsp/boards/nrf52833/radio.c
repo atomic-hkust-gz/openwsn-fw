@@ -173,7 +173,8 @@ uint32_t radio_get_frequency(void) {
 }
 
 void radio_rfOn(void) {
-
+    
+    clocks_start();
     // power on radio
     NRF_RADIO->POWER = ((uint32_t)(1)) << RADIO_POWER_POWER_POS;
 
@@ -194,8 +195,8 @@ void radio_rfOff(void) {
     // wiggle debug pin
     debugpins_radio_clr();
     leds_radio_off();
-
     radio_vars.state  = RADIOSTATE_RFOFF;
+
 }
 
 int8_t radio_getFrequencyOffset(void){

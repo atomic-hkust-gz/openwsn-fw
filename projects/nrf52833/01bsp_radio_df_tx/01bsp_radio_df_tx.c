@@ -166,6 +166,8 @@ int mote_main(void) {
         radio_txEnable();
         radio_txNow();
         packet_counter++;
+        //clocks_stop();
+        board_sleep();
 
     }
 }
@@ -225,6 +227,8 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     // update debug stats
     app_dbg.num_endFrame++;
     radio_rfOff();
+    clocks_stop();
+    //board_sleep();
 }
 
 void cb_timer(void) {
@@ -236,6 +240,7 @@ void cb_timer(void) {
     app_vars.txpk_txNow = 1;
 
     sctimer_setCompare(0, sctimer_readCounter()+TIMER_PERIOD);
+    //board_sleep();
 }
 
 void cb_uartTxDone(void) {
