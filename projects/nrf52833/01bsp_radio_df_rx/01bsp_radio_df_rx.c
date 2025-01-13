@@ -111,6 +111,10 @@ void     send_string(const char* str);
 
 void     assemble_ibeacon_packet(void);
 
+Complex* update_steering_vector1(Complex* steer_vector_array1);
+Complex* update_steering_vector2(Complex* steer_vector_array2);
+uint16_t cal_angle(sample_array_int_t sample_array_int, Complex* steer_vector_array1, Complex* steer_vector_array2);
+
 //=========================== main ============================================
 
 /**
@@ -129,8 +133,11 @@ int mote_main(void) {
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
 
-    // clear local variables
-    memset(&app_vars,0,sizeof(app_vars_t));
+    Complex steer_vector_array1[180];
+    Complex steer_vector_array2[180];
+    
+    memcpy(steer_vector_array1, update_steering_vector1(steer_vector_array1), 180);
+    memcpy(steer_vector_array1, update_steering_vector1(steer_vector_array1), 180);
 
     // initialize board
     board_init();
@@ -207,7 +214,7 @@ int mote_main(void) {
                 sample_array_int.ant3_I[i] = (int16_t)(app_vars.sample_buffer[15+i*8]) & 0x0000FFFF;
             }
 
-            app_vars.estimate_angle = cal_angle(sample_array_int);
+            app_vars.estimate_angle = cal_angle(sample_array_int, steer_vector_array1, steer_vector_array2);
 
             // record the samples
             for (i=0;i<app_vars.num_samples;i++) {
