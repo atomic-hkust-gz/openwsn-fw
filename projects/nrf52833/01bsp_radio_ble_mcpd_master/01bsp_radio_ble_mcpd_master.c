@@ -29,13 +29,17 @@ end of frame event), it will turn on its error LED.
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
 #define CHANNEL         0              ///< 0~39
-#define TIMER_PERIOD    (0xffff>>4)     ///< 0xffff = 2s@32kHz
+
+#define TIMER_PERIOD    (32768/200)*20     // 5ms@ (32768/200)
+#define WAITING_TIME    (32768/1000)*20    // 1ms@ (32768/1000)
+
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 #define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
+#define LENGTH_SERIAL_FRAME  127
 
-#define ENABLE_DF       0
+#define ENABLE_DF       1
 
 const static uint8_t ble_device_addr[6] = { 
     0xaa, 0xbb, 0xcc, 0xcc, 0xbb, 0xaa
@@ -47,6 +51,7 @@ const static uint8_t ble_uuid[16]       = {
     0x46, 0x23, 0xbb, 0x56, 0xae, 0x67,
     0xbd, 0x65, 0x3c, 0x73
 };
+
 
 //=========================== variables =======================================
 
@@ -82,6 +87,10 @@ typedef struct {
                 uint8_t         uart_buffer_to_send[LEN_UART_BUFFER];
                 uint16_t        uart_lastTxByteIndex;
      volatile   uint8_t         uartDone;
+
+                uint8_t         packet_counter;
+                uint8_t         tx_done_timestamp;
+
 } app_vars_t;
 
 app_vars_t app_vars;
@@ -90,12 +99,13 @@ app_vars_t app_vars;
 
 void     cb_startFrame(PORT_TIMER_WIDTH timestamp);
 void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
+
 void     cb_timer(void);
 
 void     cb_uartTxDone(void);
 uint8_t  cb_uartRxCb(void);
 
-void     assemble_ibeacon_packet(void);
+void     assemble_ibeacon_packet(uint8_t);
 
 //=========================== main ============================================
 
@@ -104,7 +114,7 @@ void     assemble_ibeacon_packet(void);
 */
 int mote_main(void) {
     uint16_t i;
-
+    
     uint8_t freq_offset;
     uint8_t sign;
     uint8_t read;
@@ -117,36 +127,35 @@ int mote_main(void) {
 
 #if ENABLE_DF == 1
     radio_configure_direction_finding_antenna_switch();
-
 #endif
-    uart_setCallbacks(cb_uartTxDone,cb_uartRxCb);
-    uart_enableInterrupts();
+ 
+
+    app_vars.uartDone = 1;
 
     // add callback functions radio
     radio_setStartFrameCb(cb_startFrame);
     radio_setEndFrameCb(cb_endFrame);
 
+    uart_setCallbacks(cb_uartTxDone,cb_uartRxCb);
+    uart_enableInterrupts();
     // prepare packet
     app_vars.packet_len = sizeof(app_vars.packet);
 
-    // start bsp timer
+    // start sctimer
     sctimer_set_callback(0, cb_timer);
     sctimer_setCompare(0, sctimer_readCounter()+TIMER_PERIOD);
-    sctimer_enable(0);
 
     // prepare radio
     radio_rfOn();
     // freq type only effects on scum port
     radio_setFrequency(CHANNEL, FREQ_RX);
 
-#if ENABLE_DF == 1
-    radio_configure_direction_finding_manual();
-#endif
+    app_vars.packet_counter = 0;
 
-    // switch in RX by default
-    radio_rxEnable();
+    radio_configure_direction_finding_manual_AoD();
+    
     app_vars.state = APP_STATE_RX;
-
+    
     // start by a transmit
     app_vars.flags |= APP_FLAG_TIMER;
 
@@ -154,7 +163,7 @@ int mote_main(void) {
 
         // sleep while waiting for at least one of the flags to be set
         while (app_vars.flags==0x00) {
-            board_sleep();
+            continue;
         }
 
         // handle and clear every flag
@@ -216,14 +225,23 @@ int mote_main(void) {
                                 app_vars.uart_buffer_to_send[4*i+3] = (app_vars.sample_buffer[i] >> 0) & 0x000000ff;
                             }
 
-                            // recoard rssi
-                            app_vars.uart_buffer_to_send[4*i+0]     = app_vars.rxpk_rssi;
-                            // record scum settings for transmitting
-                            app_vars.uart_buffer_to_send[4*i+1]     = app_vars.packet[3];
-                            app_vars.uart_buffer_to_send[4*i+2]     = app_vars.packet[4];
-                            app_vars.uart_buffer_to_send[4*i+3]     = app_vars.packet[5];
+                            sign = (app_vars.rxpk_rssi & 0x80) >> 7;
+                                if (sign){
+                                    read = 0xff - (uint8_t)(app_vars.rxpk_rssi) + 1;
+                                } else {
+                                    read = app_vars.rxpk_rssi;
+                                }
+
+                                if (sign) {
+                                    app_vars.uart_buffer_to_send[4*i+0] = '-';
+                                } else {
+                                    app_vars.uart_buffer_to_send[4*i+0] = '+';
+                                }
+                            app_vars.uart_buffer_to_send[4*i+1] = '0'+read/100;
+                            app_vars.uart_buffer_to_send[4*i+2] = '0'+read/10;
+                            app_vars.uart_buffer_to_send[4*i+3] = '0'+read%10;
                             // frame split identifier
-                            app_vars.uart_buffer_to_send[4*i+4]     = 0xff;
+                            app_vars.uart_buffer_to_send[4*i+4]     = app_vars.packet[33];    //packet id
                             app_vars.uart_buffer_to_send[4*i+5]     = 0xff;
                             app_vars.uart_buffer_to_send[4*i+6]     = 0xff;
                             app_vars.uart_buffer_to_send[4*i+7]     = 0xff;
@@ -269,10 +287,11 @@ int mote_main(void) {
                     // prepare packet
                     app_vars.packet_len = sizeof(app_vars.packet);
                     
-                    assemble_ibeacon_packet();
+                    assemble_ibeacon_packet(app_vars.packet_counter);
 
                     // start transmitting packet
                     radio_loadPacket(app_vars.packet,LENGTH_PACKET);
+                    app_vars.packet_counter++;
 
                     radio_txEnable();
                     radio_txNow();
@@ -288,7 +307,7 @@ int mote_main(void) {
 }
 //=========================== private =========================================
 
-void assemble_ibeacon_packet(void) {
+void assemble_ibeacon_packet(uint8_t packet_counter) {
 
     uint8_t i;
     i=0;
@@ -316,7 +335,7 @@ void assemble_ibeacon_packet(void) {
     app_vars.packet[i++]  = 0x00;               // major
     app_vars.packet[i++]  = 0xff;
     app_vars.packet[i++]  = 0x00;               // minor
-    app_vars.packet[i++]  = 0x0f;
+    app_vars.packet[i++] = packet_counter;
     app_vars.packet[i++]  = TXPOWER;            // power level
 }
 
@@ -369,3 +388,4 @@ uint8_t cb_uartRxCb(void) {
    
    return 0;
 }
+

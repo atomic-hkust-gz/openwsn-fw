@@ -61,6 +61,7 @@ to this board.
 
 // priority range from 0 (highest) ~ 7
 #define RTC_PRIORITY          0 
+#define TIMER_PRIORITY        0
 #define EGU0_PRIORITY         0
 #define RADIO_PRIORITY        0
 #define UART_PRIORITY         1

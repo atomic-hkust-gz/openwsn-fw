@@ -326,10 +326,10 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         //sample_array_int = get_sample_array(sample_array_int, app_vars.sample_buffer, NUM_SAMPLES);
 
         // check if the frame is target one
-        if (app_vars.rxpk_packet[0] == 0x42 & app_vars.rxpk_packet[1] == 0x21)
+        if (app_vars.rxpk_packet[0] == 0x42 & app_vars.rxpk_packet[1] == 0x21) {
             app_vars.isTargetPkt = TRUE;
             app_vars.got_sample = TRUE;
-
+        }
         
         // is is target pkt, check if synced. if not, sync
         if (app_vars.isTargetPkt) {

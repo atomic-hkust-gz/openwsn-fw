@@ -21,6 +21,7 @@ remainder of the packet contains an incrementing bytes.
 #include "radio_df.h"
 #include "aod.h"
 #include "uart.h"
+#include "timer.h"
 
 //=========================== defines =========================================
 
@@ -31,7 +32,8 @@ remainder of the packet contains an incrementing bytes.
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
-#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
+//#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
+#define LEN_UART_BUFFER ((NUM_SAMPLES*4)*2+3)
 #define LENGTH_SERIAL_FRAME  127            // length of the serial frame
 
 #define ENABLE_DF       1
@@ -73,14 +75,17 @@ app_dbg_t app_dbg;
 typedef struct {
                 uint8_t         flags;
                 app_state_t     state;
-                uint8_t         packet[LENGTH_PACKET];
-                uint8_t         packet_len;
+                
                 int8_t          rxpk_rssi;
                 uint8_t         rxpk_lqi;
                 bool            rxpk_crc;
                 uint16_t        num_samples;
-                uint32_t        sample_buffer[NUM_SAMPLES];
+
+                uint32_t        tx1_sample_buffer[NUM_SAMPLES];
+                uint32_t        tx2_sample_buffer[NUM_SAMPLES];
+                
                 uint8_t         uart_buffer_to_send[LEN_UART_BUFFER];
+
                 uint16_t        uart_lastTxByteIndex;
      volatile   uint8_t         uartDone;
                 uint8_t         rxpk_done;
@@ -89,8 +94,15 @@ typedef struct {
                 uint8_t         rxpk_len;
                 uint8_t         rxpk_num;
 
-                int8_t         estimate_angle;
+                bool            tx1_done;
+                uint8_t         tx1_packet_sqn;
+                uint32_t        tx1_done_timestamp;
 
+                bool            tx2_done;
+                uint8_t         tx2_packet_sqn;
+                uint32_t        tx2_done_timestamp;
+
+                uint32_t        time_interval;
 
 
                 uint8_t         uart_txFrame[LENGTH_SERIAL_FRAME];
@@ -102,18 +114,9 @@ app_vars_t app_vars;
 
 void     cb_startFrame(PORT_TIMER_WIDTH timestamp);
 void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
-void     cb_timer(void);
 
 void     cb_uartTxDone(void);
 uint8_t  cb_uartRxCb(void);
-void     send_string(const char* str);
-
-
-void     assemble_ibeacon_packet(void);
-
-Complex* update_steering_vector1(Complex* steer_vector_array1);
-Complex* update_steering_vector2(Complex* steer_vector_array2);
-uint16_t cal_angle(sample_array_int_t sample_array_int, Complex* steer_vector_array1, Complex* steer_vector_array2);
 
 //=========================== main ============================================
 
@@ -133,14 +136,11 @@ int mote_main(void) {
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
 
-    Complex steer_vector_array1[180];
-    Complex steer_vector_array2[180];
-    
-    memcpy(steer_vector_array1, update_steering_vector1(steer_vector_array1), 180);
-    memcpy(steer_vector_array1, update_steering_vector1(steer_vector_array1), 180);
-
     // initialize board
     board_init();
+    
+    timer_init();
+    timer_start();
     
 #if ENABLE_DF == 1
     //antenna_CHW_rx_switch_init();
@@ -154,8 +154,6 @@ int mote_main(void) {
     // add radio callback functions
     radio_setStartFrameCb(cb_startFrame);
     radio_setEndFrameCb(cb_endFrame);
-
-    app_vars.packet_len = sizeof(app_vars.packet);
 
     // prepare radio
     radio_rfOn();
@@ -182,79 +180,41 @@ int mote_main(void) {
         leds_error_toggle();
         if (app_vars.rxpk_crc && ENABLE_DF) {
             
-            app_vars.num_samples = radio_get_df_samples(app_vars.sample_buffer,NUM_SAMPLES);
-            
-            //sample_array_int_t sample_array_int;
+            if (app_vars.tx1_done && app_vars.tx2_done) {
+                if (app_vars.tx1_packet_sqn == app_vars.tx2_packet_sqn) {
 
-            //memset( &sample_array_int, 0, sizeof(sample_array_int) );
+                    for (i=0;i<app_vars.num_samples;i++) {
+                        app_vars.uart_buffer_to_send[4*i+0] = (app_vars.tx1_sample_buffer[i] >>24) & 0x000000ff;
+                        app_vars.uart_buffer_to_send[4*i+1] = (app_vars.tx1_sample_buffer[i] >>16) & 0x000000ff;
+                        app_vars.uart_buffer_to_send[4*i+2] = (app_vars.tx1_sample_buffer[i] >> 8) & 0x000000ff;
+                        app_vars.uart_buffer_to_send[4*i+3] = (app_vars.tx1_sample_buffer[i] >> 0) & 0x000000ff;
+                    }
 
-            //uint8_t i=0;
-            //for (i;i<8;i++) {
-            //    sample_array_int.ref_Q[i] = (int16_t)((app_vars.sample_buffer[i] >> 16) & 0x0000FFFF);
-            //    sample_array_int.ref_I[i] = (int16_t)(app_vars.sample_buffer[i]) & 0x0000FFFF;
-            //}
-    
-            //for (i = 0;(9+i*8)<NUM_SAMPLES;i++) {
-            //    sample_array_int.ant0_Q[i] = (int16_t)(app_vars.sample_buffer[9+i*8] >> 16) & 0x0000FFFF;
-            //    sample_array_int.ant0_I[i] = (int16_t)(app_vars.sample_buffer[9+i*8]) & 0x0000FFFF;
-            //}
+                    for (i=0;i<app_vars.num_samples;i++) {
+                        app_vars.uart_buffer_to_send[4*i+0 + 352] = (app_vars.tx2_sample_buffer[i] >>24) & 0x000000ff;
+                        app_vars.uart_buffer_to_send[4*i+1 + 352] = (app_vars.tx2_sample_buffer[i] >>16) & 0x000000ff;
+                        app_vars.uart_buffer_to_send[4*i+2 + 352] = (app_vars.tx2_sample_buffer[i] >> 8) & 0x000000ff;
+                        app_vars.uart_buffer_to_send[4*i+3 + 352] = (app_vars.tx2_sample_buffer[i] >> 0) & 0x000000ff;
+                    }
+                    
+                    app_vars.time_interval = app_vars.tx2_done_timestamp - app_vars.tx1_done_timestamp;
 
-            //for (i = 0;(11+i*8)<NUM_SAMPLES;i++) {
-            //    sample_array_int.ant1_Q[i] = (int16_t)(app_vars.sample_buffer[11+i*8] >> 16) & 0x0000FFFF;
-            //    sample_array_int.ant1_I[i] = (int16_t)(app_vars.sample_buffer[11+i*8]) & 0x0000FFFF;
-            //}
+                    app_vars.uart_buffer_to_send[704]     = 0xff;
+                    app_vars.uart_buffer_to_send[705]     = 0xff;
+                    app_vars.uart_buffer_to_send[706]     = 0xff;
 
-            //for (i = 0;(13+i*8)<NUM_SAMPLES;i++) {
-            //    sample_array_int.ant2_Q[i] = (int16_t)(app_vars.sample_buffer[13+i*8] >> 16) & 0x0000FFFF;
-            //    sample_array_int.ant2_I[i] = (int16_t)(app_vars.sample_buffer[13+i*8]) & 0x0000FFFF;
-            //}
+                    app_vars.uart_lastTxByteIndex = 0;
+                    
+                    leds_debug_toggle();
+                    uart_writeByte(app_vars.uart_buffer_to_send[0]);
 
-            //for (i = 0;(15+i*8)<NUM_SAMPLES;i++) {
-            //    sample_array_int.ant3_Q[i] = (int16_t)(app_vars.sample_buffer[15+i*8] >> 16) & 0x0000FFFF;
-            //    sample_array_int.ant3_I[i] = (int16_t)(app_vars.sample_buffer[15+i*8]) & 0x0000FFFF;
-            //}
+                    app_vars.tx1_done = 0;
+                    app_vars.tx2_done = 0;
+                } 
 
-            //app_vars.estimate_angle = cal_angle(sample_array_int, steer_vector_array1, steer_vector_array2);
-
-            // record the samples
-            for (i=0;i<app_vars.num_samples;i++) {
-                app_vars.uart_buffer_to_send[4*i+0] = (app_vars.sample_buffer[i] >>24) & 0x000000ff;
-                app_vars.uart_buffer_to_send[4*i+1] = (app_vars.sample_buffer[i] >>16) & 0x000000ff;
-                app_vars.uart_buffer_to_send[4*i+2] = (app_vars.sample_buffer[i] >> 8) & 0x000000ff;
-                app_vars.uart_buffer_to_send[4*i+3] = (app_vars.sample_buffer[i] >> 0) & 0x000000ff;
             }
 
-            // recoard rssi
-
-            sign = (app_vars.rxpk_rssi & 0x80) >> 7;
-                if (sign){
-                    read = 0xff - (uint8_t)(app_vars.rxpk_rssi) + 1;
-                } else {
-                    read = app_vars.rxpk_rssi;
-                }
-
-                if (sign) {
-                    app_vars.uart_buffer_to_send[4*i+0] = '-';
-                } else {
-                    app_vars.uart_buffer_to_send[4*i+0] = '+';
-                }
-            app_vars.uart_buffer_to_send[4*i+1] = '0'+read/100;
-            app_vars.uart_buffer_to_send[4*i+2] = '0'+read/10;
-            app_vars.uart_buffer_to_send[4*i+3] = '0'+read%10;
-
-            //app_vars.uart_buffer_to_send[4*i+0]     = app_vars.rxpk_rssi;
-            // record scum settings for transmitting
-            //app_vars.uart_buffer_to_send[4*i+1]     = app_vars.packet[3];
-            //app_vars.uart_buffer_to_send[4*i+2]     = app_vars.packet[4];
-            //app_vars.uart_buffer_to_send[4*i+3]     = app_vars.packet[5];
-            // frame split identifier
-            app_vars.uart_buffer_to_send[4*i+4]     = app_vars.rxpk_buf[33];
-            app_vars.uart_buffer_to_send[4*i+5]     = 0xff;
-            app_vars.uart_buffer_to_send[4*i+6]     = 0xff;
-            app_vars.uart_buffer_to_send[4*i+7]     = 0xff;
-
-            app_vars.uart_lastTxByteIndex = 0;
-            uart_writeByte(app_vars.uart_buffer_to_send[0]);
+           
 
         }
 
@@ -262,38 +222,6 @@ int mote_main(void) {
 }
 
 //=========================== private =========================================
-
-void assemble_ibeacon_packet(void) {
-
-    uint8_t i;
-    i=0;
-
-    memset( app_vars.packet, 0x00, sizeof(app_vars.packet) );
-
-    app_vars.packet[i++]  = 0x42;               // BLE ADV_NONCONN_IND (this is a must)
-    app_vars.packet[i++]  = 0x21;               // Payload length
-    app_vars.packet[i++]  = ble_device_addr[0]; // BLE adv address byte 0
-    app_vars.packet[i++]  = ble_device_addr[1]; // BLE adv address byte 1
-    app_vars.packet[i++]  = ble_device_addr[2]; // BLE adv address byte 2
-    app_vars.packet[i++]  = ble_device_addr[3]; // BLE adv address byte 3
-    app_vars.packet[i++]  = ble_device_addr[4]; // BLE adv address byte 4
-    app_vars.packet[i++]  = ble_device_addr[5]; // BLE adv address byte 5
-
-    app_vars.packet[i++]  = 0x1a;
-    app_vars.packet[i++]  = 0xff;
-    app_vars.packet[i++]  = 0x4c;
-    app_vars.packet[i++]  = 0x00;
-
-    app_vars.packet[i++]  = 0x02;
-    app_vars.packet[i++]  = 0x15;
-    memcpy(&app_vars.packet[i], &ble_uuid[0], 16);
-    i                    += 16;
-    app_vars.packet[i++]  = 0x00;               // major
-    app_vars.packet[i++]  = 0xff;
-    app_vars.packet[i++]  = 0x00;               // minor
-    app_vars.packet[i++]  = 0x0f;
-    app_vars.packet[i++]  = TXPOWER;            // power level
-}
 
 
 //=========================== callbacks =======================================
@@ -310,12 +238,15 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     bool     expectedFrame;
     uint8_t  i;
-
+    uint32_t  rx_done_timestamp;
+    timer_capture_now(0);
+    rx_done_timestamp = timer_getCapturedValue(0);
     // set flag
     //app_vars.flags |= APP_FLAG_END_FRAME;
 
     // update debug stats
     app_dbg.num_endFrame++;
+    
 
     memset(&app_vars.rxpk_buf[0],0,LENGTH_PACKET);
     
@@ -332,7 +263,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
     // check the frame is sent by radio_tx project
     expectedFrame = TRUE;
-
+    
     if (app_vars.rxpk_len>LENGTH_PACKET){
         expectedFrame = FALSE;
     } else {
@@ -343,6 +274,21 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     }
     
     if (expectedFrame){
+
+        if (app_vars.rxpk_buf[34] == 1) {
+            app_vars.tx1_done = 1;
+            app_vars.tx1_done_timestamp = rx_done_timestamp;
+            app_vars.tx1_packet_sqn = app_vars.rxpk_buf[33];
+            app_vars.num_samples = radio_get_df_samples(app_vars.tx1_sample_buffer,NUM_SAMPLES);
+        }
+
+        if (app_vars.rxpk_buf[34] == 2) {
+            app_vars.tx2_done = 1;
+            app_vars.tx2_done_timestamp = rx_done_timestamp;
+            app_vars.tx2_packet_sqn = app_vars.rxpk_buf[33];
+            app_vars.num_samples = radio_get_df_samples(app_vars.tx2_sample_buffer,NUM_SAMPLES);
+        }
+
         app_vars.rxpk_done = 1;
     }
     //leds_debug_toggle();

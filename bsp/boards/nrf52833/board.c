@@ -40,7 +40,7 @@ void board_init(void) {
     // initialize bsp modules
     debugpins_init();
     leds_init();
-    //uart_init();
+    uart_init();
     radio_init();
     sctimer_init();
 
