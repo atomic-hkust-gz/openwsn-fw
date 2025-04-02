@@ -30,7 +30,7 @@ int main(void) {
     uint32_t delay;
     uint8_t  i;
 
-    clocks_start();
+    //clocks_start();
 
     // init gpio
 
@@ -75,7 +75,10 @@ int main(void) {
         NRF_RESET_S->NETWORK.FORCEOFF = 0x0;
     }
 
-    while(1);
+    while(1) {
+        __WFI();
+        __WFI();
+    }
 
  }
 

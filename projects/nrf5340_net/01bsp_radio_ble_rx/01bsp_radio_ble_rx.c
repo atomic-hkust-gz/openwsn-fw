@@ -31,7 +31,7 @@ This program is edited from 01bsp_radio_ble_rx. This program implement a ble rx 
 
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
-#define CHANNEL         20              ///< 0~39
+#define CHANNEL         0              ///< 0~39
 #define TIMER_PERIOD    (0xffff>>2)     ///< 0xffff = 2s@32kHz
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 

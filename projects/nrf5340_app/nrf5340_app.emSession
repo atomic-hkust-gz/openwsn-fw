@@ -13,6 +13,7 @@
  <Project>
   <ProjectSessionItem path="nrf5340_app"/>
   <ProjectSessionItem path="nrf5340_app;00std_leds"/>
+  <ProjectSessionItem path="nrf5340_app;00std_leds;sdk"/>
  </Project>
  <Register1/>
  <Register2/>
@@ -37,7 +38,9 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="00std_leds/00std_leds.c" left="0" selected="1" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="6" useTextEdit="1" path="00std_leds/00std_leds.c" left="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="916" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/projects/nrf5340_app/00std_leds/00std_leds.c" path="../../bsp/boards/nrf5340_app/sdk/cmsis_gcc.h" left="0" top="850" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="77" y="476" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/projects/nrf5340_app/00std_leds/00std_leds.c" path="../../bsp/boards/nrf5340_app/sdk/nrf5340_application.h" left="0" selected="1" top="455" codecName="Default"/>
  </Files>
  <EMStudioWindow activeProject="00std_leds" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>

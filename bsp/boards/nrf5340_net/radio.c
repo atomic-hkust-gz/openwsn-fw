@@ -42,7 +42,7 @@
 #define RADIO_TXPOWER             0 // in 2-compilant format
 
 // the maxmium should be ((1<<14)-1), but need larger .bss size
-#define MAX_IQSAMPLES            0x58 //used to be ((1<<8)-1) 0x140 == 320 0x440 = 1088 0x240 = 576   1us=0x48
+#define MAX_IQSAMPLES            0x58 //used to be ((1<<8)-1) 0x140 == 320 0x440 = 1088 0x240 = 576   1us=0x48    //0x58 in Plast 0x5c for scum
 
 //=========================== variables =======================================
 
@@ -173,7 +173,8 @@ uint32_t radio_get_frequency(void) {
 }
 
 void radio_rfOn(void) {
-
+    
+    clocks_start();
     // power on radio
     NRF_RADIO_NS->POWER = ((uint32_t)(1)) << RADIO_POWER_POWER_POS;
 

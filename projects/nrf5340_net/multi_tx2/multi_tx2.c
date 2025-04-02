@@ -41,10 +41,8 @@ const static uint8_t ble_uuid[16]       = {
     0xbd, 0x65, 0x3c, 0x73
 };
 
-#define NUM_SLOTS       5
-#define SLOT_DURATION   (32768/200)*20  // 5ms@ (32768/200)
-#define SENDING_OFFSET  (32768/1000)*20 // 1ms@ (32768/1000)
-
+#define SEND_DURATION     (16000000/200)*100        //5ms@ (16000000/200)
+#define SEND_OFFSET       (16000000/5000)*1        //200us @ (16000000/5000)
 
 //define debug GPIO
 #define DEBUG_PORT           1
@@ -79,8 +77,13 @@ typedef struct {
 
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
+                int8_t          rxpk_rssi;
+                uint8_t         rxpk_lqi;
+                bool            rxpk_crc;
 
-                uint8_t         antenna_array_id;
+                uint8_t         rx_doneAt;
+                uint8_t         tx_now;
+
 } app_vars_t;
 
 app_vars_t app_vars;
@@ -90,8 +93,7 @@ app_vars_t app_vars;
 void     cb_startFrame(PORT_TIMER_WIDTH timestamp);
 void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
 
-void     cb_slot_timer(void);
-void     cb_inner_slot_timer(void);
+void     cb_timer(void);
 
 void     assemble_ibeacon_packet(uint8_t);
 void nrf_gpio_cfg_output(uint8_t port_number, uint32_t pin_number);
@@ -113,12 +115,8 @@ int mote_main(void) {
     radio_rfOff();
     app_vars.state = APP_STATE_OFF;
     
-    //set antenna array id
-    app_vars.antenna_array_id = 1;
-
 #if ENABLE_DF == 1
     antenna_CHW_tx_switch_init();
-    radio_configure_direction_finding_CHW_antenna_switch(app_vars.antenna_array_id);
     radio_configure_direction_finding_manual_AoD();
 #endif
 
@@ -126,37 +124,40 @@ int mote_main(void) {
     radio_setStartFrameCb(cb_startFrame);
     radio_setEndFrameCb(cb_endFrame);
 
-    app_vars.slot_timerId = 0;
-    app_vars.inner_timerId = 1;
-
     //initial debugs GPIO
     nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_PIN0);
     nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_RADIO_PIN);
 
 
-    // start sctimer
-    sctimer_set_callback(app_vars.slot_timerId, cb_slot_timer);
-    sctimer_set_callback(app_vars.inner_timerId, cb_inner_slot_timer);
-    app_vars.time_slotStartAt = sctimer_readCounter()+SLOT_DURATION;
-    sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
+    timer0_init();
+    timer_start(NRF_TIMER0_NS);
+    timer0_set_callback(0, cb_timer);
+
+    radio_rfOn();
+    radio_setFrequency(CHANNEL, FREQ_TX);
+    radio_rxEnable();
+    app_vars.state = APP_STATE_RX;
+    radio_rxNow();
 
     //sctimer_enable(app_vars.slot_timerId);
 
     // sleep
     while (1){
-        //if (app_vars.slot_offset == 0) {
-        //    NRF_P1_NS->OUTSET =  1 << DEBUG_PIN0;
-        //}
-        //else {
-        //    NRF_P1_NS->OUTCLR =  1 << DEBUG_PIN0;
-        //}
+        app_vars.tx_now = 0;
+        while (app_vars.tx_now == 0) {
+            board_sleep();
+        }
 
-        //if (app_vars.state == APP_STATE_OFF) {
-        //    NRF_P1_NS->OUTCLR =  1 << DEBUG_RADIO_PIN;
-        //} else {
-        //    NRF_P1_NS->OUTSET =  1 << DEBUG_RADIO_PIN;
-        //}
-        board_sleep();
+        app_vars.pkt_sqn = app_vars.packet[33];
+
+        app_vars.packet_len = sizeof(app_vars.packet);
+
+        assemble_ibeacon_packet(app_vars.pkt_sqn);
+        radio_loadPacket(app_vars.packet, LENGTH_PACKET);
+        radio_txEnable();
+        app_vars.state = APP_STATE_TX;
+
+        radio_txNow();
     }
 }
   
@@ -190,10 +191,9 @@ void assemble_ibeacon_packet(uint8_t sqn) {
     i                    += 16;
     app_vars.packet[i++]  = 0x00;               // major
     app_vars.packet[i++]  = 0xff;
-    app_vars.packet[i++]  = 0x00;               // minor
-    app_vars.packet[i++]  = sqn;                //34 byte
-    app_vars.packet[i++]  = app_vars.antenna_array_id;
-    app_vars.packet[i++]  = 0x00;               // power level
+    app_vars.packet[i++]  = 0x00;               //  minor
+    app_vars.packet[i++]  = sqn;                //  34 byte
+    app_vars.packet[i++]  = 0x02;               //  tx2 id
 }
 
 //=========================== callbacks =======================================
@@ -203,65 +203,43 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
-
-    radio_rfOff();
-    clocks_stop();
-    app_vars.state = APP_STATE_OFF;
+    uint32_t endframe_timestamp;
     
-    //reset antenna array and init
-    //app_vars.antenna_array_id = 1;
-    app_vars.antenna_array_id++;
-    if (app_vars.antenna_array_id == 5) {
-        app_vars.antenna_array_id = 1;
+    app_dbg.num_endFrame++;
+    timer_capture_now(NRF_TIMER0_NS, 0);
+    endframe_timestamp = timer_getCapturedValue(NRF_TIMER0_NS, 0);
+    app_vars.time_slotStartAt = endframe_timestamp + SEND_OFFSET;
+    
+    app_vars.packet_len = sizeof(app_vars.packet);
+
+    radio_getReceivedFrame(
+        app_vars.packet,
+        &app_vars.packet_len,
+        sizeof(app_vars.packet),
+        &app_vars.rxpk_rssi,
+        &app_vars.rxpk_lqi,
+        &app_vars.rxpk_crc
+    );
+    
+    if (app_vars.state == APP_STATE_RX) {
+        leds_error_toggle();
+        timer_schedule(NRF_TIMER0_NS, 0, app_vars.time_slotStartAt);
     }
-    antenna_CHW_tx_switch_init();
-    radio_configure_direction_finding_CHW_antenna_switch(app_vars.antenna_array_id);
-    radio_configure_direction_finding_manual_AoD();
+
+    if (app_vars.state == APP_STATE_TX) {
+        leds_sync_toggle();
+        radio_rxEnable();
+        app_vars.state = APP_STATE_RX;
+        radio_rxNow();
+    }
 }
 
-void cb_slot_timer(void) {
+void cb_timer(void) {
+    app_dbg.num_timer++;
+    leds_debug_toggle();
 
-      leds_error_toggle();
-      // update slot offset
-      app_vars.slot_offset = (app_vars.slot_offset+1)%NUM_SLOTS;
-      // schedule next slot
-      app_vars.time_slotStartAt += SLOT_DURATION;
-      sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
-
-      
-      // check which slotoffset is right now
-
-      switch(app_vars.slot_offset) {
-      case 0:
-     
-          // set when to send packet out
-          sctimer_setCompare(app_vars.inner_timerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET);
-          
-          // prepare to send
-          // prepare packet
-          app_vars.packet_len = sizeof(app_vars.packet);
-          assemble_ibeacon_packet(app_vars.pkt_sqn++);
-
-          //prepare radio
-          //radio_rfOn();
-          //app_vars.state = APP_STATE_TX;
-          radio_setFrequency(CHANNEL, FREQ_RX);
-          radio_loadPacket(app_vars.packet,LENGTH_PACKET);
-          //radio_txEnable();
-      break;
-      default:
-          radio_rfOff();
-          app_vars.state = APP_STATE_OFF;
-      break;
-      }
-   
+    app_vars.tx_now = 1;
 }
 
-void cb_inner_slot_timer(void) {
-    radio_rfOn();
-    //radio_setFrequency(CHANNEL, FREQ_RX);
-    //radio_loadPacket(app_vars.packet,LENGTH_PACKET);
-    radio_txEnable();
-    radio_txNow();
-}
+
 

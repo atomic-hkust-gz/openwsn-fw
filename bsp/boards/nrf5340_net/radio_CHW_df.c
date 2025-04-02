@@ -14,7 +14,7 @@ This file is driver of using CHW antenna board for AoA/AoD
 //=========================== define ==========================================
 
 
-#define SAMPLE_MAXCNT       (0x58)    //0x58 == 1 us 1 sample for 88 us    0x2c0 == 1 us 8 samples for 88us
+#define SAMPLE_MAXCNT       (0x58)    //0x58 == 1 us 1 sample for 88 us    0x2c0 == 1 us 8 samples for 88us       0x5c for scum
 #define MAX_IQSAMPLES            0x58 //((1<<8)-1)
 
 #define MAX_PACKET_SIZE           (255)       ///< maximal size of radio packet (one more byte at the beginning needed to store the length)
@@ -190,41 +190,49 @@ void radio_configure_direction_finding_CHW_antenna_switch(uint8_t antenna_array_
 
     NRF_RADIO_NS->CLEARPATTERN  = (uint32_t)1;
     
-    // set radio switch pattern
-    if (antenna_array_id == 1) {
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
 
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_2);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_3);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
+    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_2);
+    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_3);
+    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
+
+    //// set radio switch pattern
+    //if (antenna_array_id == 1) {
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_2);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_3);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
     
-    } else if (antenna_array_id == 2) {
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
+    //} else if (antenna_array_id == 2) {
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
 
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_1);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_1);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
-    } else if (antenna_array_id == 3) {
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_1);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_1);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_1);
+    //} else if (antenna_array_id == 3) {
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
 
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_3);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_4);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
-    } else if (antenna_array_id == 4) {
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_2);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_3);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_4);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_1);
+    //} else if (antenna_array_id == 4) {
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
 
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_4);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
-        NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_4);
-    }
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A3_4);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A2_4);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A1_4);
+    //    NRF_RADIO_NS->SWITCHPATTERN = (uint32_t)(PATTERN_A4_4);
+    //}
     
 }
 

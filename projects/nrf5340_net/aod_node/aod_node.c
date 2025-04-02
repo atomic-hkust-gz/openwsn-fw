@@ -55,7 +55,7 @@ const static uint8_t ble_uuid[16]       = {
 
 //=========================== variables =======================================
 
-typedef enum {
+ typedef enum {
     APP_STATE_TX         = 0x01,
     APP_STATE_RX         = 0x02,
     APP_STATE_OFF        = 0x04,

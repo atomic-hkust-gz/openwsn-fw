@@ -31,7 +31,7 @@ This program is edited from 01bsp_radio_ble_rx. This program implement a ble rx 
 
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
-#define CHANNEL         20              ///< 0~39
+#define CHANNEL         37              ///< 0~39
 #define TIMER_PERIOD    (0xffff>>2)     ///< 0xffff = 2s@32kHz
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
@@ -160,19 +160,7 @@ int mote_main(void) {
         }
         
         leds_error_toggle();
-        memset(&app_vars,0,sizeof(app_vars_t));
-        // done receiving a packet
-        app_vars.packet_len = sizeof(app_vars.packet);
         
-        radio_getReceivedFrame(
-                            app_vars.packet,
-                            &app_vars.packet_len,
-                            sizeof(app_vars.packet),
-                            &app_vars.rxpk_rssi,
-                            &app_vars.rxpk_lqi,
-                            &app_vars.rxpk_crc
-                        );
-
         app_vars.node_id = app_vars.packet[32];
         app_vars.estimate_angle = app_vars.packet[33];
         app_vars.antenna_array_id = app_vars.packet[34];
@@ -221,7 +209,43 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
     // update debug stats
     app_dbg.num_endFrame++;
-    app_vars.rxpk_done = 1;
+
+    memset(&app_vars.rxpk_buf[0],0,LENGTH_PACKET);
+    
+    app_vars.rxpk_len = sizeof(app_vars.rxpk_buf);
+
+    radio_getReceivedFrame(
+        app_vars.rxpk_buf,
+        &app_vars.rxpk_len,
+        sizeof(app_vars.rxpk_buf),
+        &app_vars.rxpk_rssi,
+        &app_vars.rxpk_lqi,
+        &app_vars.rxpk_crc
+    );
+
+    // check the frame is sent by radio_tx project
+    expectedFrame = TRUE;
+
+    if (app_vars.rxpk_len>LENGTH_PACKET){
+        expectedFrame = FALSE;
+    } else {
+
+        if(app_vars.rxpk_buf[0]!=0x02){
+            expectedFrame = FALSE;
+        }
+    }
+    
+    if (expectedFrame){
+        app_vars.rxpk_done = 1;
+    }
+    //leds_debug_toggle();
+
+    // keep listening (needed for at86rf215 radio)
+    radio_rxEnable();
+    radio_rxNow();
+
+    // led
+    //leds_sync_off();
 
 }
 

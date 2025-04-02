@@ -15,7 +15,7 @@
 #define MODE_LOWPOWER_COUNTER   2
 
 #define BITMODE_16BIT           0
-#define BITMODE_0BIT            1
+#define BITMODE_08BIT           1
 #define BITMODE_24BIT           2
 #define BITMODE_32BIT           3
 
@@ -24,7 +24,9 @@
 #define OFFSET_INTENSET_CC_2    18  
 #define OFFSET_INTENSET_CC_3    19  
 #define OFFSET_INTENSET_CC_4    20  
-#define OFFSET_INTENSET_CC_5    21     
+#define OFFSET_INTENSET_CC_5    21
+#define OFFSET_INTENSET_CC_6    22  
+#define OFFSET_INTENSET_CC_7    23       
 
 #define NUM_TIMER_COMPARE      8
 
@@ -56,15 +58,17 @@ void timer0_init(void) {
     NVIC->IPR[((uint32_t)TIMER0_IRQn)] = (uint8_t)((RTC_PRIORITY << (8 - __NVIC_PRIO_BITS)) & (uint32_t)0xff);   //problem: __NVIC_PRIO_BITS will this effect the timer?
     NVIC->ISER[((uint32_t)TIMER0_IRQn)>>5] = ((uint32_t)1) << ( ((uint32_t)TIMER0_IRQn) & 0x1f);
     // set compare interrupt for timer0
-    //NRF_TIMER0->INTENSET = (1<<OFFSET_INTENSET_CC_0) |\
-    //                       (1<<OFFSET_INTENSET_CC_1) |\
-    //                       (1<<OFFSET_INTENSET_CC_2) |\
-    //                       (1<<OFFSET_INTENSET_CC_3) |\
-    //                       (1<<OFFSET_INTENSET_CC_4) |\
-    //                       (1<<OFFSET_INTENSET_CC_5);
+    NRF_TIMER0_NS->INTENSET = (1<<OFFSET_INTENSET_CC_0) |\
+                              (1<<OFFSET_INTENSET_CC_1) |\
+                              (1<<OFFSET_INTENSET_CC_2) |\
+                              (1<<OFFSET_INTENSET_CC_3) |\
+                              (1<<OFFSET_INTENSET_CC_4) |\
+                              (1<<OFFSET_INTENSET_CC_5) |\
+                              (1<<OFFSET_INTENSET_CC_6) |\
+                              (1<<OFFSET_INTENSET_CC_7);
 
                            
-    NRF_TIMER0_NS->INTENSET = (1<<OFFSET_INTENSET_CC_0);
+    //NRF_TIMER0_NS->INTENSET = (1<<OFFSET_INTENSET_CC_0);
 }
 
 void timer1_init(void) {      //problem: when using two timer, the interrupt configure is the same except for TIMER1_IRQn?

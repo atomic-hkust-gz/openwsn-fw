@@ -78,6 +78,6 @@ uint16_t DoA_algorithm(ant_mean_t ant_mean);
 //=========================== public ==========================================
 sample_array_float_t ant_IQ_norm(sample_array_int_t sample_array_int);
 sample_array_float_t compensate_phase(sample_array_float_t sample_array_float, float angle_change_us);
-uint16_t cal_angle(sample_array_int_t sample_array_int);
+uint16_t cal_angle(sample_array_int_t sample_array_int, Complex*, Complex*);
 
 #endif

@@ -18,6 +18,7 @@
 //=========================== prototypes ======================================
 
 void clocks_start(void);
+void clocks_stop(void);
 
 //=========================== main ============================================
 
@@ -31,7 +32,7 @@ int main(void) {
 
 void board_init(void) {
 
-    clocks_start();
+    //clocks_start();
 
     // initialize bsp modules
     debugpins_init();
@@ -59,4 +60,12 @@ void clocks_start( void ){
     NRF_CLOCK_NS->EVENTS_HFCLKSTARTED = 0;
     NRF_CLOCK_NS->TASKS_HFCLKSTART = 1;
     while (NRF_CLOCK_NS->EVENTS_HFCLKSTARTED == 0);
+}
+
+void clocks_stop( void ){
+
+    // Stop HFCLK and wait for it to stop.
+    NRF_CLOCK_NS->EVENTS_HFCLKSTARTED = 0;
+    NRF_CLOCK_NS->TASKS_HFCLKSTOP = 1;
+    while (NRF_CLOCK_NS->EVENTS_HFCLKSTARTED == 1);
 }

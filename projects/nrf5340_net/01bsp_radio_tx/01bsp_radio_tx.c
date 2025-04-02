@@ -67,7 +67,7 @@ int mote_main(void) {
     board_init();
 
     // add radio callback functions
-    sctimer_set_callback(cb_scTimerCompare);
+    sctimer_set_callback(0, cb_scTimerCompare);
     radio_setStartFrameCb(cb_startFrame);
     radio_setEndFrameCb(cb_endFrame);
 
@@ -77,14 +77,15 @@ int mote_main(void) {
     radio_setFrequency(CHANNEL, FREQ_TX);
 
 #if ENABLE_DF == 1
-    radio_configure_direction_finding_manual();
+    antenna_CHW_tx_switch_init();
+    radio_configure_direction_finding_manual_AoD();
 #endif
 
     radio_rfOff();
 
     // start periodic overflow
-    sctimer_setCompare(sctimer_readCounter()+ TIMER_PERIOD);
-    sctimer_enable();
+    sctimer_setCompare(0, sctimer_readCounter()+ TIMER_PERIOD);
+    //sctimer_enable();
 
     //radio_txEnable();
 
@@ -124,7 +125,7 @@ void cb_scTimerCompare(void) {
     // ready to send next packet
     app_vars.txpk_txNow = 1;
     // schedule again
-    sctimer_setCompare(sctimer_readCounter()+ TIMER_PERIOD);
+    sctimer_setCompare(0, sctimer_readCounter()+ TIMER_PERIOD);
 }
 
 void cb_startFrame(PORT_TIMER_WIDTH timestamp) {

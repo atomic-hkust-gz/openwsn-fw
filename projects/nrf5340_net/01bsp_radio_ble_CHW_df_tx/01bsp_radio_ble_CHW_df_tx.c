@@ -33,7 +33,7 @@ This program is edited from 01bsp_radio_ble_rx. This program implement a ble tx 
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
 #define CHANNEL         0                   ///< 0~39
-#define TIMER_PERIOD    (32768/200)*100      // 5ms@ (32768/200)     ///< 0xffff = 2s@32kHz
+#define TIMER_PERIOD    (32768/200)*10      // 5ms@ (32768/200)     ///< 0xffff = 2s@32kHz
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
@@ -47,6 +47,10 @@ uint16_t length = 0;
 const static uint8_t ble_device_addr[6] = { 
     0xaa, 0xbb, 0xcc, 0xcc, 0xbb, 0xaa
 };
+
+//const static uint8_t ble_device_addr[6] = { 
+//    0x00, 0x02, 0x72, 0x32, 0x80, 0xc6
+//};
 
 // get from https://openuuid.net/signin/:  a24e7112-a03f-4623-bb56-ae67bd653c73
 const static uint8_t ble_uuid[16]       = {
