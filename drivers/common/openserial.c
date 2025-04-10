@@ -109,9 +109,9 @@ void openserial_init(void) {
             openserial_debugPrint_timer_cb
     );
 
-    // UART
-    uart_setCallbacks(isr_openserial_tx, isr_openserial_rx);
-    uart_enableInterrupts();
+    // UART ## temp ban for crazyflie syslink ##
+    //uart_setCallbacks(isr_openserial_tx, isr_openserial_rx);
+    //uart_enableInterrupts();
 }
 
 //===== transmitting
@@ -464,11 +464,12 @@ void openserial_flush(void) {
             // send CTS
 #if BOARD_FASTSIM_ENABLED
 #else
-            if (openserial_vars.fInhibited == TRUE) {
-                uart_setCTS(FALSE);
-            } else {
-                uart_setCTS(TRUE);
-            }
+            // ## temp ban for crazyflie syslink ##
+            //if (openserial_vars.fInhibited == TRUE) {
+            //    uart_setCTS(FALSE);
+            //} else {
+            //    uart_setCTS(TRUE);
+            //}
 #endif
             openserial_vars.ctsStateChanged = FALSE;
         } else {
@@ -486,7 +487,8 @@ void openserial_flush(void) {
                         &openserial_vars.outputBufIdxW
                     );
 #else
-                    uart_writeByte(openserial_vars.outputBuf[OUTPUT_BUFFER_MASK & (openserial_vars.outputBufIdxR++)]);
+                    // ## temp ban for crazyflie syslink ##
+                    //uart_writeByte(openserial_vars.outputBuf[OUTPUT_BUFFER_MASK & (openserial_vars.outputBufIdxR++)]);
                     openserial_vars.fBusyFlushing = TRUE;
 #endif
                 }
@@ -772,13 +774,13 @@ void task_printWrongCRCInput(void) {
 void isr_openserial_tx(void) {
     if (openserial_vars.ctsStateChanged == TRUE) {
         // set CTS
-
-        if (openserial_vars.fInhibited == TRUE) {
-            uart_setCTS(FALSE);
-            openserial_vars.fBusyFlushing = FALSE;
-        } else {
-            uart_setCTS(TRUE);
-        }
+        // ## temp ban for crazyflie syslink ##
+        //if (openserial_vars.fInhibited == TRUE) {
+        //    uart_setCTS(FALSE);
+        //    openserial_vars.fBusyFlushing = FALSE;
+        //} else {
+        //    uart_setCTS(TRUE);
+        //}
         openserial_vars.ctsStateChanged = FALSE;
     } else if (openserial_vars.fInhibited == TRUE) {
         // currently inhibited
@@ -790,7 +792,8 @@ void isr_openserial_tx(void) {
         if (openserial_vars.outputBufIdxW != openserial_vars.outputBufIdxR) {
             // I have some bytes to transmit
 
-            uart_writeByte(openserial_vars.outputBuf[OUTPUT_BUFFER_MASK & (openserial_vars.outputBufIdxR++)]);
+            // ## temp ban for crazyflie syslink ##
+            // uart_writeByte(openserial_vars.outputBuf[OUTPUT_BUFFER_MASK & (openserial_vars.outputBufIdxR++)]);
             openserial_vars.fBusyFlushing = TRUE;
         } else {
             // I'm done sending bytes
@@ -812,8 +815,8 @@ uint8_t isr_openserial_rx(void) {
 
     returnVal = 0;
 
-    // read byte just received
-    rxbyte = uart_readByte();
+    // read byte just received ## temp ban for crazyflie syslink ##
+    // rxbyte = uart_readByte();
 
     if (
             openserial_vars.hdlcBusyReceiving == FALSE &&
