@@ -66,7 +66,8 @@ int mote_main(void) {uint8_t i;
    }
    
    // reset the board, so the program starts running again
-   board_reset();
+   //board_reset();
+   board_sleep();
    
    return 0;
 }

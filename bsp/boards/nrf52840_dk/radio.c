@@ -57,7 +57,10 @@ typedef struct {
     radio_capture_cbt   startFrame_cb;
     radio_capture_cbt   endFrame_cb;
     radio_state_t       state; 
+    //This payload length will effect ble rx
+    //Not sure change this setting will effect 15.4 communication or not.
     uint8_t             payload[1+MAX_PACKET_SIZE] __attribute__ ((aligned));
+    //uint8_t             payload[MAX_PACKET_SIZE] __attribute__ ((aligned));
     bool                hfc_started;
 //  volatile bool event_ready;
 } radio_vars_t;

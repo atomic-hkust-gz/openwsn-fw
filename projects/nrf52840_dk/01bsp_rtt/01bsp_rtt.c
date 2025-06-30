@@ -23,8 +23,8 @@
 //#define TIMER_PERIOD          (0xffff>>4)    ///< 0xffff = 2s@32kHz
 #define TIMER_PERIOD          48    /// 1ms 0x20 = 32
 
-#define SENDER_ID_LAST_BYTE   0x7f            //board id ---226
-#define RECEIVER_ID_LAST_BYTE 0x7a            //board id ---553
+#define SENDER_ID_LAST_BYTE   0xac            //board id ---014
+#define RECEIVER_ID_LAST_BYTE 0x61            //board id ---732
 //#define RECEIVER_ID_LAST_BYTE 0x01            //board id ---376
 //#define RECEIVER_ID_LAST_BYTE 0x9e            //board id ---265
 
@@ -245,7 +245,7 @@ int sender_main(void){
                                             );
 
                         tmp = app_vars.t2 - app_vars.t1;
-                        app_vars.diff[app_vars.diff_index++&NUM_SAMPLE_MASK] = tmp;
+                        //app_vars.diff[app_vars.diff_index++&NUM_SAMPLE_MASK] = tmp;
 
                         uint8_t i = 0;
 

@@ -171,7 +171,7 @@
  *
  * Application that creates UDP traffic and injects it in the network.
  *
- * Requires: OPENWSN_UDP_C
+ * Requires: OPEOPENWSN_UINJECT_CNWSN_UDP_C
  *
  */
 #ifndef OPENWSN_UINJECT_C
