@@ -11,7 +11,7 @@
 #include "debugpins.h"
 #include "leds.h"
 #include "radio_df.h"
-
+#include "timer.h"
 //=========================== defines =========================================
 
 #define RADIO_POWER_POWER_POS       0
@@ -589,6 +589,7 @@ kick_scheduler_t    radio_isr(void){
     uint32_t time_stampe;
 
     time_stampe = NRF_RTC0->COUNTER;
+    timer_capture_now(0);
 
     // start of frame (payload)
     if (NRF_RADIO->EVENTS_ADDRESS){

@@ -1,17 +1,3 @@
-/**
-\brief This program shows the use of the "radio" bsp module.
-
-Since the bsp modules for different platforms have the same declaration, you
-can use this project with any platform.
-
-The board running this program will send a packet on channel CHANNEL every
-TIMER_PERIOD ticks. The packet contains LENGTH_PACKET bytes. The first byte
-is the packet number, which increments for each transmitted packet. The
-remainder of the packet contains an incrementing bytes.
-
-\author Thomas Watteyne <watteyne@eecs.berkeley.edu>, August 2014.
-*/
-
 #include "stdint.h"
 #include "string.h"
 #include "board.h"
@@ -33,7 +19,7 @@ remainder of the packet contains an incrementing bytes.
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 //#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
-#define LEN_UART_BUFFER ((NUM_SAMPLES*4)*2+7)
+#define LEN_UART_BUFFER (7)
 #define LENGTH_SERIAL_FRAME  127            // length of the serial frame
 
 #define ENABLE_DF       1
@@ -81,8 +67,6 @@ typedef struct {
                 bool            rxpk_crc;
                 uint16_t        num_samples;
 
-                uint8_t         prob;
-
                 uint32_t        tx1_sample_buffer[NUM_SAMPLES];
                 uint32_t        tx2_sample_buffer[NUM_SAMPLES];
                 
@@ -105,7 +89,8 @@ typedef struct {
                 uint32_t        tx2_done_timestamp;
 
                 uint32_t        time_interval;
-
+                uint32_t        last_rx_sof_timestamp;
+                uint32_t        rx_sof_timestamp;
 
                 uint8_t         uart_txFrame[LENGTH_SERIAL_FRAME];
 } app_vars_t;
@@ -134,8 +119,6 @@ int mote_main(void) {
     
     uint8_t current_time;
     uint8_t antenna_id;
-
-    app_vars.prob = 1;
 
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
@@ -178,62 +161,33 @@ int mote_main(void) {
         // wait for timer to elapse
         app_vars.rxpk_done = 0;
         while (app_vars.rxpk_done==0) {
-            continue;
+            board_sleep();
         }
 
         leds_error_toggle();
         if (app_vars.rxpk_crc && ENABLE_DF) {
             
-            if (app_vars.tx1_done && app_vars.tx2_done) {
-                if (app_vars.tx1_packet_sqn == app_vars.tx2_packet_sqn) {
+            //for (i=0;i<app_vars.num_samples;i++) {
+            //    app_vars.uart_buffer_to_send[4*i+0] = (app_vars.tx1_sample_buffer[i] >>24) & 0x000000ff;
+            //    app_vars.uart_buffer_to_send[4*i+1] = (app_vars.tx1_sample_buffer[i] >>16) & 0x000000ff;
+            //    app_vars.uart_buffer_to_send[4*i+2] = (app_vars.tx1_sample_buffer[i] >> 8) & 0x000000ff;
+            //    app_vars.uart_buffer_to_send[4*i+3] = (app_vars.tx1_sample_buffer[i] >> 0) & 0x000000ff;
+            //}
+            app_vars.uart_buffer_to_send[0] = (app_vars.tx1_sample_buffer[0] >>24) & 0x000000ff;
+            app_vars.uart_buffer_to_send[1] = (app_vars.tx1_sample_buffer[0] >>16) & 0x000000ff;
+            app_vars.uart_buffer_to_send[2] = (app_vars.tx1_sample_buffer[0] >> 8) & 0x000000ff;
+            app_vars.uart_buffer_to_send[3] = (app_vars.tx1_sample_buffer[0] >> 0) & 0x000000ff;
 
-                    for (i=0;i<app_vars.num_samples;i++) {
-                        app_vars.uart_buffer_to_send[4*i+0] = (app_vars.tx1_sample_buffer[i] >>24) & 0x000000ff;
-                        app_vars.uart_buffer_to_send[4*i+1] = (app_vars.tx1_sample_buffer[i] >>16) & 0x000000ff;
-                        app_vars.uart_buffer_to_send[4*i+2] = (app_vars.tx1_sample_buffer[i] >> 8) & 0x000000ff;
-                        app_vars.uart_buffer_to_send[4*i+3] = (app_vars.tx1_sample_buffer[i] >> 0) & 0x000000ff;
-                    }
+            app_vars.time_interval = app_vars.rx_sof_timestamp - app_vars.last_rx_sof_timestamp;
+            
+            app_vars.uart_buffer_to_send[4]     = 0xff;
+            app_vars.uart_buffer_to_send[5]     = 0xff;
+            app_vars.uart_buffer_to_send[6]     = 0xff;
 
-                    for (i=0;i<app_vars.num_samples;i++) {
-                        app_vars.uart_buffer_to_send[4*i+0 + 352] = (app_vars.tx2_sample_buffer[i] >>24) & 0x000000ff;
-                        app_vars.uart_buffer_to_send[4*i+1 + 352] = (app_vars.tx2_sample_buffer[i] >>16) & 0x000000ff;
-                        app_vars.uart_buffer_to_send[4*i+2 + 352] = (app_vars.tx2_sample_buffer[i] >> 8) & 0x000000ff;
-                        app_vars.uart_buffer_to_send[4*i+3 + 352] = (app_vars.tx2_sample_buffer[i] >> 0) & 0x000000ff;
-                    }
-                    
-                    app_vars.time_interval = app_vars.tx2_done_timestamp - app_vars.tx1_done_timestamp;
-
-                    app_vars.uart_buffer_to_send[704] = (app_vars.time_interval >> 24) & 0x000000ff;
-                    app_vars.uart_buffer_to_send[705] = (app_vars.time_interval >> 16) & 0x000000ff;
-                    app_vars.uart_buffer_to_send[706] = (app_vars.time_interval >>  8) & 0x000000ff;
-                    app_vars.uart_buffer_to_send[707] = (app_vars.time_interval >>  0) & 0x000000ff;
-
-                    //app_vars.uart_buffer_to_send[708] = app_vars.tx1_packet_sqn;
-                    //app_vars.uart_buffer_to_send[709] = app_vars.tx2_packet_sqn;
-
-                    app_vars.uart_buffer_to_send[708]     = 0xff;
-                    app_vars.uart_buffer_to_send[709]     = 0xff; 
-                    app_vars.uart_buffer_to_send[710]     = 0xff;
-
-                    app_vars.uart_lastTxByteIndex = 0;
-                    
-                    leds_debug_toggle();
-                    uart_writeByte(app_vars.uart_buffer_to_send[0]);
-
-                    app_vars.tx1_done = 0;
-                    app_vars.tx1_packet_sqn = 0;
-                    app_vars.tx2_done = 0;
-                    app_vars.tx2_packet_sqn = 0;
-                } 
-                app_vars.tx1_done = 0;
-                app_vars.tx1_packet_sqn = 0;
-                app_vars.tx2_done = 0;
-                app_vars.tx2_packet_sqn = 0;
-
-            }
-
-           
-
+            app_vars.uart_lastTxByteIndex = 0;
+            
+            leds_debug_toggle();
+            uart_writeByte(app_vars.uart_buffer_to_send[0]);
         }
 
     }
@@ -251,14 +205,16 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
     //leds_sync_on();
     // update debug stats
     app_dbg.num_startFrame++;
+
+    app_vars.last_rx_sof_timestamp = app_vars.rx_sof_timestamp;
+    app_vars.rx_sof_timestamp = timer_getCapturedValue(0);
 }
 
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     bool     expectedFrame;
     uint8_t  i;
     uint32_t  rx_done_timestamp;
-    timer_capture_now(0);
-    rx_done_timestamp = timer_getCapturedValue(0);
+
     // set flag
     //app_vars.flags |= APP_FLAG_END_FRAME;
 
@@ -292,24 +248,8 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     }
     
     if (expectedFrame){
-
-        if (app_vars.rxpk_buf[34] == 1) {
-            app_vars.tx1_done = 1;
-            app_vars.tx1_done_timestamp = rx_done_timestamp;
-            app_vars.tx1_packet_sqn = app_vars.rxpk_buf[33];
-            app_vars.num_samples = radio_get_df_samples(app_vars.tx1_sample_buffer,NUM_SAMPLES);
-        }
-
-        if (app_vars.rxpk_buf[34] == 2) {
-            app_vars.tx2_done = 1;
-            app_vars.tx2_done_timestamp = rx_done_timestamp;
-            app_vars.tx2_packet_sqn = app_vars.rxpk_buf[33];
-            app_vars.num_samples = radio_get_df_samples(app_vars.tx2_sample_buffer,NUM_SAMPLES);
-
-            app_vars.rxpk_done = 1;
-        }
-
-        //app_vars.rxpk_done = 1;
+        app_vars.num_samples = radio_get_df_samples(app_vars.tx1_sample_buffer,NUM_SAMPLES);
+        app_vars.rxpk_done = 1;
     }
     //leds_debug_toggle();
 
