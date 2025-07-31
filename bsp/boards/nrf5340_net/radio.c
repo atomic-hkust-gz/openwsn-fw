@@ -11,6 +11,7 @@
 #include "debugpins.h"
 #include "leds.h"
 #include "radio_df.h"
+#include "timer.h"
 
 //=========================== defines =========================================
 
@@ -42,7 +43,7 @@
 #define RADIO_TXPOWER             0 // in 2-compilant format
 
 // the maxmium should be ((1<<14)-1), but need larger .bss size
-#define MAX_IQSAMPLES            0x58 //used to be ((1<<8)-1) 0x140 == 320 0x440 = 1088 0x240 = 576   1us=0x48    //0x58 in Plast 0x5c for scum
+#define MAX_IQSAMPLES            0x58  //used to be ((1<<8)-1) 0x140 == 320 0x440 = 1088 0x240 = 576   1us=0x48    //0x58 in Plast 0x5c for scum
 
 //=========================== variables =======================================
 
@@ -592,6 +593,7 @@ kick_scheduler_t    radio_isr(void){
     uint32_t time_stampe;
 
     time_stampe = NRF_RTC0_NS->COUNTER;
+    //timer_capture_now(NRF_TIMER0_NS,0);
 
     // start of frame (payload)
     if (NRF_RADIO_NS->EVENTS_ADDRESS){

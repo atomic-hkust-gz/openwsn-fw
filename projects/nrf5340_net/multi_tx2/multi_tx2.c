@@ -31,18 +31,18 @@ when send the packet in one slot.
 #define ENABLE_DF       1
 
 const static uint8_t ble_device_addr[6] = { 
-    0xaa, 0xbb, 0xcc, 0xcc, 0xbb, 0xaa
+   0xaa, 0xbb, 0xcc, 0xcc, 0xbb, 0xaa
 };
 
 // get from https://openuuid.net/signin/:  a24e7112-a03f-4623-bb56-ae67bd653c73
 const static uint8_t ble_uuid[16]       = {
-    0xa2, 0x4e, 0x71, 0x12, 0xa0, 0x3f, 
-    0x46, 0x23, 0xbb, 0x56, 0xae, 0x67,
-    0xbd, 0x65, 0x3c, 0x73
+   0xa2, 0x4e, 0x71, 0x12, 0xa0, 0x3f, 
+   0x46, 0x23, 0xbb, 0x56, 0xae, 0x67,
+   0xbd, 0x65, 0x3c, 0x73
 };
 
 #define SEND_DURATION     (16000000/200)*100        //5ms@ (16000000/200)
-#define SEND_OFFSET       (16000000/5000)*1        //200us @ (16000000/5000)
+#define SEND_OFFSET       (16000000/5000)*0.3        //200us @ (16000000/5000)
 
 //define debug GPIO
 #define DEBUG_PORT           1
@@ -51,38 +51,42 @@ const static uint8_t ble_uuid[16]       = {
 
 //=========================== variables =======================================
 typedef enum {
-    APP_STATE_TX         = 0x01,
-    APP_STATE_RX         = 0x02,
-    APP_STATE_OFF        = 0x04,
+   APP_STATE_TX         = 0x01,
+   APP_STATE_RX         = 0x02,
+   APP_STATE_OFF        = 0x04,
 } app_state_t;
 
 typedef struct {
-    uint8_t              num_startFrame;
-    uint8_t              num_endFrame;
-    uint8_t              num_timer;
-    uint8_t              num_slot;
+   uint8_t              num_startFrame;
+   uint8_t              num_endFrame;
+   uint8_t              num_timer;
+   uint8_t              num_slot;
 } app_dbg_t;
 
 app_dbg_t app_dbg;
 
 typedef struct {
 
-                uint8_t         slot_timerId;
-                uint8_t         inner_timerId;
-                app_state_t     state;
+               uint8_t         slot_timerId;
+               uint8_t         inner_timerId;
+               app_state_t     state;
 
-                uint8_t         slot_offset;
-                uint8_t         pkt_sqn;
-                uint32_t        time_slotStartAt;
+               uint8_t         slot_offset;
+               uint8_t         pkt_sqn;
+               uint32_t        time_slotStartAt;
 
-                uint8_t         packet[LENGTH_PACKET];
-                uint8_t         packet_len;
-                int8_t          rxpk_rssi;
-                uint8_t         rxpk_lqi;
-                bool            rxpk_crc;
+               uint8_t         packet[LENGTH_PACKET];
+               uint8_t         packet_len;
+               int8_t          rxpk_rssi;
+               uint8_t         rxpk_lqi;
+               bool            rxpk_crc;
 
-                uint8_t         rx_doneAt;
-                uint8_t         tx_now;
+               uint8_t         rx_doneAt;
+               uint8_t         tx_now;
+
+               uint32_t       start_timestamp;
+               uint32_t       end_timestamp;
+               uint32_t       time_interval;
 
 } app_vars_t;
 
@@ -114,11 +118,11 @@ int mote_main(void) {
     // turn radio off
     radio_rfOff();
     app_vars.state = APP_STATE_OFF;
-    
-#if ENABLE_DF == 1
+
+    #if ENABLE_DF == 1
     antenna_CHW_tx_switch_init();
     radio_configure_direction_finding_manual_AoD();
-#endif
+    #endif
 
     // add callback functions radio
     radio_setStartFrameCb(cb_startFrame);
@@ -148,19 +152,18 @@ int mote_main(void) {
             board_sleep();
         }
 
-        app_vars.pkt_sqn = app_vars.packet[33];
+        timer_capture_now(NRF_TIMER0_NS, 0);
+        app_vars.start_timestamp = timer_getCapturedValue(NRF_TIMER0_NS, 0);
 
-        app_vars.packet_len = sizeof(app_vars.packet);
-
-        assemble_ibeacon_packet(app_vars.pkt_sqn);
-        radio_loadPacket(app_vars.packet, LENGTH_PACKET);
         radio_txEnable();
         app_vars.state = APP_STATE_TX;
 
         radio_txNow();
+        //continue;
     }
+     
 }
-  
+ 
 
 //=========================== private =========================================
 
@@ -204,12 +207,12 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     uint32_t endframe_timestamp;
-    
+ 
     app_dbg.num_endFrame++;
     timer_capture_now(NRF_TIMER0_NS, 0);
     endframe_timestamp = timer_getCapturedValue(NRF_TIMER0_NS, 0);
     app_vars.time_slotStartAt = endframe_timestamp + SEND_OFFSET;
-    
+
     app_vars.packet_len = sizeof(app_vars.packet);
 
     radio_getReceivedFrame(
@@ -220,10 +223,23 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         &app_vars.rxpk_lqi,
         &app_vars.rxpk_crc
     );
-    
+
     if (app_vars.state == APP_STATE_RX) {
         leds_error_toggle();
-        timer_schedule(NRF_TIMER0_NS, 0, app_vars.time_slotStartAt);
+        //timer_schedule(NRF_TIMER0_NS, 0, app_vars.time_slotStartAt);
+
+        //timer_capture_now(NRF_TIMER0_NS, 0);
+        //app_vars.start_timestamp = timer_getCapturedValue(NRF_TIMER0_NS, 0);
+
+        app_vars.pkt_sqn = app_vars.packet[33];
+        assemble_ibeacon_packet(app_vars.pkt_sqn);
+        radio_loadPacket(app_vars.packet, LENGTH_PACKET);
+        app_vars.tx_now = 1;
+
+        //timer_capture_now(NRF_TIMER0_NS, 0);
+        //app_vars.end_timestamp = timer_getCapturedValue(NRF_TIMER0_NS, 0);
+        //app_vars.time_interval = app_vars.end_timestamp - app_vars.start_timestamp;
+
     }
 
     if (app_vars.state == APP_STATE_TX) {
@@ -235,11 +251,11 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_timer(void) {
-    app_dbg.num_timer++;
-    leds_debug_toggle();
+   app_dbg.num_timer++;
+   leds_debug_toggle();
+   radio_txEnable();
+   app_vars.state = APP_STATE_TX;
 
-    app_vars.tx_now = 1;
+   radio_txNow();
+   //app_vars.tx_now = 1;
 }
-
-
-

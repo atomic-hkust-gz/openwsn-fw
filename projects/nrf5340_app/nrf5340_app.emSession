@@ -38,9 +38,9 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="6" useTextEdit="1" path="00std_leds/00std_leds.c" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="916" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/projects/nrf5340_app/00std_leds/00std_leds.c" path="../../bsp/boards/nrf5340_app/sdk/cmsis_gcc.h" left="0" top="850" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="77" y="476" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/projects/nrf5340_app/00std_leds/00std_leds.c" path="../../bsp/boards/nrf5340_app/sdk/nrf5340_application.h" left="0" selected="1" top="455" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="6" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="00std_leds/00std_leds.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="916" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/projects/nrf5340_app/00std_leds/00std_leds.c" useBinaryEdit="0" left="0" path="../../bsp/boards/nrf5340_app/sdk/cmsis_gcc.h" selected="0" top="850" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="24" y="473" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf5340/openwsn-fw/projects/nrf5340_app/00std_leds/00std_leds.c" useBinaryEdit="0" left="0" path="../../bsp/boards/nrf5340_app/sdk/nrf5340_application.h" selected="1" top="449" codecName="Default"/>
  </Files>
- <EMStudioWindow activeProject="00std_leds" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="00std_leds" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>

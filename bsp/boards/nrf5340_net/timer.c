@@ -147,6 +147,8 @@ void TIMER0_IRQHandler(void) {
         if (NRF_TIMER0_NS->EVENTS_COMPARE[i]) {
         
             NRF_TIMER0_NS->EVENTS_COMPARE[i] = 0;
+            NRF_P1_NS->OUTSET = 1 << 10;
+            NRF_P1_NS->OUTCLR = 1 << 10;
             if (timer0_vars.cb[i]!=NULL) {
                 timer0_vars.cb[i]();
             }
