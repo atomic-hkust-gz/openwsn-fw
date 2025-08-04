@@ -238,13 +238,11 @@ int8_t DoA_algorithm(ant_mean_t ant_mean, Complex* steer_vector_array1, Complex*
     received_signal[1] = complex_exponential(ant1_theta);
     received_signal[2] = complex_exponential(ant2_theta);
 
-    // 角度列表
     double angle_list[ANGLE_RANGE];
     for (int i = -90; i < 90; i++) {
-        angle_list[i + 90] = i; // 将角度范围从 -90 到 90 转换为 0 到 179
+        angle_list[i + 90] = i; 
     }
 
-    // 存储 y_alpha_values
     double y_alpha_list[ANGLE_RANGE];
     for (int i = 0; i < ANGLE_RANGE; i++) {
         double alpha = angle_list[i];
@@ -255,9 +253,6 @@ int8_t DoA_algorithm(ant_mean_t ant_mean, Complex* steer_vector_array1, Complex*
 
         //steer_vector[1] = complex_exponential(-2*PI*FREQUENCY*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT);
         //steer_vector[2] = complex_exponential(-2*PI*FREQUENCY*2*ANT_INTERVAL*sin(alpha)/SPEED_OF_LIGHT);
-
-
-        //没必要每个循环都计算steer vector， 可以打表
 
 
         steer_vector[1] = steer_vector_array1[i];
@@ -271,10 +266,9 @@ int8_t DoA_algorithm(ant_mean_t ant_mean, Complex* steer_vector_array1, Complex*
         Complex add1 = complex_add(part1, part2);
         Complex add_total = complex_add(add1, part3);
 
-        y_alpha_list[i] = add_total.real;
+        y_alpha_list[i] = (add_total.real*add_total.real) + (add_total.imag*add_total.imag);
     }
 
-    // 找到 y_alpha_list 中的最大值的索引
     double max_value = y_alpha_list[0];
     int8_t best_angle_index = 0;
     for (int i = 1; i < ANGLE_RANGE; i++) {

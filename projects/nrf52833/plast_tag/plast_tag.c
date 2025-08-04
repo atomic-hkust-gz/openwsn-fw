@@ -114,6 +114,7 @@ typedef struct {
 
                 uint8_t         current_time;
                 bool            flag;
+                bool            need_reset;
 
 } app_vars_t;
 
@@ -155,14 +156,14 @@ int mote_main(void) {
     Complex steer_vector_array2[180];
     
     memcpy(steer_vector_array1, update_steering_vector1(steer_vector_array1), 180);
-    memcpy(steer_vector_array1, update_steering_vector1(steer_vector_array1), 180);
+    memcpy(steer_vector_array2, update_steering_vector2(steer_vector_array2), 180);
 
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
     app_vars.got_sample = FALSE;
     //set slot offset to any value untill sync
     app_vars.slot_offset = 10;
-    app_vars.node_id = 1;
+    app_vars.node_id = 2;         //    #559=1    #870=2
     
     sample_array_int_t sample_array_int;
     // initialize board
@@ -186,7 +187,8 @@ int mote_main(void) {
     app_vars.slot_timerId = 0;
     app_vars.inner_rxtimerId = 1;
     app_vars.inner_txtimerId = 2;
-        
+    
+    app_vars.need_reset = FALSE;
     //initial debugs GPIO
     //nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_SLOT_PIN);
     //nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_RADIO_PIN);
@@ -391,6 +393,8 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
                 }
             break;
             case 1: //1 represent this packet is a DF packet
+                app_vars.time_slotStartAt = app_vars.capture_time + SLOT_DURATION - SENDING_OFFSET;
+                sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
                 if (app_vars.node_id == app_vars.rxpk_packet[34]) {
                     app_vars.num_samples = radio_get_df_samples(app_vars.sample_buffer,NUM_SAMPLES);
                     app_vars.got_sample = TRUE;
@@ -441,24 +445,34 @@ void cb_slot_timer(void) {
    
         // set when to turn on the radio
         //clocks_start();
+        if (app_vars.isSynced) {
+            prob_function(3,10);
 
-        prob_function(5,10);
+            if (app_vars.flag) {
+                //board_reset();
+                //if flag== true, in this frame, the tag will send a sync packet to extend the system coverage
+                sctimer_setCompare(app_vars.inner_txtimerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET);
 
-        if (app_vars.flag) {
-            //if flag== true, in this frame, the tag will send a sync packet to extend the system coverage
-            sctimer_setCompare(app_vars.inner_txtimerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET);
+                app_vars.packet_len = sizeof(app_vars.packet);
+                assemble_ibeacon_packet();
 
-            app_vars.packet_len = sizeof(app_vars.packet);
-            assemble_ibeacon_packet();
+                radio_setFrequency(CHANNEL, FREQ_RX);
+                radio_loadPacket(app_vars.packet,LENGTH_PACKET);
 
+                app_vars.isSynced = FALSE;
+
+            } else {    // flag == false, in this frame, the tag will listen for a sync packet to re-sync itself
+                sctimer_setCompare(app_vars.inner_rxtimerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET-TURNON_OFFSET);
+        
+            }
+            //clocks_stop();
+        } else {
+            radio_rfOn();
+            app_vars.state = APP_STATE_RX;
             radio_setFrequency(CHANNEL, FREQ_RX);
-            radio_loadPacket(app_vars.packet,LENGTH_PACKET);
-        } else {    // flag == false, in this frame, the tag will listen for a sync packet to re-sync itself
-            sctimer_setCompare(app_vars.inner_rxtimerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET-TURNON_OFFSET);
-        
+            radio_rxEnable();
+            radio_rxNow();
         }
-        //clocks_stop();
-        
     break;
     case 1:
         sctimer_setCompare(app_vars.inner_rxtimerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET-TURNON_OFFSET);
@@ -473,6 +487,7 @@ void cb_slot_timer(void) {
           radio_loadPacket(app_vars.packet,LENGTH_PACKET);
         }
         app_vars.need_broadcast = FALSE;
+
     break;
     default:
         //if not correct slot, turn off the radio and sleep
