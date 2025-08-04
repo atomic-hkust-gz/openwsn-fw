@@ -23,12 +23,15 @@ when send the packet in one slot.
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
 #define CHANNEL         0              ///< 0~39
+#define BEACON_CHANNEL  20
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
-#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
+#define LEN_UART_BUFFER 5// ((NUM_SAMPLES*4)+8)
 #define LENGTH_SERIAL_FRAME  127              // length of the serial frame
 
 #define ENABLE_DF       1
+
+#define UART_LENGTH     5
 
 const static uint8_t ble_device_addr[6] = { 
     0xaa, 0xbb, 0xcc, 0xcc, 0xbb, 0xaa
@@ -90,6 +93,11 @@ typedef struct {
                 bool            rxpk_crc;
                 uint16_t        num_samples;
                 uint32_t        sample_buffer[NUM_SAMPLES];
+                
+                uint8_t         uart_buffer_to_send[UART_LENGTH];
+                uint16_t        uart_lastTxByteIndex;
+     volatile   uint8_t         uartDone;
+                int8_t          estimate_angle;
 
                 uint8_t         antenna_array_id;
                 uint32_t        capture_time;
@@ -105,6 +113,9 @@ void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
 void     cb_slot_timer(void);
 void     cb_inner_slot_rxtimer(void);
 void     cb_inner_slot_txtimer(void);
+
+void     cb_uartTxDone(void);
+uint8_t  cb_uartRxCb(void);
 
 void     assemble_ibeacon_packet(uint8_t);
 void nrf_gpio_cfg_output(uint8_t port_number, uint32_t pin_number);
@@ -129,6 +140,9 @@ int mote_main(void) {
     //set antenna array id
     app_vars.antenna_array_id = 1;
     app_vars.target_tag_id = 1;
+    
+    uart_setCallbacks(cb_uartTxDone,cb_uartRxCb);
+    uart_enableInterrupts();
 
 #if ENABLE_DF == 1
     antenna_CHW_tx_switch_init();
@@ -269,10 +283,25 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             break;
             case 2:
                 // 2 represent this packet is a broadcast packet pacekt
-
+                
                 // need to do
                 // read the position information
                 // send the information through serials
+
+                app_vars.estimate_angle = app_vars.rxpk_packet[34];
+                
+                uint8_t i;
+                i = 0;
+                app_vars.uart_buffer_to_send[i++] = app_vars.target_tag_id;
+                app_vars.uart_buffer_to_send[i++] = app_vars.estimate_angle;
+
+                app_vars.uart_buffer_to_send[i++] = 0xff;
+                app_vars.uart_buffer_to_send[i++] = 0xff;
+                app_vars.uart_buffer_to_send[i++] = 0xff;
+
+                app_vars.uart_lastTxByteIndex = 0;
+                uart_writeByte(app_vars.uart_buffer_to_send[0]);
+
             break;
             }
             return;   //legal packet and task done, end the EoF interrupt
@@ -317,6 +346,7 @@ void cb_slot_timer(void) {
       case 1:
      
           // set when to send packet out
+          radio_rfOff();
           sctimer_setCompare(app_vars.inner_txtimerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET);
           
           // prepare to send
@@ -335,7 +365,7 @@ void cb_slot_timer(void) {
           //turn on the radio for receiving the broadcast packet
           radio_rfOn();
           app_vars.state = APP_STATE_RX;
-          radio_setFrequency(CHANNEL, FREQ_RX);
+          radio_setFrequency(BEACON_CHANNEL, FREQ_RX);
           radio_rxEnable();
           radio_rxNow();
       break;
@@ -365,3 +395,24 @@ void cb_inner_slot_txtimer(void) {
     radio_txNow();
 }
 
+void cb_uartTxDone(void) {
+
+   app_vars.uart_lastTxByteIndex++;
+   if (app_vars.uart_lastTxByteIndex<LEN_UART_BUFFER) {
+      uart_writeByte(app_vars.uart_buffer_to_send[app_vars.uart_lastTxByteIndex]);
+   } else {
+      app_vars.uartDone = 1;
+   }
+}
+
+uint8_t cb_uartRxCb(void) {
+   uint8_t byte;
+   
+   // read received byte
+   byte = uart_readByte();
+   
+   // echo that byte over serial
+   uart_writeByte(byte);
+   
+   return 0;
+}
