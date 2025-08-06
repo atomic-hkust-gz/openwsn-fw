@@ -37,8 +37,6 @@ typedef struct {
 
 //=========================== prototypes ======================================
 
-void nrf_gpio_cfg_input(uint32_t pin_number);
-
 //=========================== public ==========================================
 
 void i2c_init(void) {
@@ -158,26 +156,3 @@ uint32_t i2c_write_bytes(uint8_t address, uint8_t* buffer, uint32_t length) {
 }
 
 //=========================== private =========================================
-
-void nrf_gpio_cfg_input(uint32_t pin_number) {
-
-    NRF_GPIO_Type* NRF_Px_port;
-    uint32_t       nrf_pin_number;
-
-    if (pin_number < 32) {
-
-        NRF_Px_port     = NRF_P0;
-        nrf_pin_number  = pin_number;
-    } else {
-
-        NRF_Px_port = NRF_P1;
-        nrf_pin_number  = pin_number & 0x1f;
-    }
-    
-    NRF_Px_port->PIN_CNF[nrf_pin_number]  = \
-            ((uint32_t)GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos)
-        | ((uint32_t)GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos)
-        | ((uint32_t)GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos)
-        | ((uint32_t)GPIO_PIN_CNF_DRIVE_S0D1 << GPIO_PIN_CNF_DRIVE_Pos)
-        | ((uint32_t)GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos);
-}

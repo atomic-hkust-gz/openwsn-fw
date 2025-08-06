@@ -67,7 +67,14 @@ void spi_init(void) {
 }
 
 // Blocking SPI transfer using EasyDMA
-void spi_transfer(uint8_t* tx_buf, uint8_t* rx_buf, uint32_t length) {
+void    spi_txrx(uint8_t*     bufTx,
+                 uint16_t     lenbufTx,
+                 spi_return_t returnType,
+                 uint8_t*     bufRx,
+                 uint16_t     maxLenBufRx,
+                 spi_first_t  isFirst,
+                 spi_last_t   isLast) {
+
     // Assert SS (active low)
     if (SPI_SS_PIN < 32) {
         NRF_P0->OUTCLR = (1UL << SPI_SS_PIN);
@@ -76,11 +83,11 @@ void spi_transfer(uint8_t* tx_buf, uint8_t* rx_buf, uint32_t length) {
     }
 
     // Set up DMA pointers
-    NRF_SPIM0->TXD.PTR    = (uint32_t)tx_buf;
-    NRF_SPIM0->TXD.MAXCNT = length;
+    NRF_SPIM0->TXD.PTR    = (uint32_t)bufTx;
+    NRF_SPIM0->TXD.MAXCNT = lenbufTx;
 
-    NRF_SPIM0->RXD.PTR    = (uint32_t)rx_buf;
-    NRF_SPIM0->RXD.MAXCNT = length;
+    NRF_SPIM0->RXD.PTR    = (uint32_t)bufRx;
+    NRF_SPIM0->RXD.MAXCNT = maxLenBufRx;
 
     // Clear previous events
     NRF_SPIM0->EVENTS_END = 0;
@@ -100,27 +107,3 @@ void spi_transfer(uint8_t* tx_buf, uint8_t* rx_buf, uint32_t length) {
 }
 
 //=========================== private =========================================
-
-void nrf_gpio_cfg_input(uint32_t pin_number) {
-    NRF_GPIO_Type* port = (pin_number < 32) ? NRF_P0 : NRF_P1;
-    uint32_t pin = pin_number & 0x1F;
-
-    port->PIN_CNF[pin] =
-          (GPIO_PIN_CNF_DIR_Input      << GPIO_PIN_CNF_DIR_Pos)
-        | (GPIO_PIN_CNF_INPUT_Connect  << GPIO_PIN_CNF_INPUT_Pos)
-        | (GPIO_PIN_CNF_PULL_Pullup    << GPIO_PIN_CNF_PULL_Pos)
-        | (GPIO_PIN_CNF_DRIVE_S0D1     << GPIO_PIN_CNF_DRIVE_Pos)
-        | (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos);
-}
-
-void nrf_gpio_cfg_output(uint32_t pin_number) {
-    NRF_GPIO_Type* port = (pin_number < 32) ? NRF_P0 : NRF_P1;
-    uint32_t pin = pin_number & 0x1F;
-
-    port->PIN_CNF[pin] =
-          (GPIO_PIN_CNF_DIR_Output     << GPIO_PIN_CNF_DIR_Pos)
-        | (GPIO_PIN_CNF_INPUT_Disconnect << GPIO_PIN_CNF_INPUT_Pos)
-        | (GPIO_PIN_CNF_DRIVE_S0S1     << GPIO_PIN_CNF_DRIVE_Pos)
-        | (GPIO_PIN_CNF_PULL_Disabled  << GPIO_PIN_CNF_PULL_Pos)
-        | (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos);
-}

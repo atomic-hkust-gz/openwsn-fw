@@ -12,37 +12,20 @@ run regardless of your radio, but might not return anything useful.
 
 #include "stdint.h"
 #include "board.h"
-#include "nrf52840.h"
 #include "spi.h"
 
 //=========================== defines =========================================
-#define LLCC68_RESET_PIN NRF_GPIO_PIN_MAP(0, 8)
-
-#define LLCC68_CMD_GET_STATUS  0xC0
 
 //=========================== variables =======================================
 
+typedef struct {
+   uint8_t    txBuf[3];
+   uint8_t    rxBuf[3];
+} app_vars_t;
+
+app_vars_t app_vars;
+
 //=========================== prototypes ======================================
-
-// Delay function (basic for-loop delay)
-void delay_ms(uint32_t ms) {
-    for (volatile uint32_t i = 0; i < (16000 * ms); i++) {
-        __NOP();
-    }
-}
-
-void llcc68_reset(void) {
-    // Configure RESET pin as output
-    nrf_gpio_cfg_output(LLCC68_RESET_PIN);
-
-    // Drive low to reset
-    NRF_P0->OUTCLR = (1UL << 10);
-    delay_ms(10);
-
-    // Drive high to end reset
-    NRF_P0->OUTSET = (1UL << 10);
-    delay_ms(10);
-}
 
 //=========================== main ============================================
 
@@ -50,24 +33,30 @@ void llcc68_reset(void) {
 \brief The program starts executing here.
 */
 int mote_main(void) {
-  uint8_t tx_buf[2];
-  uint8_t rx_buf[2];
-
- // memset(&app_vars,0,sizeof(app_vars));
    
-  // initialize 
-  board_init();
-  spi_init();
-  llcc68_reset();
+   memset(&app_vars,0,sizeof(app_vars));
+   
+   // initialize
+   
+   board_init();
 
-  // Send GET_STATUS command
-  tx_buf[0] = LLCC68_CMD_GET_STATUS;
-  tx_buf[1] = 0x00; // Dummy byte for reading response
-
-  rx_buf[0] = 0x00;
-  rx_buf[1] = 0x00;
-  spi_transfer(tx_buf, rx_buf, 2);
-  while (1) {
-    __WFE();
-    } 
+   // prepare buffer to send over SPI
+   app_vars.txBuf[0]     =  (0x80 | 0x1E);  // [b7]    Read/Write:    1    (read)
+                                            // [b6]    RAM/Register : 0    (register)
+                                            // [b5-0]  address:       0x1E (Manufacturer ID, Lower 16 Bit)
+   app_vars.txBuf[1]     =  0x00;           // send a SNOP strobe just to get the reg value
+   app_vars.txBuf[2]     =  0x00;           // send a SNOP strobe just to get the reg value
+   
+   // retrieve radio manufacturer ID over SPI
+   while(1) {
+      spi_txrx(
+         app_vars.txBuf,
+         sizeof(app_vars.txBuf),
+         SPI_BUFFER,
+         app_vars.rxBuf,
+         sizeof(app_vars.rxBuf),
+         SPI_FIRST,
+         SPI_LAST
+      );
+   }
 }

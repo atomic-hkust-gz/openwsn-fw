@@ -159,6 +159,9 @@ static const uint8_t infoRadioName[]        = "nRF52840 SoC";
 
 //=========================== prototypes ======================================
 
+void nrf_gpio_cfg_input(uint32_t pin_number);
+void nrf_gpio_cfg_output(uint32_t pin_number);
+
 //=========================== public ==========================================
 
 //=========================== private =========================================
