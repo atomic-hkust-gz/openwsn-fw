@@ -1,13 +1,12 @@
 /**
-\brief AT86RF215-specific library.
+\brief LLCC68-specific library.
 
-\author Jonathan Munoz <jonathan.munoz@inria.fr>, August 2016.
-\author Xavi Vilajosana <xvilajosana@eecs.berkeley.edu>, December 2017.
+\author Tengfei Chang <tengfeichang@hkust-gz.edu.cn>, August 2025.
 
 */
 
 #include "board.h"
-#include "at86rf215.h"
+#include "llcc68.h"
 #include "spi.h"
 #include "debugpins.h"
 #include "leds.h"
