@@ -5,6 +5,7 @@
  * Description: nRF52840-specific definition of the SPI module
  */
 
+#include "board.h"
 #include "nrf52840.h"
 #include "nrf52840_bitfields.h"
 #include "spi.h"
@@ -67,7 +68,7 @@ void spi_init(void) {
 }
 
 // Blocking SPI transfer using EasyDMA
-void    spi_txrx(uint8_t*     bufTx,
+void spi_txrx(uint8_t*     bufTx,
                  uint16_t     lenbufTx,
                  spi_return_t returnType,
                  uint8_t*     bufRx,

@@ -12,6 +12,24 @@
 #include "leds.h"
 #include "radio.h"
 
+void llcc68_spiWriteReg(uint16_t reg, uint8_t regValueToWrite){
+    uint8_t spi_rx_buffer[3];
+    uint8_t spi_tx_buffer[3];
+
+    spi_tx_buffer[0]     = (FLAG_WRITE | (uint8_t)((reg)/256));
+    spi_tx_buffer[1]     = (uint8_t)((reg)%256);
+    spi_tx_buffer[2]     = regValueToWrite;
+
+    spi_txrx(
+        spi_tx_buffer,              // bufTx
+        3,                          // lenbufTx
+        SPI_FIRSTBYTE,              // returnType
+        spi_rx_buffer,              // bufRx
+        3,                          // maxLenBufRx
+        SPI_FIRST,                  // isFirst
+        SPI_LAST                    // isLast
+    );
+}
 
 void at86rf215_spiStrobe(uint8_t strobe, uint8_t type) {
     uint8_t  spi_tx_buffer[3];

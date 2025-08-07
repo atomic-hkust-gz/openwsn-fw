@@ -16,6 +16,7 @@
 #include "radio.h"
 #include "sensors.h"
 #include "i2c.h"
+#include "spi.h"
 
 
 //=========================== variables =======================================
@@ -49,6 +50,7 @@ void board_init(void) {
     radio_init();
 
     i2c_init();
+    spi_init();
 
     // configure dcdc
     enable_dcdc();
