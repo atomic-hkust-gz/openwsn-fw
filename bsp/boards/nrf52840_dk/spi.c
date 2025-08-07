@@ -13,11 +13,10 @@
 //=========================== defines =========================================
 #define NRF_GPIO_PIN_MAP(port, pin) (((port) << 5) | ((pin) & 0x1F))
 // Pin assignments
-#define SPI_SS_PIN   NRF_GPIO_PIN_MAP(0,0)   // P0.00
-#define SPI_MOSI_PIN NRF_GPIO_PIN_MAP(0,1)   // P0.01
-#define SPI_MISO_PIN NRF_GPIO_PIN_MAP(0,5)   // P0.05
-#define SPI_SCK_PIN  NRF_GPIO_PIN_MAP(0,6)   // P0.06
-//#define SPI_IRQ_PIN  NRF_GPIO_PIN_MAP(0,7)   // P0.07
+#define SPI_SS_PIN   NRF_GPIO_PIN_MAP(1,2)   // P1.02
+#define SPI_MOSI_PIN NRF_GPIO_PIN_MAP(1,3)   // P1.03
+#define SPI_MISO_PIN NRF_GPIO_PIN_MAP(1,4)   // P1.04
+#define SPI_SCK_PIN  NRF_GPIO_PIN_MAP(1,5)   // P1.05
 
 // SPI instance
 #define SPIM NRF_SPIM0
@@ -33,6 +32,7 @@
 
 // Configure GPIOs and SPIM0
 void spi_init(void) {
+
     // Configure SPI pins
     nrf_gpio_cfg_output(SPI_SCK_PIN);
     nrf_gpio_cfg_output(SPI_MOSI_PIN);
@@ -40,11 +40,7 @@ void spi_init(void) {
     nrf_gpio_cfg_output(SPI_SS_PIN);
 
     // De-assert SS
-    if (SPI_SS_PIN < 32) {
-        NRF_P0->OUTSET = (1UL << SPI_SS_PIN);
-    } else {
-        NRF_P1->OUTSET = (1UL << (SPI_SS_PIN & 0x1F));
-    }
+    NRF_P1->OUTSET = (1UL << (SPI_SS_PIN & 0x001F));
 
     // Disable SPIM0 before configuration
     NRF_SPIM0->ENABLE = (SPIM_ENABLE_ENABLE_Disabled << SPIM_ENABLE_ENABLE_Pos);
@@ -77,11 +73,7 @@ void spi_txrx(uint8_t*     bufTx,
                  spi_last_t   isLast) {
 
     // Assert SS (active low)
-    if (SPI_SS_PIN < 32) {
-        NRF_P0->OUTCLR = (1UL << SPI_SS_PIN);
-    } else {
-        NRF_P1->OUTCLR = (1UL << (SPI_SS_PIN & 0x1F));
-    }
+    NRF_P1->OUTCLR = (1UL << (SPI_SS_PIN & 0x1F));
 
     // Set up DMA pointers
     NRF_SPIM0->TXD.PTR    = (uint32_t)bufTx;
@@ -100,11 +92,7 @@ void spi_txrx(uint8_t*     bufTx,
     while (NRF_SPIM0->EVENTS_END == 0);
 
     // De-assert SS
-    if (SPI_SS_PIN < 32) {
-        NRF_P0->OUTSET = (1UL << SPI_SS_PIN);
-    } else {
-        NRF_P1->OUTSET = (1UL << (SPI_SS_PIN & 0x1F));
-    }
+    NRF_P1->OUTSET = (1UL << (SPI_SS_PIN & 0x1F));
 }
 
 //=========================== private =========================================

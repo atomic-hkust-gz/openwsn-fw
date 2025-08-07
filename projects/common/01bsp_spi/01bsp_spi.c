@@ -42,10 +42,8 @@ int mote_main(void) {
 
    // prepare buffer to send over SPI
    app_vars.txBuf[0]     =  0x1D;           // Read register LLCC68
-   //app_vars.txBuf[1]     =  0x06;           // NODEADDRESS MSB
-   //app_vars.txBuf[2]     =  0xCD;           // NODEADDRESS LSB
-   app_vars.txBuf[1]     =  0x09;           // Version MSB
-   app_vars.txBuf[2]     =  0x10;           // Version LSB
+   app_vars.txBuf[1]     =  0x06;           // NODEADDRESS MSB
+   app_vars.txBuf[2]     =  0xCD;           // NODEADDRESS LSB
    app_vars.txBuf[3]     =  0x00;           // dummy
    app_vars.txBuf[4]     =  0x00;           // dummy
    
