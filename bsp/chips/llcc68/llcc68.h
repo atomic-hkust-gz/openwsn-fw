@@ -9,6 +9,14 @@
 #ifndef LLCC68_H
 #define LLCC68_H
 
+// LoRa Configuration Constants
+#define RF_FREQUENCY                915000000 // 915 MHz
+#define LORA_BANDWIDTH              0x04      // 0x04 = 125 kHz
+#define LORA_SPREADING_FACTOR       7         // SF7
+#define LORA_CODINGRATE             1         // CR 4/5
+#define LORA_PREAMBLE_LENGTH        8
+#define LORA_TX_POWER_DBM           14
+
 /* === INCLUDES ============================================================ */
 
 /* === EXTERNALS =========================================================== */
@@ -113,6 +121,14 @@ typedef struct
 #define XTBTRIM             0x0912
 #define DIO3OUTPUTVOLTAGE   0x920
 #define EVENTMASK           0x944
+
+/* ========================== prototypes =================================== */
+void llcc68_init(void)
+void llcc68_spiWriteReg(uint16_t reg, uint8_t regValueToWrite);
+uint8_t llcc68_spiReadReg(uint16_t reg, uint8_t regValueToRead);
+void llcc68_GetDeviceErrors(uint8_t* error, uint8_t arrayLength);
+void llcc68_mode_standby(void);
+void llcc68_opcode(uint8_t opcode, uint8_t value);
 
 //#define FLAG_WRITE        0x80
 //#define FLAG_READ         0x00

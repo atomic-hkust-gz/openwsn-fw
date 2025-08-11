@@ -36,8 +36,7 @@ int mote_main(void) {
    
    memset(&app_vars,0,sizeof(app_vars));
    
-   // initialize
-   
+   // initialize  
    board_init();
 
    // prepare buffer to send over SPI
@@ -47,7 +46,12 @@ int mote_main(void) {
    app_vars.txBuf[3]     =  0x00;           // dummy
    app_vars.txBuf[4]     =  0x00;           // dummy
    
-   // retrieve radio manufacturer ID over SPI
+   // Expected rxBuf
+   // rxBuf[0] = 0xa1                       // status: Mode = standby
+   // rxBuf[1] = 0xa1                       
+   // rxBuf[2] = 0xa1
+   // rxBuf[3] = 0x00                       // deafult node address = 0x00   
+
    while(1) {
       spi_txrx(
          app_vars.txBuf,
