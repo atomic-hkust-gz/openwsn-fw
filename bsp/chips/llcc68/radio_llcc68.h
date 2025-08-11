@@ -9,12 +9,6 @@
 
 \brief Cross-platform declaration "radio" bsp module.
 
-\author Thomas Watteyne <watteyne@eecs.berkeley.edu>, February 2012.
-*/
-
-/*
-\modifications to implement the IEEE 802.15.4-SUN
-\done by Jonathan Munoz <jonathan.munoz@inria.fr>
 */
 
 #include "at86rf215.h"

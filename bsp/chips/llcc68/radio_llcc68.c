@@ -10,7 +10,7 @@
 #include "debugpins.h"
 #include "leds.h"
 #include "llcc68.h"
-#include "radio.h"
+#include "radio__llcc68.h"
 
 
 //=========================== defines =========================================
