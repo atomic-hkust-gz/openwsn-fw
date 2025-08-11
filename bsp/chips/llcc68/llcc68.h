@@ -10,7 +10,7 @@
 #define LLCC68_H
 
 // LoRa Configuration Constants
-#define RF_FREQUENCY                915000000 // 915 MHz
+#define RF_FREQUENCY                490000000 // 490 MHz
 #define LORA_BANDWIDTH              0x04      // 0x04 = 125 kHz
 #define LORA_SPREADING_FACTOR       7         // SF7
 #define LORA_CODINGRATE             1         // CR 4/5
@@ -123,7 +123,7 @@ typedef struct
 #define EVENTMASK           0x944
 
 /* ========================== prototypes =================================== */
-void llcc68_init(void)
+void llcc68_init(void);
 void llcc68_spiWriteReg(uint16_t reg, uint8_t regValueToWrite);
 uint8_t llcc68_spiReadReg(uint16_t reg, uint8_t regValueToRead);
 void llcc68_GetDeviceErrors(uint8_t* error, uint8_t arrayLength);

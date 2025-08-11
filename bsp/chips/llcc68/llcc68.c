@@ -23,7 +23,7 @@ void llcc68_init(void){
   llcc68_opcode(SETPACKETTYPE, 0x01); // 0x00 = FSK mode, 0x01 = LoRa mode
 
   // Set RF Frequency
-  llcc68_opcode(SETRFFREQUENCY,);
+  //llcc68_opcode(SETRFFREQUENCY,);
 
   // Set power amplifier configuration
   // Set TX parameters
@@ -119,10 +119,10 @@ void llcc68_mode_standby(void){
         SPI_LAST                    // isLast
     );
 }
-    data[0] = (freq_val >> 24) & 0xFF;
-    data[1] = (freq_val >> 16) & 0xFF;
-    data[2] = (freq_val >> 8) & 0xFF;
-    data[3] = freq_val & 0xFF;
+    //data[0] = (freq_val >> 24) & 0xFF;
+    //data[1] = (freq_val >> 16) & 0xFF;
+    //data[2] = (freq_val >> 8) & 0xFF;
+    //data[3] = freq_val & 0xFF;
 // Set using OPCODE
 void llcc68_opcode(uint8_t opcode, uint8_t value){
     uint8_t spi_rx_buffer[2];
