@@ -10,25 +10,35 @@
 #include "debugpins.h"
 #include "leds.h"
 #include "llcc68.h"
-#include "radio__llcc68.h"
+#include "radio_llcc68.h"
 
 
 //=========================== defines =========================================
+#define NRF_GPIO_PIN_MAP(port, pin) (((port) << 5) | ((pin) & 0x1F))
+// Pin assignments
+#define LLCC68_IRQ_PIN   NRF_GPIO_PIN_MAP(1,6)   // P1.06
+#define LLCC68_BUSY_PIN  NRF_GPIO_PIN_MAP(1,7)   // P1.07
+#define LLCC68_RESET_PIN NRF_GPIO_PIN_MAP(1,8)   // P1.08
 
-#define RADIO_POWER_POWER_POS       0
+#define SCTIMER_PERIOD              32 // @32kHz = 1ms
 
-#define STATE_DISABLED              0
-#define STATE_RXRU                  1
-#define STATE_RXIDLE                2
-#define STATE_RX                    3
-#define STATE_RXDISABLE             4
-#define STATE_TXTU                  9
-#define STATE_TXIDLE                10
-#define STATE_TX                    11
-#define STATE_TXDIABLE              12
+#define MAX_PACKET_SIZE             128 // 255 actual max
+#define IRQ_MASK                    0xFF
+
+
+// lora configuration
+#define RF_FREQUENCY                490000000 // 490 MHz
+#define LORA_BANDWIDTH              0x04      // 0x04 = 125 kHz
+#define LORA_SPREADING_FACTOR       0X07      // SF7
+#define LORA_CODINGRATE             0X01      // CR 4/5
+#define LORA_PREAMBLE_LENGTH        0X08
+#define LORA_PAYLOAD_LENGTH         0X80      // 128
+#define LORA_TX_BASE_ADDR           0x00
+#define LORA_RX_BASE_ADDR           0x80      // Max packet size = 128
+//#define LORA_TX_POWER_DBM           14
 
 //=========================== variables =======================================
-
+/*
 typedef struct {
     radio_capture_cbt   startFrame_cb;
     radio_capture_cbt   endFrame_cb;
@@ -39,116 +49,200 @@ typedef struct {
 } radio_vars_t;
 
 static radio_vars_t radio_vars;
-
+*/
 //=========================== prototypes ======================================
 
-static uint32_t swap_bits(uint32_t inp);
-static uint32_t bytewise_bitswap(uint32_t inp);
-static uint8_t  ble_channel_to_frequency(uint8_t channel);
+//static uint32_t swap_bits(uint32_t inp);
+//static uint32_t bytewise_bitswap(uint32_t inp);
 
 //=========================== public ==========================================
 
-
-void radio_init(void) {
+void radio_llcc68_init(void) {
+    
+    radioModulationParams_t loraModParams;
+    radioTxParams_t radioTxParams;
+    packetParams_t packetParams;
+    bufferBaseAddress_t bufferBaseAddress;
+    irqStatus_t irqStatus;
+    uint8_t value;
 
     // clear internal variables
-    memset(&radio_vars, 0, sizeof(radio_vars));
+    memset(&loraModParams, 0, sizeof(loraModParams));
+    memset(&radioTxParams, 0, sizeof(radioTxParams));
+    memset(&packetParams, 0, sizeof(packetParams));
+    memset(&bufferBaseAddress, 0, sizeof(bufferBaseAddress));
+    memset(&irqStatus, 0, sizeof(irqStatus));
+    
+    // nrf pin configure
+    nrf_gpio_cfg_input(LLCC68_IRQ_PIN);
+    nrf_gpio_cfg_input(LLCC68_BUSY_PIN);
+    nrf_gpio_cfg_output(LLCC68_RESET_PIN);
+    // set busy pin to pulldown
+    NRF_P1->PIN_CNF[LLCC68_BUSY_PIN & 0x1F] =
+      (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos);
 
-    // set radio configuration parameters
-    NRF_RADIO->TXPOWER   = (RADIO_TXPOWER_TXPOWER_Pos4dBm << RADIO_TXPOWER_TXPOWER_Pos);
+    // reset
+    radio_llcc68_reset();
 
-    // set radio mode to IEEE 802.15.4
-    NRF_RADIO->MODE      = (RADIO_MODE_MODE_Ieee802154_250Kbit << RADIO_MODE_MODE_Pos);
+    // tx clamp config
+    // workaround: must be set to 0x1E
+    llcc68_spiWriteReg(TXCLAMPCONFIG, TX_CLAMP_WORKAROUND);
 
-    // set config field length to 8
-    NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_LFLEN_Msk);
-    NRF_RADIO->PCNF0 |= (((uint32_t)8) << RADIO_PCNF0_LFLEN_Pos);
+    // clock calibration 
+    value = CALIBRATE_ALL;
+    llcc68_noAddress_opcode(CALIBRATE, 
+        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
+    radio_llcc68_wait_on_busy();
 
-    // set 32-bit zero preamble
-    NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_PLEN_Msk);
-    NRF_RADIO->PCNF0 |= ((uint32_t) RADIO_PCNF0_PLEN_32bitZero << RADIO_PCNF0_PLEN_Pos);
+    // set to standby mode and use XTAL_32 MHz clock reference 
+    value = XTAL_32MHz;
+    llcc68_noAddress_opcode(SETSTANDBY, 
+        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
 
-    // set max packet size
-    NRF_RADIO->PCNF1 &= (~RADIO_PCNF1_MAXLEN_Msk);
-    NRF_RADIO->PCNF1 |= ((uint32_t) MAX_PACKET_SIZE << RADIO_PCNF1_MAXLEN_Pos);
+    // set packet type
+    value = PACKET_TYPE_LORA;
+    llcc68_noAddress_opcode(SETPACKETTYPE, 
+        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
 
-    // set start of frame delimiter
-    NRF_RADIO->SFD = (SFD_OCTET << RADIO_SFD_SFD_Pos) & RADIO_SFD_SFD_Msk;
+    // set RF Frequency
+    value = RF_FREQ_490_MHZ;
+    llcc68_noAddress_opcode(SETRFFREQUENCY, 
+        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
 
-    // set CRC to be included
-    NRF_RADIO->PCNF0 &= (~RADIO_PCNF0_CRCINC_Msk);
-    NRF_RADIO->PCNF0 |= ((uint32_t) RADIO_PCNF0_CRCINC_Include << RADIO_PCNF0_CRCINC_Pos);
+    // set power amplifier configuration
+    value = PA_CONFIG_17_DBM;
+    llcc68_noAddress_opcode(SETPACONFIG, 
+        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
 
-    // set CRC length
-    NRF_RADIO->CRCCNF &= (~RADIO_CRCCNF_LEN_Msk);
-    NRF_RADIO->CRCCNF |= ((uint32_t) LENGTH_CRC << RADIO_CRCCNF_LEN_Pos);
+    // set Tx parameters
+    radioTxParams = (radioTxParams_t){
+        .TxPowerDbm           = TX_P22_DBM,
+        .TxRampTime           = RAMP_200U
+    };
+    llcc68_noAddress_opcode(SETTXPARAMS, 
+        TYPE_WRITE, (uint8_t*)&radioTxParams, sizeof(radioTxParams));
 
-    // configure CRC (CRC calculation as per 802.15.4 standard. Starting at first byte after length field.)
-    NRF_RADIO->CRCCNF &= (~RADIO_CRCCNF_SKIPADDR_Msk);
-    NRF_RADIO->CRCCNF |= ((uint32_t) RADIO_CRCCNF_SKIPADDR_Ieee802154 << RADIO_CRCCNF_SKIPADDR_Pos);
+    // set modulation parameters
+    loraModParams = (radioModulationParams_t){
+        .SpreadingFactor      = LORA_SF7,
+        .Bandwidth            = LORA_BW_125,
+        .CodingRate           = LORA_CR_4_5,
+        .LowDataRateOptimize  = LDRO_ON
+    };
+    llcc68_noAddress_opcode(SETMODULATIONPARAMS, 
+        TYPE_WRITE, (uint8_t*)&loraModParams, sizeof(loraModParams));
 
-    // set CRC polynomial
-    NRF_RADIO->CRCPOLY = (CRC_POLYNOMIAL << RADIO_CRCPOLY_CRCPOLY_Pos);
-    NRF_RADIO->CRCINIT = 0x0UL;
+    // set packet parameters
+    packetParams = (packetParams_t){
+        .PreambleLength       = LORA_PREAMBLE_LENGTH,
+        .HeaderType           = FIXED_LENGTH_PACKET,
+        .PayloadLength        = LORA_PAYLOAD_LENGTH,
+        .CrcType              = CRC_ON,
+        .InvertIq             = STD_IQ
+    };
+    llcc68_noAddress_opcode(SETMODULATIONPARAMS, 
+        TYPE_WRITE, (uint8_t*)&packetParams, sizeof(packetParams));
 
-    // set payload pointer
-    NRF_RADIO->PACKETPTR = (uint32_t)(radio_vars.payload);
+    // set buffer base addresses
+    bufferBaseAddress = (bufferBaseAddress_t){
+        .TxBaseAddress        = LORA_TX_BASE_ADDR,
+        .RxBaseAddress        = LORA_RX_BASE_ADDR
+    };
+    llcc68_noAddress_opcode(SETBUFFERBASEADDRESS, 
+        TYPE_WRITE, (uint8_t*)&bufferBaseAddress, sizeof(bufferBaseAddress));
 
-    // set up interrupts
-    // disable radio interrupt
-    NVIC_DisableIRQ(RADIO_IRQn);
-    NRF_RADIO->INTENSET = // RADIO_INTENSET_READY_Enabled << RADIO_INTENSET_READY_Pos | 
-                        RADIO_INTENSET_ADDRESS_Enabled << RADIO_INTENSET_ADDRESS_Pos |
-                        RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos; 
-    NVIC_SetPriority(RADIO_IRQn, NRFX_RADIO_CONFIG_IRQ_PRIORITY);
+    // clear IRQ status
+    memset(&irqStatus, IRQ_MASK, sizeof(irqStatus));
+    llcc68_noAddress_opcode(CLEARIRQSTATUS, 
+        TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus));
 
-    NVIC_ClearPendingIRQ(RADIO_IRQn);
-    NVIC_EnableIRQ(RADIO_IRQn);
+    // WriteBuffer
+    // SetTx
+    // GetIrqStatus
+    // GetRxBufferStatus
+    // ReadBuffer
+    // GetStatus
+  
+}
+// Gets the chip's status byte
+uint8_t radio_llcc68_get_status(void) {
+    uint8_t rx_buf;
+    llcc68_noAddress_opcode(GETSTATUS, TYPE_READ, rx_buf, sizeof(rx_buf));
+
+    // After the command, the chip returns the status byte as the first data byte
+    return rx_buf;
+}
+
+// Waits until the chip is no longer busy
+void radio_llcc68_wait_on_busy(void) {
+    // wait for busy pin to go low
+    while ((NRF_P1->IN & (1UL << (LLCC68_BUSY_PIN & 0x1F))) != 0) {
+        board_sleep();
+    }
 }
 
 
-void radio_setStartFrameCb(radio_capture_cbt cb) {
+irqStatus_t radio_llcc68_irq_status(void) {
+    uint8_t rx_buf[] = {0,0};
+    llcc68_noAddress_opcode(GETIRQSTATUS, TYPE_READ, rx_buf, sizeof(rx_buf));
+
+    return *(irqStatus_t *)rx_buf;
+}
+
+void radio_llcc68_reset(void) {
+
+    // reset pin low
+    NRF_P1->OUTCLR = (1UL << (LLCC68_RESET_PIN & 0x1F));
+
+    // wait 1 ms (>100 us)
+    sctimer_set_callback(cb_compare);
+    sctimer_setCompare(sctimer_readCounter()+SCTIMER_PERIOD);
+    while (1) {
+        board_sleep();
+    }
+
+    // reset pin high
+    NRF_P1->OUTSET = (1UL << (LLCC68_RESET_PIN & 0x1F));
+
+    radio_llcc68_wait_on_busy();
+}
+
+/*
+void radio_llcc68_setStartFrameCb(radio_capture_cbt cb) {
 
     radio_vars.startFrame_cb  = cb;
 }
 
 
-void radio_setEndFrameCb(radio_capture_cbt cb) {
+void radio_llcc68_setEndFrameCb(radio_capture_cbt cb) {
 
     radio_vars.endFrame_cb = cb;
 }
 
 
-void radio_reset(void) {
-
-    // reset is implemented by power off and power radio
-    NRF_RADIO->POWER = ((uint32_t)(0)) << RADIO_POWER_POWER_POS;
-    NRF_RADIO->POWER = ((uint32_t)(1)) << RADIO_POWER_POWER_POS;
-
-    radio_vars.state  = RADIOSTATE_STOPPED;
-}
 
 
-void radio_setFrequency(uint8_t frequency, radio_freq_t tx_or_rx) {
+
+void radio_llcc68_setFrequency(uint8_t frequency, radio_freq_t tx_or_rx) {
 
     NRF_RADIO->FREQUENCY = FREQUENCY_STEP*(frequency-FREQUENCY_OFFSET);
 
     radio_vars.state     = RADIOSTATE_FREQUENCY_SET;
 }
 
-int8_t radio_getFrequencyOffset(void){
+int8_t radio_llcc68_getFrequencyOffset(void){
   
     return 0; 
 }
 
-void radio_rfOn(void) {
+void radio_llcc68_rfOn(void) {
     // power on radio
     NRF_RADIO->POWER = ((uint32_t)(1)) << 0;
 
     radio_vars.state = RADIOSTATE_STOPPED;
 }
 
-void radio_rfOff(void) {
+void radio_llcc68_rfOff(void) {
 
     radio_vars.state  = RADIOSTATE_TURNING_OFF;
 
@@ -156,7 +250,7 @@ void radio_rfOff(void) {
 }
 
 
-void radio_loadPacket(uint8_t* packet, uint16_t len) {
+void radio_llcc68_loadPacket(uint8_t* packet, uint16_t len) {
 
     radio_vars.state  = RADIOSTATE_LOADING_PACKET;
 
@@ -170,23 +264,7 @@ void radio_loadPacket(uint8_t* packet, uint16_t len) {
     radio_vars.state  = RADIOSTATE_PACKET_LOADED;
 }
 
-void radio_ble_loadPacket(uint8_t* packet, uint16_t len) {
-    radio_vars.state  = RADIOSTATE_LOADING_PACKET;
-
-    ///< note: 1st byte should be the payload size (for Nordic), and
-    ///   the two last bytes are used by the MAC layer for CRC
-    if ((len > 0) && (len <= MAX_PACKET_SIZE)) {
-        memcpy(&radio_vars.payload[0], packet, len);
-    }
-
-    // (re)set payload pointer
-    NRF_RADIO->PACKETPTR = (uint32_t)(radio_vars.payload);
-
-    radio_vars.state  = RADIOSTATE_PACKET_LOADED;
-}
-
-
-void radio_txEnable(void) {
+void radio_llcc68_txEnable(void) {
 
     radio_vars.state  = RADIOSTATE_ENABLING_TX;
 
@@ -204,7 +282,7 @@ void radio_txEnable(void) {
 }
 
 
-void radio_txNow(void) {
+void radio_llcc68_txNow(void) {
 
     NRF_RADIO->TASKS_START = (uint32_t)1;
 
@@ -212,7 +290,7 @@ void radio_txNow(void) {
 }
 
 
-void radio_rxEnable(void) {
+void radio_llcc68_rxEnable(void) {
 
     radio_vars.state = RADIOSTATE_ENABLING_RX;
 
@@ -230,7 +308,7 @@ void radio_rxEnable(void) {
 }
 
 
-void radio_rxNow(void) {
+void radio_llcc68_rxNow(void) {
 
     NRF_RADIO->TASKS_START = (uint32_t)1;
 
@@ -241,7 +319,7 @@ void radio_rxNow(void) {
 }
 
 
-void radio_getReceivedFrame(uint8_t* pBufRead,
+void radio_llcc68_getReceivedFrame(uint8_t* pBufRead,
                             uint8_t* pLenRead,
                             uint8_t  maxBufLen,
                              int8_t* pRssi,
@@ -283,41 +361,6 @@ void radio_getReceivedFrame(uint8_t* pBufRead,
     *pCrc = (NRF_RADIO->CRCSTATUS == 1U);
 }
 
-void                radio_ble_getReceivedFrame(uint8_t* pBufRead,
-                            uint8_t* pLenRead,
-                            uint8_t  maxBufLen,
-                             int8_t* pRssi,
-                            uint8_t* pLqi,
-                               bool* pCrc) 
-{
-    // check for length parameter; if too long, payload won't fit into memory
-    uint8_t len;
-
-    len = radio_vars.payload[1];
-
-    if (len == 0) {
-        return; 
-    }
-
-    if (len > MAX_PACKET_SIZE) {
-        len = MAX_PACKET_SIZE; 
-    }
-
-    if (len > maxBufLen) {
-        len = maxBufLen; 
-    }
-
-    // copy payload
-    memcpy(pBufRead, &radio_vars.payload[0], len+2);
-
-    // store other parameters
-    *pLenRead = len+2;
-
-    *pCrc = (NRF_RADIO->CRCSTATUS == 1U);
-
-}
-
-
 //=========================== private =========================================
 
 static uint32_t swap_bits(uint32_t inp) {
@@ -341,39 +384,6 @@ static uint32_t bytewise_bitswap(uint32_t inp) {
           | (swap_bits(inp >> 16) << 16)
           | (swap_bits(inp >> 8) << 8)
           | (swap_bits(inp));
-}
-
-static uint8_t ble_channel_to_frequency(uint8_t channel) {
-
-    uint8_t frequency;
-    
-    if (channel<=10) {
-
-        frequency = 4+2*channel;
-    } else {
-        if (channel >=11 && channel <=36) {
-            
-            frequency = 28+2*(channel-11);
-        } else {
-            switch(channel){
-                case 37:
-                    frequency = 2;
-                break;
-                case 38:
-                    frequency = 26;
-                break;
-                case 39:
-                    frequency = 80;
-                break;
-                default:
-                    // something goes wrong
-                    frequency = 2;
-
-            }
-        }
-    }
-
-    return frequency;
 }
 
 
@@ -400,4 +410,13 @@ void RADIO_IRQHandler(void) {
             radio_vars.endFrame_cb(sctimer_readCounter());
         }
     }
+}
+*/
+
+void cb_compare(void) {   
+   // toggle error led
+   leds_error_toggle();
+      
+   // schedule again
+   sctimer_setCompare(sctimer_readCounter()+SCTIMER_PERIOD);
 }

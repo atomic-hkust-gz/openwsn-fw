@@ -12,16 +12,16 @@
 #include "leds.h"
 #include "radio.h"
 
-// ========================== define ==========================================
+//========================== define ===========================================
 
 #define DEVICE_ERRORS_LEN 5
 #define LEN_OPCODE        1
 #define LEN_REG           2
-#define MAXIMUM_LEN       256
+#define MAX_BUFFER_SIZE   256
 
-// ========================== prototype =======================================
+//========================== prototype ========================================
 
-void llcc68_spiWriteReg(uint16_t reg, uint8_t regValueToWrite){
+void llcc68_spiWriteReg(uint16_t reg, uint8_t regValueToWrite) {
 
     uint8_t spi_rx_buffer[LEN_OPCODE+LEN_REG+1];
     uint8_t spi_tx_buffer[LEN_OPCODE+LEN_REG+1];
@@ -42,7 +42,7 @@ void llcc68_spiWriteReg(uint16_t reg, uint8_t regValueToWrite){
     );
 }
 
-uint8_t llcc68_spiReadReg(uint16_t reg){
+uint8_t llcc68_spiReadReg(uint16_t reg) {
 
     uint8_t spi_rx_buffer[LEN_OPCODE+LEN_REG+1];
     uint8_t spi_tx_buffer[LEN_OPCODE+LEN_REG+1];
@@ -64,10 +64,10 @@ uint8_t llcc68_spiReadReg(uint16_t reg){
     return spi_rx_buffer[3];
 }
 
-void llcc68_multipleBytesRead(uint16_t reg, uint8_t* buffer, uint8_t len){
+void llcc68_multipleBytesRead(uint16_t reg, uint8_t* buffer, uint8_t len) {
 
-    uint8_t spi_rx_buffer[MAXIMUM_LEN];
-    uint8_t spi_tx_buffer[MAXIMUM_LEN];
+    uint8_t spi_rx_buffer[MAX_BUFFER_SIZE];
+    uint8_t spi_tx_buffer[MAX_BUFFER_SIZE];
     
     spi_tx_buffer[0]     = READBUFFER;                     // OPCODE: read buffer
     spi_tx_buffer[1]     = (uint8_t)((reg >> 8) & 0xFF);    // High byte of reg
@@ -88,8 +88,8 @@ void llcc68_multipleBytesRead(uint16_t reg, uint8_t* buffer, uint8_t len){
 
 void llcc68_multipleBytesWrite(uint16_t reg, uint8_t* buffer, uint8_t len) {
 
-    uint8_t spi_rx_buffer[MAXIMUM_LEN];
-    uint8_t spi_tx_buffer[MAXIMUM_LEN];
+    uint8_t spi_rx_buffer[MAX_BUFFER_SIZE];
+    uint8_t spi_tx_buffer[MAX_BUFFER_SIZE];
     
     spi_tx_buffer[0]     = WRITEBUFFER;                     // OPCODE: write buffer
     spi_tx_buffer[1]     = (uint8_t)((reg >> 8) & 0xFF);    // High byte of reg
@@ -108,12 +108,13 @@ void llcc68_multipleBytesWrite(uint16_t reg, uint8_t* buffer, uint8_t len) {
 }
 
 
-// Set using OPCODE
+void llcc68_noAddress_opcode(uint8_t opcode, 
+                 type_t rw, 
+                 uint8_t* buffer, 
+                 uint8_t len) {
 
-void llcc68_noAddress_opcode(uint8_t opcode, type_t rw, uint8_t* buffer, uint8_t len){
-
-    uint8_t spi_rx_buffer[MAXIMUM_LEN];
-    uint8_t spi_tx_buffer[MAXIMUM_LEN];
+    uint8_t spi_rx_buffer[MAX_BUFFER_SIZE];
+    uint8_t spi_tx_buffer[MAX_BUFFER_SIZE];
     
     spi_tx_buffer[0]     = opcode;  // OPCODE
 
