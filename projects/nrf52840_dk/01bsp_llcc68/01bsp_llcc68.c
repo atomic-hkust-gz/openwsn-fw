@@ -8,6 +8,7 @@
 #include "leds.h"
 #include "sctimer.h"
 #include "uart.h"
+#include "radio_llcc68.h"
 
 //=========================== defines =========================================
 
@@ -16,6 +17,8 @@
 #define CHANNEL         11             ///< 11=2.405GHz
 #define TIMER_PERIOD    (0xffff>>4)    ///< 0xffff = 2s@32kHz
 #define ID              0x99           ///< byte sent in the packets
+
+#define MAX_BUFFER_SIZE   10
 
 uint8_t stringToSend[]  = "+002 Ptest.24.00.12.-010\n";
 
@@ -68,11 +71,95 @@ void     cb_timer(void);
 void     cb_uart_tx_done(void);
 uint8_t  cb_uart_rx(void);
 
+void llcc68_function_test(void);
 //=========================== main ============================================
 
-/**
-\brief The program starts executing here.
-*/
+
+int mote_main(void){
+    radioModulationParams_t loraModParams;
+    packetParams_t packetParams;
+    uint8_t packet[MAX_BUFFER_SIZE];
+    
+    memset(&loraModParams, 0, sizeof(loraModParams));
+    memset(&packetParams, 0, sizeof(packetParams));
+
+    board_init();
+    radio_llcc68_init();
+    
+    //llcc68_function_test();
+
+    radio_llcc68_loadPacket(uint8_t offset, uint8_t* buffer, uint8_t len);
+    //radio_llcc68_setModulation(radioModulationParams_t modParams);
+    //radio_llcc68_setPacketParams(packetParams_t packetParams);
+    radio_llcc68_txNow(radioTimeout_t timeout);
+
+    //SetDioIrqParams
+    //Define Sync Word value: use the command WriteReg(...)
+    //SetTx()
+    //wait for irq TxDone or Timeout
+    //clear IRQ TxDone
+
+    while(1);
+
+}
+void llcc68_function_test(void){
+    uint8_t packet[4];
+    uint8_t opcodeDate[2];
+    uint8_t txPayload[MAX_BUFFER_SIZE];
+    uint8_t rxPayload[MAX_BUFFER_SIZE];
+
+    memset(&packet, 0, sizeof(packet));
+    memset(&opcodeDate, 0, sizeof(opcodeDate));
+    memset(&txPayload, 0, sizeof(txPayload));
+    memset(&rxPayload, 0, sizeof(rxPayload));
+    
+    // function testing
+
+    // llcc68_spiReadingReg()
+    packet[0] = llcc68_spiReadReg(CRCMSB); // Default Value = 0x1D
+    packet[1] = llcc68_spiReadReg(CRCLSB); // Default Value = 0x0F
+
+    // llcc68_spiReadingReg() 
+    llcc68_spiWriteReg(CRCMSB,0x12);
+    llcc68_spiWriteReg(CRCLSB,0x34);
+    packet[2] = llcc68_spiReadReg(CRCMSB); // expected value = 0x12
+    packet[3] = llcc68_spiReadReg(CRCLSB); // Expected value = 0x34
+    
+    // write opcode
+    opcodeDate[0] = 0x01;     // LORA packet type
+    llcc68_noAddress_opcode(SETPACKETTYPE, 
+        TYPE_WRITE, &opcodeDate[0], sizeof(opcodeDate[0]));
+
+    // read opcode
+    llcc68_noAddress_opcode(GETPACKETTYPE, 
+        TYPE_READ, &opcodeDate[1], sizeof(opcodeDate[1]));
+
+
+    // llcc68_writeBuffer()
+    opcodeDate[0] = 0x00;   // tx base address
+    opcodeDate[0] = 0x80;   // rx base address
+    llcc68_noAddress_opcode(SETBUFFERBASEADDRESS, 
+        TYPE_WRITE, opcodeDate, sizeof(opcodeDate));
+
+    for(int i = 0; i < MAX_BUFFER_SIZE; i++){
+        txPayload[i] = (uint8_t)i;
+    }
+    llcc68_txBufferWrite((uint8_t)0x00, txPayload, sizeof(txPayload));
+    rxPayload[0] = llcc68_spiReadReg(0x0080);
+    rxPayload[1] = llcc68_spiReadReg(0x0040);
+    rxPayload[2] = llcc68_spiReadReg(0x0020);
+    rxPayload[3] = llcc68_spiReadReg(0x00C0);
+    radio_llcc68_get_opError();
+    radio_llcc68_get_status();
+    // llcc68_readBuffer()
+    //llcc68_rxBufferRead((uint8_t)0x00, rxPayload, sizeof(rxPayload));
+};
+
+
+    //llcc68_noAddress_opcode(SETFS, 
+    //    TYPE_WRITE, (uint8_t*)&value, sizeof(value));
+    //llcc68_noAddress_opcode(SETFS, TYPE_WRITE, packet, sizeof(packet));
+/*
 int mote_main(void) {
     uint8_t i;
 
@@ -339,3 +426,4 @@ uint8_t cb_uart_rx(void) {
 
     return 0;
 }
+*/
