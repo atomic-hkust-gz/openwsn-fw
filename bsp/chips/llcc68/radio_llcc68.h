@@ -16,37 +16,75 @@
 //=========================== define ==========================================
 
 #define LENGTH_CRC 2
-
+typedef enum {
+   LLCC68STATE_RESET               = 0x00,   ///< reset pin low/powering on.
+   LLCC68STATE_STARTUP             = 0x01,   ///< chip still waking up.
+   LLCC68STATE_STANDBY_RC          = 0x02,   ///< standby mode using RC oscillator.
+   LLCC68STATE_STANDBY_XOSC        = 0x03,   ///< standby mode using XOSC oscillator.
+   LLCC68STATE_FS                  = 0x04,   ///< fs mode, set the radio frequency.
+   LLCC68STATE_TX                  = 0x05,   ///< tx mode, transmitting.
+   LLCC68STATE_RX                  = 0x06,   ///< rx mode, receiving.
+   LLCC68STATE_SLEEP               = 0x07,   ///< sleep mode, using RTC timer in low power mode.
+   LLCC68STATE_ENABLE_CALIBRATING  = 0x08,   ///< begin calibration of all clocks.
+   LLCC68STATE_CALIBRATION_DONE    = 0x09,   ///< all clocks finished calibrating.
+   LLCC68STATE_ENABLE_IMAGE_CAL    = 0x0a,   ///< begin image calibration (ISM bands).
+   LLCC68STATE_IMAGE_CAL_DONE      = 0x0b,   ///< image calibration finished.
+   /*
+   RADIOSTATE_RFOFF               = 0x01,   ///< Listening for commands, but RF chain is off.
+   RADIOSTATE_SETTING_FREQUENCY   = 0x02,   ///< Configuring the frequency.
+   RADIOSTATE_FREQUENCY_SET       = 0x03,   ///< Done configuring the frequency.
+   RADIOSTATE_LOADING_PACKET      = 0x04,   ///< Loading packet into the radio's TX buffer.
+   RADIOSTATE_PACKET_LOADED       = 0x05,   ///< Packet is fully loaded in the radio's TX buffer.
+   RADIOSTATE_ENABLING_TX         = 0x06,   ///< The RF TX chaing is being enabled (includes locking the PLL).
+   RADIOSTATE_TX_ENABLED          = 0x07,   ///< Radio ready to transmit.
+   RADIOSTATE_TRANSMITTING        = 0x08,   ///< Busy transmitting bytes.
+   RADIOSTATE_ENABLING_RX         = 0x09,   ///< The RF RX chain is being enabled (includes locking the PLL).
+   RADIOSTATE_LISTENING           = 0x0a,   ///< RF chain is on, listening, but no packet received yet.
+   RADIOSTATE_RECEIVING           = 0x0b,   ///< Busy receiving bytes.
+   RADIOSTATE_TXRX_DONE           = 0x0c,   ///< Frame has been sent/received completely.
+   RADIOSTATE_TURNING_OFF         = 0x0d,   ///< Turning the RF chain off.
+   */
+} radio_llcc68_state_t;
 //=========================== typedef =========================================
 
 typedef enum {
-    LORA_SF5  = 0x05,
-    LORA_SF6  = 0x06,
-    LORA_SF7  = 0x07,
-    LORA_SF8  = 0x08,
-    LORA_SF9  = 0x09,
-    LORA_SF10 = 0x0A, 
-    LORA_SF11 = 0x0B,
+    LORA_SF5      = 0x05,
+    LORA_SF6      = 0x06,
+    LORA_SF7      = 0x07,
+    LORA_SF8      = 0x08,
+    LORA_SF9      = 0x09,
+    LORA_SF10     = 0x0A, 
+    LORA_SF11     = 0x0B,
 }loraSpreadingFactor_t;
 
 typedef enum {
-    LORA_BW_125 = 0x04,
-    LORA_BW_250 = 0x05,
-    LORA_BW_500 = 0x06,
+    LORA_BW_125   = 0x04,
+    LORA_BW_250   = 0x05,
+    LORA_BW_500   = 0x06,
 }loraBandwidth_t;
 
 typedef enum {
-    LORA_CR_4_5 = 0x01,
-    LORA_CR_4_6 = 0x02,
-    LORA_CR_4_7 = 0x03,
-    LORA_CR_4_8 = 0x04,
+    LORA_CR_4_5   = 0x01,
+    LORA_CR_4_6   = 0x02,
+    LORA_CR_4_7   = 0x03,
+    LORA_CR_4_8   = 0x04,
 }loraCodingRate_t;
 
 // low data rate optimize (LDRO)
 typedef enum {
-    LDRO_OFF = 0x00,
-    LDRO_ON  = 0x01,
+    LDRO_OFF      = 0x00,
+    LDRO_ON       = 0x01,
 }LoraLdro_t;
+
+// image calibration over the ISM bands
+typedef enum {
+    // Frequency band (MHz) = 0x Freq1(1byte) Freq2(1byte)
+    BAND430_440   = 0x6b6f,
+    BAND470_510   = 0x7581,
+    BAND779_787   = 0xc1c5,
+    BAND863_870   = 0xd7db,
+    BAND902_928   = 0xe1e9,
+}ismBand_t;
 
 typedef enum {
     // -9 dBm (0xF7) to +22 dBm (0x16)
@@ -81,6 +119,26 @@ typedef enum {
     INVERT_IQ     = 0x01,
 }invertIq_t;
 
+// status bytes
+typedef enum {
+    UNUSED        = 0x00,
+    RESERVED      = 0x01,
+    STBY_RC       = 0x02,
+    STBY_XOSC     = 0x03,
+    MODE_FS       = 0x04,
+    MODE_RX       = 0x05,
+    MODE_TX       = 0x06,
+}chipMode_t;
+typedef enum {
+    RESERVED0     = 0x00,
+    RESERVED1     = 0x01,
+    DATA_TO_HOST  = 0x02,
+    CMD_TIMEOUT   = 0x03,
+    PROCESS_ERROR = 0x04,
+    EXE_ERROR     = 0x05,
+    TX_DONE       = 0x06,
+}commandStatus_t;
+
 typedef struct {
     loraSpreadingFactor_t SpreadingFactor;
     loraBandwidth_t       Bandwidth;
@@ -106,6 +164,11 @@ typedef struct {
     uint8_t           RxBaseAddress;
 }bufferBaseAddress_t;
 
+typedef struct {
+   // Timeout Duration = timeout[] * 15.625 us
+   uint8_t timeout[3];
+}radioTimeout_t;
+
 // lora mode only irq status format: 
 // bit: 15|14|13|12|11|10|9            |8         |7       |6        |...
 //      na|na|na|na|na|na|rx/tx timeout|cad detect|cad done|crc error|...
@@ -113,7 +176,6 @@ typedef struct {
 // ---> 5           |4           |3 |2              |1      |0      |
 // ---> header error|header valid|na|preamble detect|rx done|tx done|
 typedef struct __attribute__((packed)) {
-    // need to double check bit order
     uint8_t TxDone          : 1;
     uint8_t RxDone          : 1;
     uint8_t PreambleDetect  : 1;
@@ -127,6 +189,28 @@ typedef struct __attribute__((packed)) {
     uint8_t Timeout         : 1;
     uint8_t reserved        : 6;
 }irqStatus_t;
+
+typedef struct __attribute__((packed)) {
+    uint8_t Reserved1       : 1;
+    uint8_t CommandStatus   : 3;
+    uint8_t ChipMode        : 3;
+    uint8_t Reserved7       : 1;
+}radio_llcc68_status_t;
+
+typedef struct __attribute__((packed)) {
+    uint8_t Rc64Cal         : 1;
+    uint8_t Rc13MCal        : 1;
+    uint8_t pllCal          : 1;
+    uint8_t AdcCal          : 1;
+    uint8_t ImgCal          : 1;
+    uint8_t XoscStart       : 1;
+    uint8_t PllLock         : 1;
+    uint8_t Reserved7       : 1;
+
+    uint8_t PaPamp          : 1;
+    uint8_t Reserved9_15    : 7;
+
+}radio_llcc68_opError_t;
 
 /*
 typedef enum {
@@ -164,8 +248,13 @@ void          radio_llcc68_init(void);
 // reset
 void          radio_llcc68_reset(void);
 // RF admin
-
-uint8_t       radio_llcc68_get_status(void);
+void          radio_llcc68_loadPacket(uint8_t offset, uint8_t* buffer, uint8_t len);
+void          radio_llcc68_setModulation(radioModulationParams_t modParams);
+void          radio_llcc68_setPacketParams(packetParams_t packetParams);
+void          radio_llcc68_txNow(radioTimeout_t timeout);
+void          radio_llcc68_rxNow(radioTimeout_t timeout);
+void          radio_llcc68_get_status(void);
+void          radio_llcc68_get_opError(void);
 void          radio_llcc68_wait_on_busy(void);
 irqStatus_t   radio_llcc68_irq_status(void);
 //void     radio_llcc68_setFrequency(uint16_t channel, radio_freq_t tx_or_rx);

@@ -20,9 +20,9 @@
 #define LLCC68_BUSY_PIN  NRF_GPIO_PIN_MAP(1,7)   // P1.07
 #define LLCC68_RESET_PIN NRF_GPIO_PIN_MAP(1,8)   // P1.08
 
-#define SCTIMER_PERIOD              32 // @32kHz = 1ms
+#define TIMER_PERIOD                0x2000 // @32kHz = 0.25 s
 
-#define MAX_PACKET_SIZE             128 // 255 actual max
+#define MAX_PACKET_SIZE             128 // 256 actual max
 #define IRQ_MASK                    0xFF
 
 
@@ -38,18 +38,20 @@
 //#define LORA_TX_POWER_DBM           14
 
 //=========================== variables =======================================
-/*
-typedef struct {
-    radio_capture_cbt   startFrame_cb;
-    radio_capture_cbt   endFrame_cb;
-    radio_state_t       state; 
-    //This payload length will effect ble rx
-    uint8_t             payload[1+MAX_PACKET_SIZE] __attribute__ ((aligned));
-    bool                hfc_started;
-} radio_vars_t;
 
-static radio_vars_t radio_vars;
-*/
+typedef struct {
+    //radio_capture_cbt     startFrame_cb;
+    //radio_capture_cbt     endFrame_cb;
+    radio_llcc68_state_t    state; 
+    radio_llcc68_status_t   status;
+    radio_llcc68_opError_t  opError;
+    
+    //uint8_t               payload[1+MAX_PACKET_SIZE] __attribute__ ((aligned));
+    //bool                  hfc_started;
+} radio_llcc68_vars_t;
+
+static radio_llcc68_vars_t radio_vars;
+
 //=========================== prototypes ======================================
 
 //static uint32_t swap_bits(uint32_t inp);
@@ -65,13 +67,16 @@ void radio_llcc68_init(void) {
     bufferBaseAddress_t bufferBaseAddress;
     irqStatus_t irqStatus;
     uint8_t value;
+    uint8_t mulitParam[4];
 
     // clear internal variables
+    memset(&radio_vars, 0, sizeof(radio_vars));
     memset(&loraModParams, 0, sizeof(loraModParams));
     memset(&radioTxParams, 0, sizeof(radioTxParams));
     memset(&packetParams, 0, sizeof(packetParams));
     memset(&bufferBaseAddress, 0, sizeof(bufferBaseAddress));
     memset(&irqStatus, 0, sizeof(irqStatus));
+    memset(&mulitParam, 0, sizeof(mulitParam));
     
     // nrf pin configure
     nrf_gpio_cfg_input(LLCC68_IRQ_PIN);
@@ -92,12 +97,36 @@ void radio_llcc68_init(void) {
     value = CALIBRATE_ALL;
     llcc68_noAddress_opcode(CALIBRATE, 
         TYPE_WRITE, (uint8_t*)&value, sizeof(value));
-    radio_llcc68_wait_on_busy();
 
-    // set to standby mode and use XTAL_32 MHz clock reference 
-    value = XTAL_32MHz;
+    // wait for calibration to finish (typically 3.5 ms)
+    radio_vars.state = LLCC68STATE_ENABLE_CALIBRATING;
+    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
+    sctimer_enable();
+    while(radio_vars.state == LLCC68STATE_ENABLE_CALIBRATING){
+        board_sleep();
+    };
+
+     // image calibration for ISM band
+     memcpy(mulitParam, FREQ_BAND_470_510, sizeof(FREQ_BAND_470_510));
+     llcc68_noAddress_opcode(CALIBRATEIMAGE, 
+        TYPE_WRITE, (uint8_t*)&mulitParam, sizeof(FREQ_BAND_470_510));
+    
+    // wait for image calibration to finish
+    /*
+    radio_vars.state == LLCC68STATE_ENABLE_IMAGE_CAL;
+    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
+    sctimer_enable();
+    while(radio_vars.state == LLCC68STATE_ENABLE_IMAGE_CAL){
+        board_sleep();
+    };
+    */
+
+    // set to standby mode and use RC_13 MHz clock reference 
+    value = RC_13MHz;
+    //value = XTAL_32MHz;
     llcc68_noAddress_opcode(SETSTANDBY, 
         TYPE_WRITE, (uint8_t*)&value, sizeof(value));
+    radio_vars.state = LLCC68STATE_STANDBY_RC;
 
     // set packet type
     value = PACKET_TYPE_LORA;
@@ -105,14 +134,14 @@ void radio_llcc68_init(void) {
         TYPE_WRITE, (uint8_t*)&value, sizeof(value));
 
     // set RF Frequency
-    value = RF_FREQ_490_MHZ;
+    memcpy(mulitParam, RF_FREQ_490_MHZ, sizeof(RF_FREQ_490_MHZ));
     llcc68_noAddress_opcode(SETRFFREQUENCY, 
-        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
+        TYPE_WRITE, (uint8_t*)&mulitParam, sizeof(RF_FREQ_490_MHZ));
 
     // set power amplifier configuration
-    value = PA_CONFIG_17_DBM;
+    memcpy(mulitParam, PA_CONFIG_17_DBM, sizeof(PA_CONFIG_17_DBM));
     llcc68_noAddress_opcode(SETPACONFIG, 
-        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
+        TYPE_WRITE, (uint8_t*)&mulitParam, sizeof(PA_CONFIG_17_DBM));
 
     // set Tx parameters
     radioTxParams = (radioTxParams_t){
@@ -121,6 +150,14 @@ void radio_llcc68_init(void) {
     };
     llcc68_noAddress_opcode(SETTXPARAMS, 
         TYPE_WRITE, (uint8_t*)&radioTxParams, sizeof(radioTxParams));
+
+    // set buffer base addresses
+    bufferBaseAddress = (bufferBaseAddress_t){
+        .TxBaseAddress        = LORA_TX_BASE_ADDR,
+        .RxBaseAddress        = LORA_RX_BASE_ADDR
+    };
+    llcc68_noAddress_opcode(SETBUFFERBASEADDRESS, 
+        TYPE_WRITE, (uint8_t*)&bufferBaseAddress, sizeof(bufferBaseAddress));
 
     // set modulation parameters
     loraModParams = (radioModulationParams_t){
@@ -140,37 +177,60 @@ void radio_llcc68_init(void) {
         .CrcType              = CRC_ON,
         .InvertIq             = STD_IQ
     };
-    llcc68_noAddress_opcode(SETMODULATIONPARAMS, 
+    llcc68_noAddress_opcode(SETPACKETPARAMS, 
         TYPE_WRITE, (uint8_t*)&packetParams, sizeof(packetParams));
-
-    // set buffer base addresses
-    bufferBaseAddress = (bufferBaseAddress_t){
-        .TxBaseAddress        = LORA_TX_BASE_ADDR,
-        .RxBaseAddress        = LORA_RX_BASE_ADDR
-    };
-    llcc68_noAddress_opcode(SETBUFFERBASEADDRESS, 
-        TYPE_WRITE, (uint8_t*)&bufferBaseAddress, sizeof(bufferBaseAddress));
 
     // clear IRQ status
     memset(&irqStatus, IRQ_MASK, sizeof(irqStatus));
     llcc68_noAddress_opcode(CLEARIRQSTATUS, 
         TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus));
-
-    // WriteBuffer
-    // SetTx
-    // GetIrqStatus
-    // GetRxBufferStatus
-    // ReadBuffer
-    // GetStatus
+    
+    // check for device errors 
+    radio_llcc68_get_opError();
+    radio_llcc68_get_status();
+    // uart print errors
   
 }
-// Gets the chip's status byte
-uint8_t radio_llcc68_get_status(void) {
-    uint8_t rx_buf;
-    llcc68_noAddress_opcode(GETSTATUS, TYPE_READ, rx_buf, sizeof(rx_buf));
 
-    // After the command, the chip returns the status byte as the first data byte
-    return rx_buf;
+void radio_llcc68_loadPacket(uint8_t offset, uint8_t* buffer, uint8_t len){
+    llcc68_txBufferWrite(offset, buffer, len);
+}
+
+void radio_llcc68_setModulation(radioModulationParams_t modParams){
+    llcc68_noAddress_opcode(SETMODULATIONPARAMS, 
+        TYPE_WRITE, (uint8_t*)&modParams, sizeof(modParams));
+}
+
+void radio_llcc68_setPacketParams(packetParams_t packetParams){
+    llcc68_noAddress_opcode(SETPACKETPARAMS, 
+        TYPE_WRITE, (uint8_t*)&packetParams, sizeof(packetParams));
+}
+
+// Timeout Duration = timeout[] * 15.625 us
+void radio_llcc68_txNow(radioTimeout_t txMax){
+    llcc68_noAddress_opcode(SETTX, 
+        TYPE_WRITE, (uint8_t*)&txMax.timeout, sizeof(txMax.timeout));
+}
+
+// Timeout Duration = timeout[] * 15.625 us
+void radio_llcc68_rxNow(radioTimeout_t rxMax){
+    llcc68_noAddress_opcode(SETRX, 
+        TYPE_WRITE, (uint8_t*)&rxMax.timeout, sizeof(rxMax.timeout));
+}
+
+// Gets the chip's status byte
+void radio_llcc68_get_status(void) {
+    uint8_t rx_buf;
+    llcc68_noAddress_opcode(GETSTATUS, TYPE_READ, &rx_buf, sizeof(rx_buf));
+
+    memcpy(&radio_vars.status, &rx_buf, sizeof(radio_vars.status));
+}
+
+void radio_llcc68_get_opError(void) {
+    uint8_t rx_buf[2];
+    llcc68_noAddress_opcode(GETDEVICEERRORS, TYPE_READ, rx_buf, sizeof(rx_buf));
+
+    memcpy(&radio_vars.opError, &rx_buf, sizeof(radio_vars.opError));
 }
 
 // Waits until the chip is no longer busy
@@ -180,7 +240,6 @@ void radio_llcc68_wait_on_busy(void) {
         board_sleep();
     }
 }
-
 
 irqStatus_t radio_llcc68_irq_status(void) {
     uint8_t rx_buf[] = {0,0};
@@ -193,18 +252,26 @@ void radio_llcc68_reset(void) {
 
     // reset pin low
     NRF_P1->OUTCLR = (1UL << (LLCC68_RESET_PIN & 0x1F));
+    
+    radio_vars.state = LLCC68STATE_RESET;
 
-    // wait 1 ms (>100 us)
+    // keep reset low for 0.25 s (>100 us)
     sctimer_set_callback(cb_compare);
-    sctimer_setCompare(sctimer_readCounter()+SCTIMER_PERIOD);
-    while (1) {
+    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
+    sctimer_enable();
+    while (radio_vars.state == LLCC68STATE_RESET) {
         board_sleep();
     }
 
     // reset pin high
     NRF_P1->OUTSET = (1UL << (LLCC68_RESET_PIN & 0x1F));
-
-    radio_llcc68_wait_on_busy();
+    
+    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
+    sctimer_enable();
+    // wait for chip to startup (0.25 s)
+    while (radio_vars.state == LLCC68STATE_STARTUP) {
+        board_sleep();
+    }
 }
 
 /*
@@ -414,9 +481,20 @@ void RADIO_IRQHandler(void) {
 */
 
 void cb_compare(void) {   
-   // toggle error led
-   leds_error_toggle();
-      
-   // schedule again
-   sctimer_setCompare(sctimer_readCounter()+SCTIMER_PERIOD);
+   sctimer_disable();
+
+   if (radio_vars.state == LLCC68STATE_RESET ||
+        radio_vars.state == LLCC68STATE_SLEEP) {
+      radio_vars.state = LLCC68STATE_STARTUP;
+   }
+   else if (radio_vars.state == LLCC68STATE_ENABLE_CALIBRATING){
+      radio_vars.state = LLCC68STATE_CALIBRATION_DONE;
+   }
+   else if (radio_vars.state == LLCC68STATE_ENABLE_IMAGE_CAL){
+      radio_vars.state = LLCC68STATE_IMAGE_CAL_DONE;
+   }
+   else {
+      radio_vars.state = LLCC68STATE_STANDBY_RC;
+   }
+   
 }
