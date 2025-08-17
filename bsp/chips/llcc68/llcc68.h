@@ -114,8 +114,8 @@ typedef struct {
 
 void llcc68_spiWriteReg(uint16_t reg, uint8_t regValueToWrite);
 uint8_t llcc68_spiReadReg(uint16_t reg);
-void llcc68_multipleBytesRead(uint16_t reg, uint8_t* buffer, uint8_t len);
-void llcc68_multipleBytesWrite(uint16_t reg, uint8_t* buffer, uint8_t len) ;
+void llcc68_txBufferWrite(uint8_t offset, uint8_t* buffer, uint8_t len);
+void llcc68_rxBufferRead(uint8_t offset, uint8_t* buffer, uint8_t len);
 void llcc68_noAddress_opcode(uint8_t opcode, type_t rw, uint8_t* buffer, uint8_t len);
 
 //========================== settings =========================================
@@ -149,5 +149,12 @@ static const uint8_t RF_FREQ_434_MHZ[] = { 0x1B, 0x20, 0x00, 0x00 }; // (434 MHz
 static const uint8_t RF_FREQ_490_MHZ[] = { 0x1E, 0xA0, 0x00, 0x00 }; // (490 MHz/32 MHz)*2^25 | or 490*2^20
 static const uint8_t RF_FREQ_868_MHZ[] = { 0x36, 0x40, 0x00, 0x00 }; // (868 MHz/32 MHz)*2^25 | or 868*2^20
 static const uint8_t RF_FREQ_915_MHZ[] = { 0x39, 0x30, 0x00, 0x00 }; // (915 MHz/32 MHz)*2^25 | or 915*2^20
+
+static const uint8_t FREQ_BAND_430_440[] = { 0x6B, 0x6F }; // 
+static const uint8_t FREQ_BAND_470_510[] = { 0x75, 0x81 }; // 
+static const uint8_t FREQ_BAND_779_787[] = { 0xC1, 0xC5 }; // 
+static const uint8_t FREQ_BAND_863_870[] = { 0xD7, 0xDB }; // 
+static const uint8_t FREQ_BAND_902_928[] = { 0xE1, 0xE9 }; // 
+
 
 #endif
