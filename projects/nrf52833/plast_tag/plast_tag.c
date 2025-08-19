@@ -115,6 +115,9 @@ typedef struct {
                 uint8_t         current_time;
                 bool            flag;
                 bool            need_reset;
+                bool            get_sync;
+
+                uint8_t         UnSyncFrame;
 
 } app_vars_t;
 
@@ -163,7 +166,7 @@ int mote_main(void) {
     app_vars.got_sample = FALSE;
     //set slot offset to any value untill sync
     app_vars.slot_offset = 10;
-    app_vars.node_id = 2;         //    #559=1    #870=2
+    app_vars.node_id = 6;         //    #559=1    #870=2
     
     sample_array_int_t sample_array_int;
     // initialize board
@@ -379,6 +382,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         if (app_vars.isTargetPkt) {
             switch (app_vars.rxpk_packet[33]) {
             case 0: // 0 represent this packet is a sync packet
+                app_vars.get_sync = TRUE;
                 if (app_vars.isSynced) {
                     app_vars.time_slotStartAt = app_vars.capture_time + SLOT_DURATION - SENDING_OFFSET;
                     sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
@@ -442,7 +446,7 @@ void cb_slot_timer(void) {
 
     switch(app_vars.slot_offset) {
     case 0:
-   
+        app_vars.get_sync = FALSE;
         // set when to turn on the radio
         //clocks_start();
         if (app_vars.isSynced) {
@@ -476,6 +480,14 @@ void cb_slot_timer(void) {
     break;
     case 1:
         sctimer_setCompare(app_vars.inner_rxtimerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET-TURNON_OFFSET);
+        if (app_vars.get_sync == FALSE) {
+            app_vars.UnSyncFrame += 1;
+        } else {
+            app_vars.UnSyncFrame = 0;
+        }
+        if (app_vars.UnSyncFrame == 10) {
+            board_reset();
+        }
     break;
     case 3:
         if (app_vars.need_broadcast == TRUE) {
