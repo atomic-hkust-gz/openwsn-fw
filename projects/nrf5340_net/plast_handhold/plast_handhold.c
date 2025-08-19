@@ -101,6 +101,10 @@ typedef struct {
 
                 uint8_t         antenna_array_id;
                 uint32_t        capture_time;
+
+                bool            get_sync;
+
+                uint8_t         UnSyncFrame;
 } app_vars_t;
 
 app_vars_t app_vars;
@@ -271,6 +275,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             switch (app_vars.rxpk_packet[33]) {
             case 0:
                 // 0 represent this packet is a sync packet
+                app_vars.get_sync = TRUE;
                 if (app_vars.isSynced) {
                     app_vars.time_slotStartAt = app_vars.capture_time + SLOT_DURATION - SENDING_OFFSET;
                     sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
@@ -340,6 +345,7 @@ void cb_slot_timer(void) {
 
       switch(app_vars.slot_offset) {
       case 0:
+          app_vars.get_sync = FALSE;
           // set when to turn on the radio for receiving a sync packet
           sctimer_setCompare(app_vars.inner_rxtimerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET - TURNON_OFFSET);
       break;
@@ -348,6 +354,15 @@ void cb_slot_timer(void) {
           // set when to send packet out
           radio_rfOff();
           sctimer_setCompare(app_vars.inner_txtimerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET);
+          if (app_vars.get_sync == FALSE) {
+              app_vars.UnSyncFrame += 1;
+          } else {
+              app_vars.UnSyncFrame = 0;
+          }
+
+          if (app_vars.UnSyncFrame == 5) {
+              board_reset();
+          }
           
           // prepare to send
           // prepare packet

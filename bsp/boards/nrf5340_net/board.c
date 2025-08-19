@@ -50,6 +50,7 @@ void board_sleep(void) {
 
 void board_reset(void) {
     // todo
+    NVIC_SystemReset();
 }
 
 //=========================== private =========================================
