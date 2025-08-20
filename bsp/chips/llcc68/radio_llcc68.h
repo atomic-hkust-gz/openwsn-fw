@@ -191,6 +191,13 @@ typedef struct __attribute__((packed)) {
 }irqStatus_t;
 
 typedef struct __attribute__((packed)) {
+    irqStatus_t IrqMask;
+    irqStatus_t Dio1Mask;
+    irqStatus_t Dio2Mask;
+    irqStatus_t Dio3Mask;
+}irqParams_t;
+
+typedef struct __attribute__((packed)) {
     uint8_t Reserved1       : 1;
     uint8_t CommandStatus   : 3;
     uint8_t ChipMode        : 3;
@@ -248,16 +255,17 @@ void          radio_llcc68_init(void);
 // reset
 void          radio_llcc68_reset(void);
 // RF admin
+void          radio_llcc68_setFrequency(uint32_t frequency);
 void          radio_llcc68_loadPacket(uint8_t offset, uint8_t* buffer, uint8_t len);
 void          radio_llcc68_setModulation(radioModulationParams_t modParams);
 void          radio_llcc68_setPacketParams(packetParams_t packetParams);
 void          radio_llcc68_txNow(radioTimeout_t timeout);
 void          radio_llcc68_rxNow(radioTimeout_t timeout);
+void          radio_llcc68_rfOff(void);
 void          radio_llcc68_get_status(void);
 void          radio_llcc68_get_opError(void);
 void          radio_llcc68_wait_on_busy(void);
 irqStatus_t   radio_llcc68_irq_status(void);
-//void     radio_llcc68_setFrequency(uint16_t channel, radio_freq_t tx_or_rx);
 //void     radio_llcc68_rfOn(void);
 //void     radio_llcc68_rfOff(void);
 // TX

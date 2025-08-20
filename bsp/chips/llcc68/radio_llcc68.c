@@ -23,7 +23,10 @@
 #define TIMER_PERIOD                0x2000 // @32kHz = 0.25 s
 
 #define MAX_PACKET_SIZE             128 // 256 actual max
-#define IRQ_MASK                    0xFF
+#define IRQMASK                     0xFF
+#define DIO1MASK                    0x13  //TxDone,RxDone,PreambleDetected
+#define DIO2MASK                    0x00
+#define DIO3MASK                    0x00
 
 
 // lora configuration
@@ -66,6 +69,7 @@ void radio_llcc68_init(void) {
     packetParams_t packetParams;
     bufferBaseAddress_t bufferBaseAddress;
     irqStatus_t irqStatus;
+    irqParams_t irqParams;
     uint8_t value;
     uint8_t mulitParam[4];
 
@@ -76,6 +80,7 @@ void radio_llcc68_init(void) {
     memset(&packetParams, 0, sizeof(packetParams));
     memset(&bufferBaseAddress, 0, sizeof(bufferBaseAddress));
     memset(&irqStatus, 0, sizeof(irqStatus));
+    memset(&irqParams, 0, sizeof(irqParams));
     memset(&mulitParam, 0, sizeof(mulitParam));
     
     // nrf pin configure
@@ -181,9 +186,17 @@ void radio_llcc68_init(void) {
         TYPE_WRITE, (uint8_t*)&packetParams, sizeof(packetParams));
 
     // clear IRQ status
-    memset(&irqStatus, IRQ_MASK, sizeof(irqStatus));
+    memset(&irqStatus, IRQMASK, sizeof(irqStatus));
     llcc68_noAddress_opcode(CLEARIRQSTATUS, 
         TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus));
+
+    // set IRQ/DIO params
+    memset(&irqParams.IrqMask, DIO2MASK, sizeof(irqParams.IrqMask));
+    memset(&irqParams.Dio1Mask, DIO1MASK, sizeof(irqParams.IrqMask));
+    memset(&irqParams.Dio2Mask, DIO2MASK, sizeof(irqParams.IrqMask));
+    memset(&irqParams.Dio3Mask, DIO3MASK, sizeof(irqParams.IrqMask));
+    llcc68_noAddress_opcode(SETDIOIRQPARAMS, 
+        TYPE_WRITE, (uint8_t*)&irqParams, sizeof(irqParams));
     
     // check for device errors 
     radio_llcc68_get_opError();
@@ -192,30 +205,73 @@ void radio_llcc68_init(void) {
   
 }
 
+
+void radio_llcc68_setFrequency(uint32_t frequencyHz) {
+    uint32_t freqReg;
+    uint8_t RF_frequency[4];
+
+    // freqReg = frequency(Hz) * 2^20 / 1,000,000
+    // equivalent to 
+    // freqReg = freqeuncy(Hz) * 32 MHz(F_XTAL) / 2^25
+    freqReg = (uint32_t)(((uint64_t)frequencyHz * (1UL << 20)) / 1000000UL);
+
+    memcpy(RF_frequency, &freqReg, sizeof(freqReg));
+    llcc68_noAddress_opcode(SETRFFREQUENCY, TYPE_WRITE, RF_frequency, sizeof(RF_frequency));
+    radio_llcc68_get_status();
+    radio_llcc68_get_opError();
+}
+
 void radio_llcc68_loadPacket(uint8_t offset, uint8_t* buffer, uint8_t len){
     llcc68_txBufferWrite(offset, buffer, len);
+
+    radio_llcc68_get_status();
+    radio_llcc68_get_opError();
 }
 
 void radio_llcc68_setModulation(radioModulationParams_t modParams){
     llcc68_noAddress_opcode(SETMODULATIONPARAMS, 
         TYPE_WRITE, (uint8_t*)&modParams, sizeof(modParams));
+
+    radio_llcc68_get_status();
+    radio_llcc68_get_opError();
 }
 
 void radio_llcc68_setPacketParams(packetParams_t packetParams){
     llcc68_noAddress_opcode(SETPACKETPARAMS, 
         TYPE_WRITE, (uint8_t*)&packetParams, sizeof(packetParams));
+
+    radio_llcc68_get_status();
+    radio_llcc68_get_opError();
 }
 
 // Timeout Duration = timeout[] * 15.625 us
 void radio_llcc68_txNow(radioTimeout_t txMax){
     llcc68_noAddress_opcode(SETTX, 
         TYPE_WRITE, (uint8_t*)&txMax.timeout, sizeof(txMax.timeout));
+
+    radio_llcc68_get_status();
+    radio_llcc68_get_opError();
 }
 
 // Timeout Duration = timeout[] * 15.625 us
 void radio_llcc68_rxNow(radioTimeout_t rxMax){
     llcc68_noAddress_opcode(SETRX, 
         TYPE_WRITE, (uint8_t*)&rxMax.timeout, sizeof(rxMax.timeout));
+
+    radio_llcc68_get_status();
+    radio_llcc68_get_opError();
+}
+
+// set radio to standby_RC mode
+void radio_llcc68_rfOff(void){
+    uint8_t config = RC_13MHz;
+    llcc68_noAddress_opcode(SETSTANDBY, 
+        TYPE_WRITE, (uint8_t*)&config, sizeof(config));
+
+    radio_vars.state = LLCC68STATE_STANDBY_RC;
+
+    radio_llcc68_get_status();
+    radio_llcc68_get_opError();
 }
 
 // Gets the chip's status byte
@@ -288,19 +344,6 @@ void radio_llcc68_setEndFrameCb(radio_capture_cbt cb) {
 
 
 
-
-
-void radio_llcc68_setFrequency(uint8_t frequency, radio_freq_t tx_or_rx) {
-
-    NRF_RADIO->FREQUENCY = FREQUENCY_STEP*(frequency-FREQUENCY_OFFSET);
-
-    radio_vars.state     = RADIOSTATE_FREQUENCY_SET;
-}
-
-int8_t radio_llcc68_getFrequencyOffset(void){
-  
-    return 0; 
-}
 
 void radio_llcc68_rfOn(void) {
     // power on radio

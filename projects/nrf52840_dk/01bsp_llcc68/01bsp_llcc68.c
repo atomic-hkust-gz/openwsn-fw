@@ -14,13 +14,17 @@
 
 #define LENGTH_PACKET   125+LENGTH_CRC  ///< maximum length is 127 bytes
 #define LEN_PKT_TO_SEND 20+LENGTH_CRC
-#define CHANNEL         11             ///< 11=2.405GHz
-#define TIMER_PERIOD    (0xffff>>4)    ///< 0xffff = 2s@32kHz
-#define ID              0x99           ///< byte sent in the packets
+#define RFFREQUENCY     470500000       ///< 470.5 MHz
+#define TIMER_PERIOD    (0xffff>>4)     ///< 0xffff = 2s@32kHz
+#define ID              0x99            ///< byte sent in the packets
 
 #define MAX_BUFFER_SIZE   10
+#define LORA_PREAMBLE_LENGTH        0X08
 
 uint8_t stringToSend[]  = "+002 Ptest.24.00.12.-010\n";
+
+static const uint8_t TXRXOFFSET =   0x00; 
+static const uint8_t TIMEOUT[3] =   {0x00,0x19,0x00};  ///< // 1 s = 64000 * 15.625 us
 
 //=========================== variables =======================================
 
@@ -76,136 +80,97 @@ void llcc68_function_test(void);
 
 
 int mote_main(void){
+    
     radioModulationParams_t loraModParams;
     packetParams_t packetParams;
-    uint8_t packet[MAX_BUFFER_SIZE];
-    
-    memset(&loraModParams, 0, sizeof(loraModParams));
-    memset(&packetParams, 0, sizeof(packetParams));
+    radioTimeout_t radioTimeout;    
 
+    // initialize board & radio
     board_init();
     radio_llcc68_init();
     
-    //llcc68_function_test();
-
-    radio_llcc68_loadPacket(uint8_t offset, uint8_t* buffer, uint8_t len);
-    //radio_llcc68_setModulation(radioModulationParams_t modParams);
-    //radio_llcc68_setPacketParams(packetParams_t packetParams);
-    radio_llcc68_txNow(radioTimeout_t timeout);
-
-    //SetDioIrqParams
-    //Define Sync Word value: use the command WriteReg(...)
-    //SetTx()
-    //wait for irq TxDone or Timeout
-    //clear IRQ TxDone
-
-    while(1);
-
-}
-void llcc68_function_test(void){
-    uint8_t packet[4];
-    uint8_t opcodeDate[2];
-    uint8_t txPayload[MAX_BUFFER_SIZE];
-    uint8_t rxPayload[MAX_BUFFER_SIZE];
-
-    memset(&packet, 0, sizeof(packet));
-    memset(&opcodeDate, 0, sizeof(opcodeDate));
-    memset(&txPayload, 0, sizeof(txPayload));
-    memset(&rxPayload, 0, sizeof(rxPayload));
-    
-    // function testing
-
-    // llcc68_spiReadingReg()
-    packet[0] = llcc68_spiReadReg(CRCMSB); // Default Value = 0x1D
-    packet[1] = llcc68_spiReadReg(CRCLSB); // Default Value = 0x0F
-
-    // llcc68_spiReadingReg() 
-    llcc68_spiWriteReg(CRCMSB,0x12);
-    llcc68_spiWriteReg(CRCLSB,0x34);
-    packet[2] = llcc68_spiReadReg(CRCMSB); // expected value = 0x12
-    packet[3] = llcc68_spiReadReg(CRCLSB); // Expected value = 0x34
-    
-    // write opcode
-    opcodeDate[0] = 0x01;     // LORA packet type
-    llcc68_noAddress_opcode(SETPACKETTYPE, 
-        TYPE_WRITE, &opcodeDate[0], sizeof(opcodeDate[0]));
-
-    // read opcode
-    llcc68_noAddress_opcode(GETPACKETTYPE, 
-        TYPE_READ, &opcodeDate[1], sizeof(opcodeDate[1]));
-
-
-    // llcc68_writeBuffer()
-    opcodeDate[0] = 0x00;   // tx base address
-    opcodeDate[0] = 0x80;   // rx base address
-    llcc68_noAddress_opcode(SETBUFFERBASEADDRESS, 
-        TYPE_WRITE, opcodeDate, sizeof(opcodeDate));
-
-    for(int i = 0; i < MAX_BUFFER_SIZE; i++){
-        txPayload[i] = (uint8_t)i;
-    }
-    llcc68_txBufferWrite((uint8_t)0x00, txPayload, sizeof(txPayload));
-    rxPayload[0] = llcc68_spiReadReg(0x0080);
-    rxPayload[1] = llcc68_spiReadReg(0x0040);
-    rxPayload[2] = llcc68_spiReadReg(0x0020);
-    rxPayload[3] = llcc68_spiReadReg(0x00C0);
-    radio_llcc68_get_opError();
-    radio_llcc68_get_status();
-    // llcc68_readBuffer()
-    //llcc68_rxBufferRead((uint8_t)0x00, rxPayload, sizeof(rxPayload));
-};
-
-
-    //llcc68_noAddress_opcode(SETFS, 
-    //    TYPE_WRITE, (uint8_t*)&value, sizeof(value));
-    //llcc68_noAddress_opcode(SETFS, TYPE_WRITE, packet, sizeof(packet));
-/*
-int mote_main(void) {
-    uint8_t i;
-
-    uint8_t freq_offset;
-    uint8_t sign;
-    uint8_t read;
-
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
-
-    // initialize board
-    board_init();
+    memset(&loraModParams, 0, sizeof(loraModParams));
+    memset(&packetParams, 0, sizeof(packetParams));
+    memset(&radioTimeout, 0, sizeof(radioTimeout));
 
     // setup UART
     uart_setCallbacks(cb_uart_tx_done,cb_uart_rx);
     uart_enableInterrupts();
-
     app_vars.uartDone = 1;
-
+    
     // add callback functions radio
-    radio_setStartFrameCb(cb_startFrame);
-    radio_setEndFrameCb(cb_endFrame);
+    // ...
 
     // prepare packet
+    
     app_vars.packet_len = sizeof(app_vars.packet);
-    for (i=0;i<app_vars.packet_len;i++) {
-        app_vars.packet[i] = ID;
+    /*
+      for (int i = 0; i < app_vars.packet_len; i++) {
+          app_vars.packet[i] = ID;
     }
+    */
+    for (int i = 0; i < app_vars.packet_len; i++){
+        app_vars.packet[i] = (uint8_t)i;
+    }
+
+    // radio config
+    radio_llcc68_setFrequency(RFFREQUENCY);
+
+    loraModParams = (radioModulationParams_t){
+        .SpreadingFactor      = LORA_SF7,
+        .Bandwidth            = LORA_BW_125,
+        .CodingRate           = LORA_CR_4_5,
+        .LowDataRateOptimize  = LDRO_ON
+    };
+    radio_llcc68_setModulation(loraModParams);
+    packetParams = (packetParams_t){
+        .PreambleLength       = LORA_PREAMBLE_LENGTH,
+        .HeaderType           = FIXED_LENGTH_PACKET,
+        .PayloadLength        = LENGTH_PACKET,
+        .CrcType              = CRC_ON,
+        .InvertIq             = STD_IQ
+    };
+    radio_llcc68_setPacketParams(packetParams);
 
     // start bsp timer
     sctimer_set_callback(cb_timer);
     sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
     sctimer_enable();
-
-    // prepare radio
-    radio_rfOn();
-    // freq type only effects on scum port
-    radio_setFrequency(CHANNEL, FREQ_RX);
-
+    
     // switch in RX by default
-    radio_rxEnable();
+    //radio_rxEnable();
     app_vars.state = APP_STATE_RX;
 
     // start by a transmit
     app_vars.flags |= APP_FLAG_TIMER;
 
+    //radio_llcc68_loadPacket(offset, buffer, sizeof(packet));
+
+    //memcpy(radioTimeout, RADIOTIMEOUT, sizeof(radioTimeout));
+    //radio_llcc68_txNow(radioTimeout_t timeout);
+    while (1){
+
+      //if (app_vars.flags & APP_FLAG_TIMER){
+
+        radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, LEN_PKT_TO_SEND);
+        memcpy(radioTimeout.timeout, TIMEOUT, sizeof(radioTimeout.timeout));
+        radio_llcc68_txNow(radioTimeout);
+        radio_llcc68_get_status();
+        radio_llcc68_get_opError();
+        
+        //app_vars.flags &= ~APP_FLAG_TIMER;
+      //}
+      for(int i = 0; i < 10000; i++){};
+    
+    }
+    //SetDioIrqParams
+    //Define Sync Word value: use the command WriteReg(...)
+    //SetTx()
+    //wait for irq TxDone or Timeout
+    //clear IRQ TxDone
+    /*
     while (1) {
 
         // sleep while waiting for at least one of the flags to be set
@@ -263,44 +228,10 @@ int mote_main(void) {
                             &app_vars.rxpk_crc
                         );
 
-                        freq_offset = radio_getFrequencyOffset();
-                        sign = (freq_offset & 0x80) >> 7;
-                        if (sign){
-                            read = 0xff - (uint8_t)(freq_offset) + 1;
-                        } else {
-                            read = freq_offset;
-                        }
-
                         i = 0;
-                        if (sign) {
-                            stringToSend[i++] = '-';
-                        } else {
-                            stringToSend[i++] = '+';
-                        }
-                        stringToSend[i++] = '0'+read/100;
-                        stringToSend[i++] = '0'+read/10;
-                        stringToSend[i++] = '0'+read%10;
-                        stringToSend[i++] = ' ';
-
-                        stringToSend[i++] = 'P';
-                        memcpy(&stringToSend[i],&app_vars.packet[0],14);
-                        i += 14;
-
-                        sign = (app_vars.rxpk_rssi & 0x80) >> 7;
-                        if (sign){
-                            read = 0xff - (uint8_t)(app_vars.rxpk_rssi) + 1;
-                        } else {
-                            read = app_vars.rxpk_rssi;
-                        }
-
-                        if (sign) {
-                            stringToSend[i++] = '-';
-                        } else {
-                            stringToSend[i++] = '+';
-                        }
-                        stringToSend[i++] = '0'+read/100;
-                        stringToSend[i++] = '0'+read/10;
-                        stringToSend[i++] = '0'+read%10;
+                        memcpy(&stringToSend[i],&app_vars.packet[0], 
+                            app_vars.packet_len);
+                        i += app_vars.packet_len + 1;
 
                         stringToSend[sizeof(stringToSend)-2] = '\r';
                         stringToSend[sizeof(stringToSend)-1] = '\n';
@@ -337,8 +268,8 @@ int mote_main(void) {
                 // timer fired
 
                 if (app_vars.state==APP_STATE_RX) {
-                    // stop listening
-                    radio_rfOff();
+                    // radio mode = standby_RC
+                    radio_llcc68_rfOff();
 
                     // prepare packet
                     app_vars.packet_len = sizeof(app_vars.packet);
@@ -347,15 +278,16 @@ int mote_main(void) {
                     app_vars.packet[i++] = 'e';
                     app_vars.packet[i++] = 's';
                     app_vars.packet[i++] = 't';
-                    app_vars.packet[i++] = CHANNEL;
                     while (i<app_vars.packet_len) {
                         app_vars.packet[i++] = ID;
                     }
-
+                    
                     // start transmitting packet
-                    radio_loadPacket(app_vars.packet,LEN_PKT_TO_SEND);
-                    radio_txEnable();
-                    radio_txNow();
+                    radio_llcc68_loadPacket(TXRXOFFSET,
+                        app_vars.packet,LEN_PKT_TO_SEND);
+                    radio_llcc68_setFrequency(RFFREQUENCY);
+                    memcpy(radioTimeout, TIMEOUT, sizeof(radioTimeout));
+                    radio_llcc68_txNow(radioTimeout);
 
                     app_vars.state = APP_STATE_TX;
                 }
@@ -365,7 +297,61 @@ int mote_main(void) {
             }
         }
     }
+    */
 }
+void llcc68_function_test(void){
+    uint8_t packet[4];
+    uint8_t opcodeDate[2];
+    uint8_t txPayload[MAX_BUFFER_SIZE];
+    uint8_t rxPayload[MAX_BUFFER_SIZE];
+
+    memset(&packet, 0, sizeof(packet));
+    memset(&opcodeDate, 0, sizeof(opcodeDate));
+    memset(&txPayload, 0, sizeof(txPayload));
+    memset(&rxPayload, 0, sizeof(rxPayload));
+    
+    // function testing
+
+    // llcc68_spiReadingReg()
+    packet[0] = llcc68_spiReadReg(CRCMSB); // Default Value = 0x1D
+    packet[1] = llcc68_spiReadReg(CRCLSB); // Default Value = 0x0F
+
+    // llcc68_spiReadingReg() 
+    llcc68_spiWriteReg(CRCMSB,0x12);
+    llcc68_spiWriteReg(CRCLSB,0x34);
+    packet[2] = llcc68_spiReadReg(CRCMSB); // expected value = 0x12
+    packet[3] = llcc68_spiReadReg(CRCLSB); // Expected value = 0x34
+    
+    // write opcode
+    opcodeDate[0] = 0x01;     // LORA packet type
+    llcc68_noAddress_opcode(SETPACKETTYPE, 
+        TYPE_WRITE, &opcodeDate[0], sizeof(opcodeDate[0]));
+
+    // read opcode
+    llcc68_noAddress_opcode(GETPACKETTYPE, 
+        TYPE_READ, &opcodeDate[1], sizeof(opcodeDate[1]));
+
+
+    // llcc68_writeBuffer()
+    opcodeDate[0] = 0x00;   // tx base address
+    opcodeDate[0] = 0x80;   // rx base address
+    llcc68_noAddress_opcode(SETBUFFERBASEADDRESS, 
+        TYPE_WRITE, opcodeDate, sizeof(opcodeDate));
+
+    for(int i = 0; i < MAX_BUFFER_SIZE; i++){
+        txPayload[i] = (uint8_t)i;
+    }
+    llcc68_txBufferWrite((uint8_t)0x00, txPayload, sizeof(txPayload));
+    rxPayload[0] = llcc68_spiReadReg(0x0080);
+    rxPayload[1] = llcc68_spiReadReg(0x0040);
+    rxPayload[2] = llcc68_spiReadReg(0x0020);
+    rxPayload[3] = llcc68_spiReadReg(0x00C0);
+    radio_llcc68_get_opError();
+    radio_llcc68_get_status();
+    // llcc68_readBuffer()
+    //llcc68_rxBufferRead((uint8_t)0x00, rxPayload, sizeof(rxPayload));
+};
+
 
 //=========================== callbacks =======================================
 
@@ -426,4 +412,3 @@ uint8_t cb_uart_rx(void) {
 
     return 0;
 }
-*/
