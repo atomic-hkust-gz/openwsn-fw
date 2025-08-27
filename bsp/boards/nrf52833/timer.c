@@ -55,16 +55,16 @@ void timer_init(void) {
     NVIC->IP[TIMER0_IRQn]         = (uint8_t)((TIMER_PRIORITY << (8 - __NVIC_PRIO_BITS)) & (uint32_t)0xFF);
     NVIC->ISER[TIMER0_IRQn>>5]    = (uint32_t)(0x1 << (TIMER0_IRQn & 0x1f));
 
-    // set compare interrupt for timer0
-    //NRF_TIMER0->INTENSET = (1<<OFFSET_INTENSET_CC_0) |\
-    //                       (1<<OFFSET_INTENSET_CC_1) |\
-    //                       (1<<OFFSET_INTENSET_CC_2) |\
-    //                       (1<<OFFSET_INTENSET_CC_3) |\
-    //                       (1<<OFFSET_INTENSET_CC_4) |\
-    //                       (1<<OFFSET_INTENSET_CC_5);
+    //set compare interrupt for timer0
+    NRF_TIMER0->INTENSET = (1<<OFFSET_INTENSET_CC_0) |\
+                           (1<<OFFSET_INTENSET_CC_1) |\
+                           (1<<OFFSET_INTENSET_CC_2) |\
+                           (1<<OFFSET_INTENSET_CC_3) |\
+                           (1<<OFFSET_INTENSET_CC_4) |\
+                           (1<<OFFSET_INTENSET_CC_5);
 
                            
-    NRF_TIMER0->INTENSET = (1<<OFFSET_INTENSET_CC_0);
+    //NRF_TIMER0->INTENSET = (1<<OFFSET_INTENSET_CC_0);
 }
 
 void timer_set_callback(uint8_t compare_id, timer_cbt cb) {

@@ -18,8 +18,8 @@
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
-//#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
-#define LEN_UART_BUFFER (7)
+#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
+//#define LEN_UART_BUFFER (7)
 #define LENGTH_SERIAL_FRAME  127            // length of the serial frame
 
 #define ENABLE_DF       1

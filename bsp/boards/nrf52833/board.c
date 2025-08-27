@@ -49,7 +49,6 @@ void board_init(void) {
 
 void board_sleep(void) {
     // todo
-    //__WFE();
     //clocks_stop();
     __WFE();
 }

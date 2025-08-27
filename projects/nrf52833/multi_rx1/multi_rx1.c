@@ -221,14 +221,14 @@ int mote_main(void) {
                     uart_writeByte(app_vars.uart_buffer_to_send[0]);
 
                     app_vars.tx1_done = 0;
-                    app_vars.tx1_packet_sqn = 0;
+                    //app_vars.tx1_packet_sqn = 0;
                     app_vars.tx2_done = 0;
-                    app_vars.tx2_packet_sqn = 0;
+                    //app_vars.tx2_packet_sqn = 0;
                 } 
                 app_vars.tx1_done = 0;
-                app_vars.tx1_packet_sqn = 0;
+                //app_vars.tx1_packet_sqn = 0;
                 app_vars.tx2_done = 0;
-                app_vars.tx2_packet_sqn = 0;
+                //app_vars.tx2_packet_sqn = 0;
 
             }
 
