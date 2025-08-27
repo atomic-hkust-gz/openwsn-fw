@@ -26,13 +26,22 @@ void timer1_init(void);
 void timer0_set_callback(uint8_t compare_id, timer_cbt cb);
 void timer1_set_callback(uint8_t compare_id, timer_cbt cb);
 
-void timer_start(NRF_TIMER_Type* NRF_TIMER_NS);
-void timer_stop(NRF_TIMER_Type* NRF_TIMER_NS);
+void timer0_start(void);
+void time0r_stop(void);
 
-void timer_clear(NRF_TIMER_Type* NRF_TIMER_NS);
-void timer_capture_now(NRF_TIMER_Type* NRF_TIMER_NS, uint8_t capture_id) ;
+void timer0_start(void);
+void timer1_stop(void);
 
-void timer_schedule(NRF_TIMER_Type* NRF_TIMER_NS, uint8_t compare_id, uint32_t value);
-uint32_t timer_getCapturedValue(NRF_TIMER_Type* NRF_TIMER_NS, uint8_t compare_id);
+void timer0_clear(void);
+void timer1_clear(void);
+
+void timer0_capture_now(uint8_t capture_id);
+void timer1_capture_now(uint8_t capture_id);
+
+void timer0_schedule(uint8_t compare_id, uint32_t value);
+void timer1_schedule(uint8_t compare_id, uint32_t value);
+
+uint32_t timer0_getCapturedValue(uint8_t compare_id);
+uint32_t timer1_getCapturedValue(uint8_t compare_id);
 
 #endif // __ADC_SENSOR_H__

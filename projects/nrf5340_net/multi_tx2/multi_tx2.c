@@ -67,26 +67,30 @@ app_dbg_t app_dbg;
 
 typedef struct {
 
-               uint8_t         slot_timerId;
-               uint8_t         inner_timerId;
-               app_state_t     state;
+                uint8_t         slot_timerId;
+                uint8_t         inner_timerId;
+                app_state_t     state;
 
-               uint8_t         slot_offset;
-               uint8_t         pkt_sqn;
-               uint32_t        time_slotStartAt;
+                uint8_t         slot_offset;
+                uint8_t         pkt_sqn;
+                uint32_t        time_slotStartAt;
 
-               uint8_t         packet[LENGTH_PACKET];
-               uint8_t         packet_len;
-               int8_t          rxpk_rssi;
-               uint8_t         rxpk_lqi;
-               bool            rxpk_crc;
+                uint8_t         packet[LENGTH_PACKET];
+                uint8_t         packet_len;
+                uint8_t         rxpk_packet[LENGTH_PACKET];
+                uint8_t         rxpk_packet_len;
+                int8_t          rxpk_rssi;
+                uint8_t         rxpk_lqi;
+                bool            rxpk_crc;
 
-               uint8_t         rx_doneAt;
-               uint8_t         tx_now;
+                uint8_t         rx_doneAt;
+                uint8_t         tx_now;
 
-               uint32_t       start_timestamp;
-               uint32_t       end_timestamp;
-               uint32_t       time_interval;
+                uint32_t       start_timestamp;
+                uint32_t       end_timestamp;
+                uint32_t       time_interval;
+
+                bool           isTargetPkt;
 
 } app_vars_t;
 
@@ -134,7 +138,7 @@ int mote_main(void) {
 
 
     timer0_init();
-    timer_start(NRF_TIMER0_NS);
+    timer0_start();
     timer0_set_callback(0, cb_timer);
 
     radio_rfOn();
@@ -152,8 +156,8 @@ int mote_main(void) {
             board_sleep();
         }
 
-        timer_capture_now(NRF_TIMER0_NS, 0);
-        app_vars.start_timestamp = timer_getCapturedValue(NRF_TIMER0_NS, 0);
+        timer0_capture_now(0);
+        app_vars.start_timestamp = timer0_getCapturedValue(0);
 
         radio_txEnable();
         app_vars.state = APP_STATE_TX;
@@ -206,44 +210,47 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
-    uint32_t endframe_timestamp;
- 
+
     app_dbg.num_endFrame++;
-    timer_capture_now(NRF_TIMER0_NS, 0);
-    endframe_timestamp = timer_getCapturedValue(NRF_TIMER0_NS, 0);
-    app_vars.time_slotStartAt = endframe_timestamp + SEND_OFFSET;
 
-    app_vars.packet_len = sizeof(app_vars.packet);
-
-    radio_getReceivedFrame(
-        app_vars.packet,
-        &app_vars.packet_len,
-        sizeof(app_vars.packet),
-        &app_vars.rxpk_rssi,
-        &app_vars.rxpk_lqi,
-        &app_vars.rxpk_crc
-    );
+    timer0_capture_now(0);
 
     if (app_vars.state == APP_STATE_RX) {
-        leds_error_toggle();
-        //timer_schedule(NRF_TIMER0_NS, 0, app_vars.time_slotStartAt);
+        
+        app_vars.isTargetPkt = FALSE;
 
-        //timer_capture_now(NRF_TIMER0_NS, 0);
-        //app_vars.start_timestamp = timer_getCapturedValue(NRF_TIMER0_NS, 0);
+        radio_getReceivedFrame(
+            app_vars.rxpk_packet,
+            &app_vars.rxpk_packet_len,
+            sizeof(app_vars.rxpk_packet),
+            &app_vars.rxpk_rssi,
+            &app_vars.rxpk_lqi,
+            &app_vars.rxpk_crc
+        );
+        
+        if (app_vars.rxpk_packet[0] == 0x42 & app_vars.rxpk_packet[1] == 0x21) {
+            app_vars.isTargetPkt = TRUE;      //Check if received packet is a legal plast system packet
+        }
 
-        app_vars.pkt_sqn = app_vars.packet[33];
-        assemble_ibeacon_packet(app_vars.pkt_sqn);
-        radio_loadPacket(app_vars.packet, LENGTH_PACKET);
-        app_vars.tx_now = 1;
+        if (app_vars.isTargetPkt) {
+            uint32_t endframe_timestamp = timer0_getCapturedValue(0);
+            app_vars.time_slotStartAt = endframe_timestamp + SEND_OFFSET;
+            timer0_schedule(0, app_vars.time_slotStartAt);
 
-        //timer_capture_now(NRF_TIMER0_NS, 0);
-        //app_vars.end_timestamp = timer_getCapturedValue(NRF_TIMER0_NS, 0);
-        //app_vars.time_interval = app_vars.end_timestamp - app_vars.start_timestamp;
+            app_vars.pkt_sqn = app_vars.rxpk_packet[33];
+            app_vars.packet_len = sizeof(app_vars.packet);
+            assemble_ibeacon_packet(app_vars.pkt_sqn);
+            radio_setFrequency(CHANNEL, FREQ_TX);
+            radio_loadPacket(app_vars.packet, LENGTH_PACKET);
+        } else {
+            radio_rxEnable();
+            radio_rxNow();
+        }
 
     }
 
+
     if (app_vars.state == APP_STATE_TX) {
-        leds_sync_toggle();
         radio_rxEnable();
         app_vars.state = APP_STATE_RX;
         radio_rxNow();
@@ -251,11 +258,10 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_timer(void) {
-   app_dbg.num_timer++;
-   leds_debug_toggle();
-   radio_txEnable();
-   app_vars.state = APP_STATE_TX;
-
-   radio_txNow();
-   //app_vars.tx_now = 1;
+    leds_error_toggle();
+    app_dbg.num_timer++;
+    radio_txEnable();
+    app_vars.state = APP_STATE_TX;
+    radio_txNow();
+    //app_vars.tx_now = 1;
 }

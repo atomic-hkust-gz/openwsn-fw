@@ -105,35 +105,64 @@ void timer1_set_callback(uint8_t compare_id, timer_cbt cb) {
     timer1_vars.cb[compare_id] = cb;
 }
 
-void timer_schedule(NRF_TIMER_Type* NRF_TIMER_NS, uint8_t compare_id, uint32_t value) {
+void timer0_schedule(uint8_t compare_id, uint32_t value) {
 
-    NRF_TIMER_NS->CC[compare_id] = value;
+    NRF_TIMER0_NS->CC[compare_id] = value;
 }
 
-uint32_t timer_getCapturedValue(NRF_TIMER_Type* NRF_TIMER_NS, uint8_t compare_id) {
+void timer1_schedule(uint8_t compare_id, uint32_t value) {
 
-    return NRF_TIMER_NS->CC[compare_id];
-}
-
-
-void timer_clear(NRF_TIMER_Type* NRF_TIMER_NS) {
-    NRF_TIMER_NS->TASKS_CLEAR = 1;
+    NRF_TIMER1_NS->CC[compare_id] = value;
 }
 
 
-void timer_capture_now(NRF_TIMER_Type* NRF_TIMER_NS, uint8_t capture_id) {
-    NRF_TIMER_NS->TASKS_CAPTURE[capture_id] = 1;
+uint32_t timer0_getCapturedValue(uint8_t compare_id) {
+
+    return NRF_TIMER0_NS->CC[compare_id];
+}
+
+uint32_t timer1_getCapturedValue(uint8_t compare_id) {
+
+    return NRF_TIMER1_NS->CC[compare_id];
 }
 
 
-void timer_start(NRF_TIMER_Type* NRF_TIMER_NS) {
-
-    NRF_TIMER_NS->TASKS_START = 1;
+void timer0_clear(void) {
+    NRF_TIMER0_NS->TASKS_CLEAR = 1;
 }
 
-void timer_stop(NRF_TIMER_Type* NRF_TIMER_NS) {
+void timer1_clear(void) {
+    NRF_TIMER1_NS->TASKS_CLEAR = 1;
+}
+
+
+void timer0_capture_now(uint8_t capture_id) {
+    NRF_TIMER0_NS->TASKS_CAPTURE[capture_id] = 1;
+}
+
+void timer1_capture_now(uint8_t capture_id) {
+    NRF_TIMER1_NS->TASKS_CAPTURE[capture_id] = 1;
+}
+
+
+void timer0_start(void) {
+
+    NRF_TIMER0_NS->TASKS_START = 1;
+}
+
+void timer1_start(void) {
+
+    NRF_TIMER1_NS->TASKS_START = 1;
+}
+
+void timer0_stop(void) {
     
-    NRF_TIMER_NS->TASKS_STOP = 1;
+    NRF_TIMER0_NS->TASKS_STOP = 1;
+}
+
+void timer1_stop(void) {
+    
+    NRF_TIMER1_NS->TASKS_STOP = 1;
 }
 
 //=========================== private =========================================
