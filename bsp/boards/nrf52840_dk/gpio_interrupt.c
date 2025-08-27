@@ -1,205 +1,106 @@
 /**
- * Author: Tamas Harczos (tamas.harczos@imms.de)
- * Date:   Apr 2018
- * Description: nRF52840-specific definition of the "leds" bsp module.
+ * Author: Jacob Louie (jlouie475@connect.hkust-gz.edu.cn)
+ * Date:   Aug 2025
+ * Description: nRF52840-specific definition of the gpio irq module.
  */
 
- #include "stdbool.h"
 #include "nrf52840.h"
 #include "board_info.h"
-#include "leds.h"
+#include "nrf52840_bitfields.h"
+#include "gpio_interrupt.h"
 
 
 //=========================== defines =========================================
+#define IRQ_PRIORITY  0     // adjust based on system design 
+                            // 0 = highest priority
+                            // 7 = lowest priority
 
-// nrf52840-DK
-#define LED_1           NRF_GPIO_PIN_MAP(0,13)
-#define LED_2           NRF_GPIO_PIN_MAP(0,14)
-#define LED_3           NRF_GPIO_PIN_MAP(0,15)
-#define LED_4           NRF_GPIO_PIN_MAP(0,16)
+#define channel       0
 
 //=========================== variables =======================================
+
+typedef struct {
+    gpioIrq_cbt         cb;
+    uint32_t            pin_mask;
+    uint8_t             port;      // 0 for P0, 1 for P1
+} gpio_irq_vars_t;
+
+gpio_irq_vars_t gpio_irq_vars;
 
 //=========================== prototypes ======================================
 
 //=========================== public ==========================================
 
-void leds_init() {
 
-    NRF_P0->DIRSET = 1<<LED_1;
-    NRF_P0->DIRSET = 1<<LED_2;
-    NRF_P0->DIRSET = 1<<LED_3;
-    NRF_P0->DIRSET = 1<<LED_4;
+/* 
+  port      GPIO port (0 or 1) P0/P1
+  pin       Pin number (0–31)
+  sense     NRF_GPIO_PIN_SENSE_HIGH or NRF_GPIO_PIN_SENSE_LOW
+  pull      NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_PULLUP, or NRF_GPIO_PIN_PULLDOWN
+*/
+void gpio_irq_init(uint8_t port, uint8_t pin, uint32_t sense, uint32_t pull) {
+   memset(&gpio_irq_vars, 0, sizeof(gpio_irq_vars_t));
 
-    leds_all_off();
+   gpio_irq_vars.port     = port;
+   gpio_irq_vars.pin_mask = (1UL << pin);
+
+   // Configure pin as input with pull and sense
+
+   if (port == 0) {
+       NRF_P0->PIN_CNF[pin] = 
+       (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |
+           ((uint32_t)pull << GPIO_PIN_CNF_PULL_Pos) |
+           ((uint32_t)sense << GPIO_PIN_CNF_SENSE_Pos);
+   }
+   else {
+       NRF_P1->PIN_CNF[pin] = 
+           (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |
+           ((uint32_t)pull << GPIO_PIN_CNF_PULL_Pos) |
+           ((uint32_t)sense << GPIO_PIN_CNF_SENSE_Pos);
+   }
+   
+   // Configure GPIOTE channel 0 to generate an event on toggle
+   NRF_GPIOTE->CONFIG[channel] = 
+       (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
+       (pin << GPIOTE_CONFIG_PSEL_Pos) |
+       (GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos);
+
+   // Clear and enable interrupt
+   NRF_GPIOTE->EVENTS_IN[channel] = 0;
+   NRF_GPIOTE->INTENSET     = GPIOTE_INTENSET_IN0_Msk;
+
+   NVIC->IP[GPIOTE_IRQn]    = (uint8_t)((IRQ_PRIORITY << (8 - __NVIC_PRIO_BITS)) & 0xFF);
+   NVIC->ISER[GPIOTE_IRQn >> 5] = (uint32_t)(1 << (GPIOTE_IRQn & 0x1F));
 }
 
-//==== error led
 
-void leds_error_off(void) {
-    NRF_P0->OUTSET = 1<<LED_1;
+void gpio_irq_set_callback(gpioIrq_cbt cb) {
+    gpio_irq_vars.cb= cb;
 }
 
-void leds_error_on(void) {
-    NRF_P0->OUTCLR = 1<<LED_1;
+void gpio_irq_enable(void) {
+    NRF_GPIOTE->INTENSET = GPIOTE_INTENSET_IN0_Msk;
 }
 
-void leds_error_toggle(void) {
-    if ((NRF_P0->OUT & (1<<LED_1))!=0) {        
-        NRF_P0->OUTCLR = 1<<LED_1;
-    } else {
-        NRF_P0->OUTSET = 1<<LED_1;
-    }
+void gpio_irq_disable(void) {
+    NRF_GPIOTE->INTENCLR = GPIOTE_INTENCLR_IN0_Msk;
 }
 
-uint8_t leds_error_isOn(void) {
-    if (NRF_P0->OUT & (1<<LED_1)) {
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
-//==== sync led
-
-void leds_sync_off(void) {
-    NRF_P0->OUTSET = 1<<LED_2;
-}
-
-void leds_sync_on(void) {
-    NRF_P0->OUTCLR = 1<<LED_2;
-}
-
-void leds_sync_toggle(void) {
-    if ((NRF_P0->OUT & (1<<LED_2))!=0) {        
-        NRF_P0->OUTCLR = 1<<LED_2;
-    } else {
-        NRF_P0->OUTSET = 1<<LED_2;
-    }
-}
-
-uint8_t leds_sync_isOn(void) {
-    if (NRF_P0->OUT & (1<<LED_2)) {
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
-//==== radio led
-
-
-void leds_radio_off(void) {
-    NRF_P0->OUTSET = 1<<LED_3;
-}
-
-void leds_radio_on(void) {
-    NRF_P0->OUTCLR = 1<<LED_3;
-}
-
-void leds_radio_toggle(void) {
-    if ((NRF_P0->OUT & (1<<LED_3))!=0) {        
-        NRF_P0->OUTCLR = 1<<LED_3;
-    } else {
-        NRF_P0->OUTSET = 1<<LED_3;
-    }
-}
-
-uint8_t leds_radio_isOn(void) {
-    if (NRF_P0->OUT & (1<<LED_3)) {
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
-//==== debug led
-
-
-void leds_debug_off(void) {
-    NRF_P0->OUTSET = 1<<LED_4;
-}
-
-void leds_debug_on(void) {
-    NRF_P0->OUTCLR = 1<<LED_4;
-}
-
-void leds_debug_toggle(void) {
-    if ((NRF_P0->OUT & (1<<LED_4))!=0) {        
-        NRF_P0->OUTCLR = 1<<LED_4;
-    } else {
-        NRF_P0->OUTSET = 1<<LED_4;
-    }
-}
-
-uint8_t leds_debug_isOn(void) {
-    if (NRF_P0->OUT & (1<<LED_4)) {
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
-//==== all leds
-
-void leds_all_on(void) {
-    leds_radio_on();
-    leds_sync_on();
-    leds_debug_on();
-    leds_error_on();
-}
-
-void leds_all_off(void) {
-    leds_radio_off();
-    leds_sync_off();
-    leds_debug_off();
-    leds_error_off();
-}
-
-void leds_all_toggle(void) {
-    leds_radio_toggle();
-    leds_sync_toggle();
-    leds_debug_toggle();
-    leds_error_toggle();
-}
-
-void leds_error_blink(void) {
-    
-    uint8_t i;
-    uint32_t j;
-
-    // turn all LEDs off
-    leds_all_off();
-
-    // blink error LED for ~10s
-    for (i = 0; i < 100; i++) {
-        leds_error_toggle();
-        for(j=0;j<0x1ffff;j++);
-    }
-}
-
-void leds_circular_shift(void) {
-
-    uint32_t led_new_value;
-    uint32_t led_read;
-    uint32_t shift_bit;
-
-    led_read = NRF_P0->OUT & 0x0001e000;
-    shift_bit = (NRF_P0->OUT & 0x00010000)>>3;
-    led_new_value = ((led_read<<1) & 0x0001e000) | shift_bit; 
-    
-    NRF_P0->OUTSET = led_new_value;
-}
-
-void leds_increment(void) {
-    
-    uint32_t led_new_value;
-    uint32_t led_read;
-
-    led_read = (NRF_P0->OUT & 0x0001e000)>>13;
-    led_new_value = ((led_read+1) & 0x0000000f)<<13;
-
-    NRF_P0->OUTSET = led_new_value;
-}
 
 //=========================== private =========================================
+
+
+
+
+//=========================== interrupt handler ===============================
+
+void GPIOTE_IRQHandler(void) {
+
+    if (NRF_GPIOTE->EVENTS_IN[channel] != 0) {
+        NRF_GPIOTE->EVENTS_IN[channel] = 0;
+
+        if (gpio_irq_vars.cb != NULL) {
+            gpio_irq_vars.cb();
+        }
+    }
+}

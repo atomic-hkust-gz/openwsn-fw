@@ -24,7 +24,7 @@
 
 #define MAX_PACKET_SIZE             128 // 256 actual max
 #define IRQMASK                     0xFF
-#define DIO1MASK                    0x13  //TxDone,RxDone,PreambleDetected
+#define DIO1MASK                    0xFF  //TxDone,RxDone,PreambleDetected
 #define DIO2MASK                    0x00
 #define DIO3MASK                    0x00
 
@@ -191,10 +191,10 @@ void radio_llcc68_init(void) {
         TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus));
 
     // set IRQ/DIO params
-    memset(&irqParams.IrqMask, DIO2MASK, sizeof(irqParams.IrqMask));
-    memset(&irqParams.Dio1Mask, DIO1MASK, sizeof(irqParams.IrqMask));
-    memset(&irqParams.Dio2Mask, DIO2MASK, sizeof(irqParams.IrqMask));
-    memset(&irqParams.Dio3Mask, DIO3MASK, sizeof(irqParams.IrqMask));
+    irqParams.IrqMask = IRQMASK;
+    irqParams.Dio1Mask = DIO1MASK;
+    irqParams.Dio2Mask = DIO2MASK;
+    irqParams.Dio3Mask = DIO3MASK;
     llcc68_noAddress_opcode(SETDIOIRQPARAMS, 
         TYPE_WRITE, (uint8_t*)&irqParams, sizeof(irqParams));
     

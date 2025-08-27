@@ -17,8 +17,10 @@
 #include "sensors.h"
 #include "i2c.h"
 #include "spi.h"
+#include "gpio_interrupt.h"
 
-
+#define IRQPORT 1
+#define IRQPIN  6
 //=========================== variables =======================================
 
 //=========================== prototypes ======================================
@@ -50,7 +52,9 @@ void board_init(void) {
     radio_init();
 
     i2c_init();
-    spi_init();
+    //spi_init();
+    //P1.06, trigger when high, pulldown
+    gpio_irq_init(IRQPORT,IRQPIN,GPIO_PIN_CNF_SENSE_High,GPIO_PIN_CNF_PULL_Pulldown); 
 
     // configure dcdc
     enable_dcdc();
