@@ -17,10 +17,9 @@
 #include "sensors.h"
 #include "i2c.h"
 #include "spi.h"
-#include "gpio_interrupt.h"
+#include "gpio_irq.h"
 
-#define IRQPORT 1
-#define IRQPIN  6
+
 //=========================== variables =======================================
 
 //=========================== prototypes ======================================
@@ -53,8 +52,8 @@ void board_init(void) {
 
     i2c_init();
     spi_init();
-    //P1.06, rising edge trigger, pull down
-    gpio_irq_init(NRF_GPIO_PIN_MAP(IRQPORT,IRQPIN), GPIOTE_POLARITY_LTHT, GPIOTE_PULL_DOWN); 
+
+    gpio_irq_init(); 
 
     // configure dcdc
     enable_dcdc();

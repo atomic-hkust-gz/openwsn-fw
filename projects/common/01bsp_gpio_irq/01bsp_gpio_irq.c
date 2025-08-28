@@ -12,7 +12,7 @@ the LED blink rate will toggle between fast and slow LED blink rate.
 #include "stdio.h"
 #include "board.h"
 #include "leds.h"
-#include "gpio_interrupt.h"
+#include "gpio_irq.h"
 
 #define SLOW_BLINK 0
 #define FAST_BLINK 1
@@ -25,12 +25,12 @@ typedef struct {
 
 app_vars_t app_vars;
 
-
 //=========================== prototypes ======================================
 
 void short_delay(void);
 void long_delay(void);
 void cb_toggle(void);
+
 //=========================== main ============================================
 
 void mote_main(void) {

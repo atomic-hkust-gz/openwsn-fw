@@ -61,7 +61,7 @@
       path="../../bsp/boards/nrf52840_dk"
       recurse="Yes" />
   </project>
-  <project Name="01bsp_gpio_interrupt">
+  <project Name="01bsp_gpio_irq">
     <configuration
       LIBRARY_IO_TYPE="None"
       Name="Common"
@@ -98,7 +98,7 @@
       Name="application"
       exclude=""
       filter="*.c"
-      path="../common/01bsp_gpio_interrupt"
+      path="../common/01bsp_gpio_irq"
       recurse="Yes" />
     <folder
       Name="inc"
