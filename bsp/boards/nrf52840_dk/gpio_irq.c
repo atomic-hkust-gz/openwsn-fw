@@ -11,7 +11,7 @@
 
 
 //=========================== defines =========================================
-#define IRQ_PRIORITY  0     // adjust based on system design 
+     // adjust based on system design 
                             // 0 = highest priority
                             // 7 = lowest priority
 
@@ -25,7 +25,6 @@
 
 typedef struct {
     gpioIrq_cbt         cb;
-    uint32_t            pin_number;
 } gpio_irq_vars_t;
 
 gpio_irq_vars_t gpio_irq_vars;
@@ -35,12 +34,6 @@ gpio_irq_vars_t gpio_irq_vars;
 //=========================== public ==========================================
 
 
-/* 
-  pin_number  NRF_GPIO_PIN_MAP(port,pin)
-  polarity    GPIOTE_POLARITY_LTHT, GPIOTE_POLARITY_HTOL, 
-              or GPIOTE_POLARITY_TOGGLE
-  pull        GPIOTE_PULL_NONE, GPIOTE_PULL_DOWN, or GPIOTE_PULL_UP
-*/
 void gpio_irq_init(void) {
 
    NRF_GPIO_Type* NRF_Px_port = (GPIO_INT_PIN < 32) ? NRF_P0 : NRF_P1;
@@ -65,7 +58,7 @@ void gpio_irq_init(void) {
    NRF_GPIOTE->EVENTS_IN[GPIO_IQR_CHANNEL] = 0;
    NRF_GPIOTE->INTENSET = (GPIOTE_INTENSET_IN0_Set << GPIOTE_INTENSET_IN0_Pos);
 
-   NVIC->IP[GPIOTE_IRQn] = (uint8_t)((IRQ_PRIORITY << 
+   NVIC->IP[GPIOTE_IRQn] = (uint8_t)((GPIO_PRIORITY << 
                             (8 - __NVIC_PRIO_BITS)) & 0xFF);
    NVIC->ISER[GPIOTE_IRQn >> 5] = (uint32_t)(1 << (GPIOTE_IRQn & 0x1F));
 }

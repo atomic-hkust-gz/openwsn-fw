@@ -33,12 +33,11 @@
 
 //=========================== variables =======================================
 
-typedef struct
-{
-   uart_tx_cbt txCb;
-   uart_rx_cbt rxCb;
-   bool        fXonXoffEscaping;
-   uint8_t     xonXoffEscapedByte;
+typedef struct {
+    uart_tx_cbt txCb;
+    uart_rx_cbt rxCb;
+    bool        fXonXoffEscaping;
+    uint8_t     xonXoffEscapedByte;
 } uart_vars_t;
 
 uart_vars_t uart_vars;

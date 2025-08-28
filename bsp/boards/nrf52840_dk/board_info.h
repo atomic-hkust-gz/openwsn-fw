@@ -46,6 +46,7 @@
 #define RADIO_PRIORITY  0
 #define UART_PRIORITY   2
 #define TIMER_PRIORITY  0
+#define GPIO_PRIORITY  0
 
 //===== IEEE802154E timing
 // 1 clock tick = 30.5 us
