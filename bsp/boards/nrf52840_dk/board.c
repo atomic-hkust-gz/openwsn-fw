@@ -52,9 +52,9 @@ void board_init(void) {
     radio_init();
 
     i2c_init();
-    //spi_init();
-    //P1.06, trigger when high, pulldown
-    gpio_irq_init(IRQPORT,IRQPIN,GPIO_PIN_CNF_SENSE_High,GPIO_PIN_CNF_PULL_Pulldown); 
+    spi_init();
+    //P1.06, rising edge trigger, pull down
+    gpio_irq_init(NRF_GPIO_PIN_MAP(IRQPORT,IRQPIN), GPIOTE_POLARITY_LTHT, GPIOTE_PULL_DOWN); 
 
     // configure dcdc
     enable_dcdc();
