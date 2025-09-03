@@ -413,7 +413,7 @@ void llcc68_irq_test(void){
       while((app_vars.irqStatus.TxDone & 1) == 0){
         // basic Tx step 13
         __NOP();
-      }
+    }
     // basic Tx step 14
     // clear IRQ status
     //memset(&irqStatus, IRQMASK, sizeof(irqStatus));

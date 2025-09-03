@@ -87,6 +87,11 @@ void radio_llcc68_init(void) {
     // reset
     radio_llcc68_reset();
 
+    radio_llcc68_get_status();
+    while(radio_vars.state != LLCC68STATE_STANDBY_RC){
+        radio_llcc68_get_status();
+    }
+
     // tx clamp config
     // data sheet section 15.2.2 workaround
     // bits 4-1 must be set to “1111” (0x1E)
@@ -410,26 +415,14 @@ void radio_llcc68_reset(void) {
 
     // reset pin low
     NRF_P1->OUTCLR = (1UL << (LLCC68_RESET_PIN & 0x1F));
-    
-    radio_vars.state = LLCC68STATE_RESET;
-
-    // keep reset low for 0.25 s (>100 us)
-    sctimer_set_callback(cb_compare);
-    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
-    sctimer_enable();
-    while (radio_vars.state == LLCC68STATE_RESET) {
-        board_sleep();
-    }
-
     // reset pin high
     NRF_P1->OUTSET = (1UL << (LLCC68_RESET_PIN & 0x1F));
-    
-    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
-    sctimer_enable();
-    // wait for chip to startup (0.25 s)
-    while (radio_vars.state == LLCC68STATE_STARTUP) {
-        board_sleep();
+
+    while(radio_vars.status.ChipMode != STBY_RC) {
+        radio_llcc68_get_status();
     }
+
+    radio_vars.state = LLCC68STATE_STANDBY_RC;
 }
 
 /*
