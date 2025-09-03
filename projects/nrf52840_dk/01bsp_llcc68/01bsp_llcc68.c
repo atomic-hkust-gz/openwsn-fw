@@ -9,6 +9,7 @@
 #include "sctimer.h"
 #include "uart.h"
 #include "radio_llcc68.h"
+#include "gpio_irq.h"
 
 //=========================== defines =========================================
 
@@ -18,8 +19,8 @@
 #define TIMER_PERIOD    (0xffff>>4)     ///< 0xffff = 2s@32kHz
 #define ID              0x99            ///< byte sent in the packets
 
-#define MAX_BUFFER_SIZE   10
-#define LORA_PREAMBLE_LENGTH        0X08
+#define MAX_BUFFER_SIZE             10
+#define LORA_PREAMBLE_LENGTH        0x08
 
 uint8_t stringToSend[]  = "+002 Ptest.24.00.12.-010\n";
 
@@ -57,6 +58,7 @@ typedef struct {
 
                 uint8_t         flags;
                 app_state_t     state;
+                irqStatus_t     irqStatus;
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
                 int8_t          rxpk_rssi;
@@ -68,22 +70,24 @@ app_vars_t app_vars;
 
 //=========================== prototypes ======================================
 
-void     cb_startFrame(PORT_TIMER_WIDTH timestamp);
-void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
-void     cb_timer(void);
+void      cb_startFrame(PORT_TIMER_WIDTH timestamp);
+void      cb_endFrame(PORT_TIMER_WIDTH timestamp);
+void      cb_gpio_irq(void);
+void      cb_timer(void);
 
-void     cb_uart_tx_done(void);
-uint8_t  cb_uart_rx(void);
+void      cb_uart_tx_done(void);
+uint8_t   cb_uart_rx(void);
 
-void llcc68_function_test(void);
+void      llcc68_function_test(void);
+void      llcc68_irq_test(void);
+
 //=========================== main ============================================
 
 
 int mote_main(void){
-    
-    radioModulationParams_t loraModParams;
-    packetParams_t packetParams;
-    radioTimeout_t radioTimeout;    
+    //radioModulationParams_t loraModParams;
+    //packetParams_t packetParams;
+    //radioTimeout_t radioTimeout;    
 
     // initialize board & radio
     board_init();
@@ -91,9 +95,9 @@ int mote_main(void){
     
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
-    memset(&loraModParams, 0, sizeof(loraModParams));
-    memset(&packetParams, 0, sizeof(packetParams));
-    memset(&radioTimeout, 0, sizeof(radioTimeout));
+    //memset(&loraModParams, 0, sizeof(loraModParams));
+    //memset(&packetParams, 0, sizeof(packetParams));
+    //memset(&radioTimeout, 0, sizeof(radioTimeout));
 
     // setup UART
     uart_setCallbacks(cb_uart_tx_done,cb_uart_rx);
@@ -105,12 +109,20 @@ int mote_main(void){
 
     // prepare packet
     
-    app_vars.packet_len = sizeof(app_vars.packet);
+    //app_vars.packet_len = sizeof(app_vars.packet);
+    app_vars.packet_len = 20;
+    
+    llcc68_irq_test();
+
+   
     /*
       for (int i = 0; i < app_vars.packet_len; i++) {
           app_vars.packet[i] = ID;
     }
     */
+
+
+     /*
     for (int i = 0; i < app_vars.packet_len; i++){
         app_vars.packet[i] = (uint8_t)i;
     }
@@ -165,6 +177,11 @@ int mote_main(void){
       for(int i = 0; i < 10000; i++){};
     
     }
+
+    */
+
+
+
     //SetDioIrqParams
     //Define Sync Word value: use the command WriteReg(...)
     //SetTx()
@@ -353,6 +370,60 @@ void llcc68_function_test(void){
 };
 
 
+void llcc68_irq_test(void){
+    radioModulationParams_t loraModParams;
+    packetParams_t packetParams;
+    radioTimeout_t radioTimeout;
+
+    memset(&loraModParams, 0, sizeof(loraModParams));
+    memset(&packetParams, 0, sizeof(packetParams));
+    memset(&radioTimeout, 0, sizeof(radioTimeout));
+    
+    gpio_irq_set_callback(cb_gpio_irq);
+    gpio_irq_enable();
+
+
+    for (int i = 0; i < app_vars.packet_len; i++){
+        app_vars.packet[i] = (uint8_t)i;
+    }
+    // basic Tx steps 1-7
+    radio_llcc68_txEnable();
+
+    // basic Tx step 8
+    radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, app_vars.packet_len);
+
+
+    // step 11 not needed for LoRa
+    
+    // basic Tx step 12 
+    
+    // start bsp timer
+    //sctimer_set_callback(cb_timer);
+    //sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
+    //sctimer_enable();
+    
+    while(1){
+      radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, app_vars.packet_len);
+      memcpy(radioTimeout.Timeout, TIMEOUT, sizeof(TIMEOUT));
+
+      // basic Tx steps 8-12
+      radio_llcc68_txNow(radioTimeout);
+      //radio_llcc68_get_status();
+      //radio_llcc68_get_opError();
+      while((app_vars.irqStatus.TxDone & 1) == 0){
+        // basic Tx step 13
+        __NOP();
+      }
+    // basic Tx step 14
+    // clear IRQ status
+    //memset(&irqStatus, IRQMASK, sizeof(irqStatus));
+    //llcc68_noAddress_opcode(CLEARIRQSTATUS, 
+    //    TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus)); 
+    //  14. Clear the IRQ TxDone flag
+    }
+    
+}
+
 //=========================== callbacks =======================================
 
 void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
@@ -377,6 +448,10 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     if (app_vars.state == APP_STATE_RX) {
         app_dbg.num_rx_endFrame++;
     }
+}
+
+void cb_gpio_irq(void){
+    app_vars.irqStatus = radio_llcc68_irq_status();
 }
 
 void cb_timer(void) {

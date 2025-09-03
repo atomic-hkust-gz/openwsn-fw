@@ -12,7 +12,7 @@ typedef void  (*gpioIrq_cbt)(void);
 
 //=========================== prototypes ======================================
 
-void gpio_irq_init(voidl);
+void gpio_irq_init(void);
 void gpio_irq_set_callback(gpioIrq_cbt cb);
 void gpio_irq_enable(void);
 void gpio_irq_disable(void);

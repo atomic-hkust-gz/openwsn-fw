@@ -16,26 +16,24 @@
 //=========================== defines =========================================
 #define NRF_GPIO_PIN_MAP(port, pin) (((port) << 5) | ((pin) & 0x1F))
 // Pin assignments
-#define LLCC68_IRQ_PIN   NRF_GPIO_PIN_MAP(1,6)   // P1.06
-#define LLCC68_BUSY_PIN  NRF_GPIO_PIN_MAP(1,7)   // P1.07
-#define LLCC68_RESET_PIN NRF_GPIO_PIN_MAP(1,8)   // P1.08
+#define LLCC68_RESET_PIN NRF_GPIO_PIN_MAP(1,7)   // P1.07
 
 #define TIMER_PERIOD                0x2000 // @32kHz = 0.25 s
 
 #define MAX_PACKET_SIZE             128 // 256 actual max
-#define IRQMASK                     0xFF
-#define DIO1MASK                    0xFF  //TxDone,RxDone,PreambleDetected
-#define DIO2MASK                    0x00
-#define DIO3MASK                    0x00
+#define IRQMASK                     0xFFFF
+#define DIO1MASK                    0x0003  //TxDone,RxDone
+#define DIO2MASK                    0x0000
+#define DIO3MASK                    0x0000
 
 
 // lora configuration
 #define RF_FREQUENCY                490000000 // 490 MHz
 #define LORA_BANDWIDTH              0x04      // 0x04 = 125 kHz
-#define LORA_SPREADING_FACTOR       0X07      // SF7
-#define LORA_CODINGRATE             0X01      // CR 4/5
-#define LORA_PREAMBLE_LENGTH        0X08
-#define LORA_PAYLOAD_LENGTH         0X80      // 128
+#define LORA_SPREADING_FACTOR       0x07      // SF7
+#define LORA_CODINGRATE             0x01      // CR 4/5
+#define LORA_PREAMBLE_LENGTH        0x08
+#define LORA_PAYLOAD_LENGTH         0x80      // 128
 #define LORA_TX_BASE_ADDR           0x00
 #define LORA_RX_BASE_ADDR           0x80      // Max packet size = 128
 //#define LORA_TX_POWER_DBM           14
@@ -84,18 +82,16 @@ void radio_llcc68_init(void) {
     memset(&mulitParam, 0, sizeof(mulitParam));
     
     // nrf pin configure
-    nrf_gpio_cfg_input(LLCC68_IRQ_PIN);
-    nrf_gpio_cfg_input(LLCC68_BUSY_PIN);
     nrf_gpio_cfg_output(LLCC68_RESET_PIN);
-    // set busy pin to pulldown
-    NRF_P1->PIN_CNF[LLCC68_BUSY_PIN & 0x1F] =
-      (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos);
 
     // reset
     radio_llcc68_reset();
 
     // tx clamp config
-    // workaround: must be set to 0x1E
+    // data sheet section 15.2.2 workaround
+    // bits 4-1 must be set to “1111” (0x1E)
+    value = llcc68_spiReadReg(TXCLAMPCONFIG);
+    value = value | TX_CLAMP_WORKAROUND;
     llcc68_spiWriteReg(TXCLAMPCONFIG, TX_CLAMP_WORKAROUND);
 
     // clock calibration 
@@ -169,7 +165,7 @@ void radio_llcc68_init(void) {
         .SpreadingFactor      = LORA_SF7,
         .Bandwidth            = LORA_BW_125,
         .CodingRate           = LORA_CR_4_5,
-        .LowDataRateOptimize  = LDRO_ON
+        .LowDataRateOptimize  = LDRO_OFF
     };
     llcc68_noAddress_opcode(SETMODULATIONPARAMS, 
         TYPE_WRITE, (uint8_t*)&loraModParams, sizeof(loraModParams));
@@ -191,10 +187,10 @@ void radio_llcc68_init(void) {
         TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus));
 
     // set IRQ/DIO params
-    irqParams.IrqMask = IRQMASK;
-    irqParams.Dio1Mask = DIO1MASK;
-    irqParams.Dio2Mask = DIO2MASK;
-    irqParams.Dio3Mask = DIO3MASK;
+    irqParams.IrqMask         = DIO1MASK;
+    irqParams.Dio1Mask        = DIO1MASK; // TxDone, RxDone
+    irqParams.Dio2Mask        = DIO2MASK;
+    irqParams.Dio3Mask        = DIO3MASK;
     llcc68_noAddress_opcode(SETDIOIRQPARAMS, 
         TYPE_WRITE, (uint8_t*)&irqParams, sizeof(irqParams));
     
@@ -204,7 +200,6 @@ void radio_llcc68_init(void) {
     // uart print errors
   
 }
-
 
 void radio_llcc68_setFrequency(uint32_t frequencyHz) {
     uint32_t freqReg;
@@ -244,19 +239,134 @@ void radio_llcc68_setPacketParams(packetParams_t packetParams){
     radio_llcc68_get_opError();
 }
 
+void radio_llcc68_txEnable(void) {
+    radioTxParams_t radioTxParams;  
+    bufferBaseAddress_t bufferBaseAddress;
+    irqStatus_t irqStatus;
+    uint8_t value;
+    uint8_t mulitParam[4];
+
+
+
+    memset(&radioTxParams, 0, sizeof(radioTxParams));
+    memset(&bufferBaseAddress, 0, sizeof(bufferBaseAddress));
+    memset(&irqStatus, 0, sizeof(irqStatus));
+    memset(&mulitParam, 0, sizeof(mulitParam));
+
+    // set standby mode
+    value = RC_13MHz;
+    llcc68_noAddress_opcode(SETSTANDBY, 
+        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
+    
+    // set packet type
+    value = PACKET_TYPE_LORA;
+    llcc68_noAddress_opcode(SETPACKETTYPE, 
+        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
+
+    // set RF frequency
+    memcpy(mulitParam, RF_FREQ_490_MHZ, sizeof(RF_FREQ_490_MHZ));
+    llcc68_noAddress_opcode(SETRFFREQUENCY, 
+        TYPE_WRITE, (uint8_t*)&mulitParam, sizeof(RF_FREQ_490_MHZ));
+
+    // set power amplifier configuration
+    memcpy(mulitParam, PA_CONFIG_17_DBM, sizeof(PA_CONFIG_17_DBM));
+    llcc68_noAddress_opcode(SETPACONFIG, 
+        TYPE_WRITE, (uint8_t*)&mulitParam, sizeof(PA_CONFIG_17_DBM));
+
+    // set Tx parameters
+    radioTxParams = (radioTxParams_t){
+        .TxPowerDbm           = TX_P22_DBM,
+        .TxRampTime           = RAMP_200U
+    };
+    llcc68_noAddress_opcode(SETTXPARAMS, 
+        TYPE_WRITE, (uint8_t*)&radioTxParams, sizeof(radioTxParams));
+
+
+    // set buffer base addresses
+    bufferBaseAddress = (bufferBaseAddress_t){
+        .TxBaseAddress        = LORA_TX_BASE_ADDR,
+        .RxBaseAddress        = LORA_RX_BASE_ADDR
+    };
+    llcc68_noAddress_opcode(SETBUFFERBASEADDRESS, 
+        TYPE_WRITE, (uint8_t*)&bufferBaseAddress, sizeof(bufferBaseAddress));
+    
+    // enable DIO2 as RF switch ctrl
+    value = llcc68_spiReadReg(SETDIO2ASRFSWITCHCTRL);
+    value = value | 0x01;
+    llcc68_spiWriteReg(SETDIO2ASRFSWITCHCTRL,value);
+
+
+}
+
 // Timeout Duration = timeout[] * 15.625 us
 void radio_llcc68_txNow(radioTimeout_t txMax){
+    radioModulationParams_t loraModParams;
+    packetParams_t packetParams;
+    irqParams_t irqParams;
+    uint8_t value;
+    
+    memset(&loraModParams, 0, sizeof(loraModParams));
+    memset(&packetParams, 0, sizeof(packetParams));
+    memset(&irqParams, 0, sizeof(irqParams));
+
+    
+    // set modulation parameters
+    loraModParams = (radioModulationParams_t){
+        .SpreadingFactor      = LORA_SF7,
+        .Bandwidth            = LORA_BW_125,
+        .CodingRate           = LORA_CR_4_5,
+        .LowDataRateOptimize  = LDRO_OFF
+    };
+    llcc68_noAddress_opcode(SETMODULATIONPARAMS, 
+        TYPE_WRITE, (uint8_t*)&loraModParams, sizeof(loraModParams));
+    
+    // data sheet section 15.1.2 Workaround
+    value = llcc68_spiReadReg(TXMODULATION);
+    
+    if (loraModParams.Bandwidth == LORA_BW_500){
+        // bit #2 set low
+        value = value & 0xFB;
+    }
+    else{
+        // bit #2 set high
+        value = value | 0x04; 
+    }
+    llcc68_spiWriteReg(TXMODULATION,value);
+
+    // set packet parameters
+    packetParams = (packetParams_t){
+        .PreambleLength       = LORA_PREAMBLE_LENGTH,
+        .HeaderType           = FIXED_LENGTH_PACKET,
+        .PayloadLength        = LORA_PAYLOAD_LENGTH,
+        .CrcType              = CRC_ON,
+        .InvertIq             = STD_IQ
+    };
+    llcc68_noAddress_opcode(SETPACKETPARAMS, 
+        TYPE_WRITE, (uint8_t*)&packetParams, sizeof(packetParams));
+
+    // set IRQ/DIO params
+    // IrqMask needs to match DioXMask to be valid
+    irqParams.IrqMask         = DIO1MASK; 
+    irqParams.Dio1Mask        = DIO1MASK; // TxDone, RxDone
+    irqParams.Dio2Mask        = DIO2MASK;
+    irqParams.Dio3Mask        = DIO3MASK;
+    llcc68_noAddress_opcode(SETDIOIRQPARAMS, 
+        TYPE_WRITE, (uint8_t*)&irqParams, sizeof(irqParams));
+
+    // set Tx mode
     llcc68_noAddress_opcode(SETTX, 
-        TYPE_WRITE, (uint8_t*)&txMax.timeout, sizeof(txMax.timeout));
+        TYPE_WRITE, (uint8_t*)&txMax.Timeout, sizeof(txMax.Timeout));
 
     radio_llcc68_get_status();
     radio_llcc68_get_opError();
-}
+} 
+
+
 
 // Timeout Duration = timeout[] * 15.625 us
 void radio_llcc68_rxNow(radioTimeout_t rxMax){
     llcc68_noAddress_opcode(SETRX, 
-        TYPE_WRITE, (uint8_t*)&rxMax.timeout, sizeof(rxMax.timeout));
+        TYPE_WRITE, (uint8_t*)&rxMax.Timeout, sizeof(rxMax.Timeout));
 
     radio_llcc68_get_status();
     radio_llcc68_get_opError();
@@ -287,14 +397,6 @@ void radio_llcc68_get_opError(void) {
     llcc68_noAddress_opcode(GETDEVICEERRORS, TYPE_READ, rx_buf, sizeof(rx_buf));
 
     memcpy(&radio_vars.opError, &rx_buf, sizeof(radio_vars.opError));
-}
-
-// Waits until the chip is no longer busy
-void radio_llcc68_wait_on_busy(void) {
-    // wait for busy pin to go low
-    while ((NRF_P1->IN & (1UL << (LLCC68_BUSY_PIN & 0x1F))) != 0) {
-        board_sleep();
-    }
 }
 
 irqStatus_t radio_llcc68_irq_status(void) {

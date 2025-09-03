@@ -15,7 +15,8 @@
 
 //=========================== define ==========================================
 
-#define LENGTH_CRC 2
+#define LENGTH_CRC  2
+
 typedef enum {
    LLCC68STATE_RESET               = 0x00,   ///< reset pin low/powering on.
    LLCC68STATE_STARTUP             = 0x01,   ///< chip still waking up.
@@ -127,7 +128,7 @@ typedef enum {
     STBY_XOSC     = 0x03,
     MODE_FS       = 0x04,
     MODE_RX       = 0x05,
-    MODE_TX       = 0x06,
+    MODE_TX       = 0x06, 
 }chipMode_t;
 typedef enum {
     RESERVED0     = 0x00,
@@ -139,34 +140,34 @@ typedef enum {
     TX_DONE       = 0x06,
 }commandStatus_t;
 
-typedef struct {
+typedef struct __attribute__((packed)){
     loraSpreadingFactor_t SpreadingFactor;
     loraBandwidth_t       Bandwidth;
     loraCodingRate_t      CodingRate;
     LoraLdro_t            LowDataRateOptimize;
 }radioModulationParams_t;
 
-typedef struct {
+typedef struct __attribute__((packed)){
     radioPower_t      TxPowerDbm;
     radioRampUpTime_t TxRampTime;
 }radioTxParams_t;
 
-typedef struct {
-    uint16_t          PreambleLength;
+typedef struct __attribute__((packed)){
+    uint16_t           PreambleLength;
     headerType_t      HeaderType;
     uint8_t           PayloadLength;
     crcType_t         CrcType;
     invertIq_t        InvertIq;
 }packetParams_t;
 
-typedef struct {
+typedef struct __attribute__((packed)){
     uint8_t           TxBaseAddress;
     uint8_t           RxBaseAddress;
 }bufferBaseAddress_t;
 
-typedef struct {
+typedef struct __attribute__((packed)){
    // Timeout Duration = timeout[] * 15.625 us
-   uint8_t timeout[3];
+   uint8_t Timeout[3];
 }radioTimeout_t;
 
 // lora mode only irq status format: 
@@ -191,17 +192,17 @@ typedef struct __attribute__((packed)) {
 }irqStatus_t;
 
 typedef struct __attribute__((packed)) {
-    irqStatus_t IrqMask;
-    irqStatus_t Dio1Mask;
-    irqStatus_t Dio2Mask;
-    irqStatus_t Dio3Mask;
+    uint16_t IrqMask;
+    uint16_t Dio1Mask;
+    uint16_t Dio2Mask;
+    uint16_t Dio3Mask;
 }irqParams_t;
 
 typedef struct __attribute__((packed)) {
-    uint8_t Reserved1       : 1;
-    uint8_t CommandStatus   : 3;
-    uint8_t ChipMode        : 3;
-    uint8_t Reserved7       : 1;
+    uint8_t         Reserved1       : 1;
+    commandStatus_t CommandStatus   : 3;
+    chipMode_t      ChipMode        : 3;
+    uint8_t         Reserved7       : 1;
 }radio_llcc68_status_t;
 
 typedef struct __attribute__((packed)) {
@@ -259,12 +260,12 @@ void          radio_llcc68_setFrequency(uint32_t frequency);
 void          radio_llcc68_loadPacket(uint8_t offset, uint8_t* buffer, uint8_t len);
 void          radio_llcc68_setModulation(radioModulationParams_t modParams);
 void          radio_llcc68_setPacketParams(packetParams_t packetParams);
+void          radio_llcc68_txEnable(void);
 void          radio_llcc68_txNow(radioTimeout_t timeout);
 void          radio_llcc68_rxNow(radioTimeout_t timeout);
 void          radio_llcc68_rfOff(void);
 void          radio_llcc68_get_status(void);
 void          radio_llcc68_get_opError(void);
-void          radio_llcc68_wait_on_busy(void);
 irqStatus_t   radio_llcc68_irq_status(void);
 //void     radio_llcc68_rfOn(void);
 //void     radio_llcc68_rfOff(void);

@@ -19,7 +19,8 @@
 #define LEN_OFFSET        1
 #define LEN_STATUS        1
 #define LEN_REG           2
-#define MAX_BUFFER_SIZE   255
+//#define MAX_BUFFER_SIZE   255
+#define MAX_BUFFER_SIZE   128
 
 //========================== prototype ========================================
 
