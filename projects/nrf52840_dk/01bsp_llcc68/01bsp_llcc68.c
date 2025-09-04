@@ -386,6 +386,7 @@ void llcc68_irq_test(void){
     for (int i = 0; i < app_vars.packet_len; i++){
         app_vars.packet[i] = (uint8_t)i;
     }
+
     // basic Tx steps 1-6
     radio_llcc68_txEnable();
     
@@ -401,11 +402,10 @@ void llcc68_irq_test(void){
 
       // basic Tx steps 8-12
       radio_llcc68_txNow(radioTimeout);
-      //radio_llcc68_get_status();
       //radio_llcc68_get_opError();
       while((app_vars.irqStatus.TxDone & 1) == 0){
         // basic Tx step 13
-        __NOP();
+        radio_llcc68_get_status();
     }
     // basic Tx step 14
     // clear IRQ status
