@@ -22,7 +22,9 @@
 
 #define MAX_PACKET_SIZE             128 // 256 actual max
 #define IRQMASK                     0xFFFF
-#define DIO1MASK                    0x0003  //TxDone,RxDone
+#define IRQTXDONE                   0x0001    // TxDone 
+#define IRQRXDONE                   0x0002    // RxDone
+#define IRQTIMEOUT                  0x0200    // Rx/Tx timeout
 #define DIO2MASK                    0x0000
 #define DIO3MASK                    0x0000
 
@@ -87,11 +89,6 @@ void radio_llcc68_init(void) {
     // reset
     radio_llcc68_reset();
 
-    radio_llcc68_get_status();
-    while(radio_vars.state != LLCC68STATE_STANDBY_RC){
-        radio_llcc68_get_status();
-    }
-
     // tx clamp config
     // data sheet section 15.2.2 workaround
     // bits 4-1 must be set to “1111” (0x1E)
@@ -105,12 +102,10 @@ void radio_llcc68_init(void) {
         TYPE_WRITE, (uint8_t*)&value, sizeof(value));
 
     // wait for calibration to finish (typically 3.5 ms)
-    radio_vars.state = LLCC68STATE_ENABLE_CALIBRATING;
-    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
-    sctimer_enable();
-    while(radio_vars.state == LLCC68STATE_ENABLE_CALIBRATING){
-        board_sleep();
-    };
+    radio_llcc68_get_status();
+    while(radio_vars.status.ChipMode != STBY_RC){
+        radio_llcc68_get_status();
+    }
 
      // image calibration for ISM band
      memcpy(mulitParam, FREQ_BAND_470_510, sizeof(FREQ_BAND_470_510));
@@ -191,14 +186,6 @@ void radio_llcc68_init(void) {
     llcc68_noAddress_opcode(CLEARIRQSTATUS, 
         TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus));
 
-    // set IRQ/DIO params
-    irqParams.IrqMask         = DIO1MASK;
-    irqParams.Dio1Mask        = DIO1MASK; // TxDone, RxDone
-    irqParams.Dio2Mask        = DIO2MASK;
-    irqParams.Dio3Mask        = DIO3MASK;
-    llcc68_noAddress_opcode(SETDIOIRQPARAMS, 
-        TYPE_WRITE, (uint8_t*)&irqParams, sizeof(irqParams));
-    
     // check for device errors 
     radio_llcc68_get_opError();
     radio_llcc68_get_status();
@@ -300,18 +287,21 @@ void radio_llcc68_txEnable(void) {
     value = value | 0x01;
     llcc68_spiWriteReg(SETDIO2ASRFSWITCHCTRL,value);
 
-
+    radio_llcc68_get_status();
+    radio_llcc68_get_opError();
 }
 
 // Timeout Duration = timeout[] * 15.625 us
 void radio_llcc68_txNow(radioTimeout_t txMax){
     radioModulationParams_t loraModParams;
     packetParams_t packetParams;
+    irqStatus_t irqStatus;
     irqParams_t irqParams;
     uint8_t value;
     
     memset(&loraModParams, 0, sizeof(loraModParams));
     memset(&packetParams, 0, sizeof(packetParams));
+    memset(&irqStatus, 0, sizeof(irqStatus));
     memset(&irqParams, 0, sizeof(irqParams));
 
     
@@ -348,11 +338,16 @@ void radio_llcc68_txNow(radioTimeout_t txMax){
     };
     llcc68_noAddress_opcode(SETPACKETPARAMS, 
         TYPE_WRITE, (uint8_t*)&packetParams, sizeof(packetParams));
+    
+    // clear IRQ status
+    memset(&irqStatus, IRQMASK, sizeof(irqStatus));
+    llcc68_noAddress_opcode(CLEARIRQSTATUS, 
+        TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus));
 
     // set IRQ/DIO params
     // IrqMask needs to match DioXMask to be valid
-    irqParams.IrqMask         = DIO1MASK; 
-    irqParams.Dio1Mask        = DIO1MASK; // TxDone, RxDone
+    irqParams.IrqMask         = IRQTXDONE | IRQTIMEOUT; 
+    irqParams.Dio1Mask        = IRQTXDONE | IRQTIMEOUT;
     irqParams.Dio2Mask        = DIO2MASK;
     irqParams.Dio3Mask        = DIO3MASK;
     llcc68_noAddress_opcode(SETDIOIRQPARAMS, 
@@ -412,16 +407,20 @@ irqStatus_t radio_llcc68_irq_status(void) {
 }
 
 void radio_llcc68_reset(void) {
-
+    
     // reset pin low
     NRF_P1->OUTCLR = (1UL << (LLCC68_RESET_PIN & 0x1F));
+    // wait > 100us
+    for(int i = 0; i < 0xFFFF; i++){}
     // reset pin high
     NRF_P1->OUTSET = (1UL << (LLCC68_RESET_PIN & 0x1F));
-
+    
+    // get chip mode
+    radio_llcc68_get_status();
     while(radio_vars.status.ChipMode != STBY_RC) {
         radio_llcc68_get_status();
     }
-
+    radio_llcc68_get_opError();
     radio_vars.state = LLCC68STATE_STANDBY_RC;
 }
 
@@ -617,22 +616,3 @@ void RADIO_IRQHandler(void) {
     }
 }
 */
-
-void cb_compare(void) {   
-   sctimer_disable();
-
-   if (radio_vars.state == LLCC68STATE_RESET ||
-        radio_vars.state == LLCC68STATE_SLEEP) {
-      radio_vars.state = LLCC68STATE_STARTUP;
-   }
-   else if (radio_vars.state == LLCC68STATE_ENABLE_CALIBRATING){
-      radio_vars.state = LLCC68STATE_CALIBRATION_DONE;
-   }
-   else if (radio_vars.state == LLCC68STATE_ENABLE_IMAGE_CAL){
-      radio_vars.state = LLCC68STATE_IMAGE_CAL_DONE;
-   }
-   else {
-      radio_vars.state = LLCC68STATE_STANDBY_RC;
-   }
-   
-}

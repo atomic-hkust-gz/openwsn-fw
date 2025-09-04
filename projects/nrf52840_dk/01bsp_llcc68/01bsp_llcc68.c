@@ -25,7 +25,7 @@
 uint8_t stringToSend[]  = "+002 Ptest.24.00.12.-010\n";
 
 static const uint8_t TXRXOFFSET =   0x00; 
-static const uint8_t TIMEOUT[3] =   {0x00,0x19,0x00};  ///< // 1 s = 64000 * 15.625 us
+static const uint8_t TIMEOUT[3] =   {0x13,0x88,0x00};  ///< // 10 s = 1,280,000 * 15.625 us
 
 //=========================== variables =======================================
 
@@ -386,16 +386,8 @@ void llcc68_irq_test(void){
     for (int i = 0; i < app_vars.packet_len; i++){
         app_vars.packet[i] = (uint8_t)i;
     }
-    // basic Tx steps 1-7
+    // basic Tx steps 1-6
     radio_llcc68_txEnable();
-
-    // basic Tx step 8
-    radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, app_vars.packet_len);
-
-
-    // step 11 not needed for LoRa
-    
-    // basic Tx step 12 
     
     // start bsp timer
     //sctimer_set_callback(cb_timer);
@@ -403,6 +395,7 @@ void llcc68_irq_test(void){
     //sctimer_enable();
     
     while(1){
+    // basic Tx step 7
       radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, app_vars.packet_len);
       memcpy(radioTimeout.Timeout, TIMEOUT, sizeof(TIMEOUT));
 
