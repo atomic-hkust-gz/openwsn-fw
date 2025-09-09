@@ -17,6 +17,9 @@ the LED blink rate will toggle between fast and slow LED blink rate.
 #define SLOW_BLINK 0
 #define FAST_BLINK 1
 
+#define IRQCHANNEL 0
+#define GPIO_IRQ_PIN  6
+
 //=========================== variables =======================================
 
 typedef struct {
@@ -38,8 +41,13 @@ void mote_main(void) {
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
 
-    gpio_irq_set_callback(cb_toggle);
-    gpio_irq_enable();
+    gpio_irq_config(IRQCHANNEL, 
+                    PORT1, 
+                    GPIO_IRQ_PIN, 
+                    GPIOTE_LOTOHI, 
+                    cb_toggle);
+    gpio_irq_enable(IRQCHANNEL);
+
 
     while (1) {
         board_sleep();
@@ -50,4 +58,4 @@ void cb_toggle(void) {
 
     app_vars.toggle_num++;
     leds_all_toggle();
-}
+  }
