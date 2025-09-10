@@ -27,10 +27,11 @@ typedef struct {
 #define SETFS                 0xC1
 #define SETTX                 0x83
 #define SETRX                 0x82
-#define STOPTIMERONPREAMBLE   0x8F
-#define SETRXDUTYCYCLE        0x9F
+#define STOPTIMERONPREAMBLE   0x9F
+#define SETRXDUTYCYCLE        0x94
 #define SETCAD                0xC5
 #define SETTXCONTINUOUSWAVE   0xD1
+#define SETTXINFINITEPREAMBLE 0xD2
 #define SETREGULATORMODE      0x96
 #define CALIBRATE             0x89
 #define CALIBRATEIMAGE        0x98
@@ -67,6 +68,7 @@ typedef struct {
 #define GETRXBUFFERSTATUS     0x13
 #define GETPACKETSTATUS       0x14
 #define GETDEVICEERRORS       0x17
+#define CLEARDEVICEERRORS     0x07
 #define GETSTATS              0x10
 #define RESETSTATS            0x00
 
@@ -151,10 +153,10 @@ static const uint8_t RF_FREQ_868_MHZ[] = { 0x36, 0x40, 0x00, 0x00 }; // (868 MHz
 static const uint8_t RF_FREQ_915_MHZ[] = { 0x39, 0x30, 0x00, 0x00 }; // (915 MHz/32 MHz)*2^25 | or 915*2^20
 
 static const uint8_t FREQ_BAND_430_440[] = { 0x6B, 0x6F }; // 
-static const uint8_t FREQ_BAND_470_510[] = { 0x75, 0x81 }; // 
+static const uint8_t FREQ_BAND_470_510[] = { 0x75, 0x81 }; // China
 static const uint8_t FREQ_BAND_779_787[] = { 0xC1, 0xC5 }; // 
-static const uint8_t FREQ_BAND_863_870[] = { 0xD7, 0xDB }; // 
-static const uint8_t FREQ_BAND_902_928[] = { 0xE1, 0xE9 }; // 
+static const uint8_t FREQ_BAND_863_870[] = { 0xD7, 0xDB }; // Europe
+static const uint8_t FREQ_BAND_902_928[] = { 0xE1, 0xE9 }; // USA
 
 
 #endif

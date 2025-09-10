@@ -15,25 +15,73 @@
 
 //=========================== define ==========================================
 
-#define LENGTH_CRC  2
+#define LENGTH_CRC    2
+#define REGION_CHINA
+// #define REGION_EUROPE
+// #define REGION_USA
 
+#if defined(REGION_CHINA)
+    #define REGION_ISM      = CHINA_ISM
+    #define REGION_CH_MAP   = CHINA_CHANNEL_MAP
+    #define REGION_MAX_DBM  = CHINA_MAX_DBM
+#elif defined(REGION_EUROPE)
+    #define REGION_ISM      = EUROPE_ISM
+    #define REGION_CH_MAP   = EUROPE_CHANNEL_MAP
+    #define REGION_MAX_DBM  = EUROPE_MAX_DBM
+#elif defined(REGION_USA)
+    #define REGION_ISM      = USA_ISM
+    #define REGION_CH_MAP   = USA_CHANNEL_MAP
+    #define REGION_MAX_DBM  = USA_MAX_DBM
+#else
+    #define REGION_ISM      = CHINA_ISM
+    #define REGION_CH_MAP   = CHINA_CHANNEL_MAP
+    #define REGION_MAX_DBM  = CHINA_MAX_DBM
+#endif
+
+
+//=========================== typedef =========================================
+// radio info
 typedef enum {
-   LLCC68STATE_RESET               = 0x00,   ///< reset pin low/powering on.
-   LLCC68STATE_STARTUP             = 0x01,   ///< chip still waking up.
-   LLCC68STATE_STANDBY_RC          = 0x02,   ///< standby mode using RC oscillator.
-   LLCC68STATE_STANDBY_XOSC        = 0x03,   ///< standby mode using XOSC oscillator.
-   LLCC68STATE_FS                  = 0x04,   ///< fs mode, set the radio frequency.
-   LLCC68STATE_TX                  = 0x05,   ///< tx mode, transmitting.
-   LLCC68STATE_RX                  = 0x06,   ///< rx mode, receiving.
-   LLCC68STATE_SLEEP               = 0x07,   ///< sleep mode, using RTC timer in low power mode.
-   LLCC68STATE_ENABLE_CALIBRATING  = 0x08,   ///< begin calibration of all clocks.
-   LLCC68STATE_CALIBRATION_DONE    = 0x09,   ///< all clocks finished calibrating.
-   LLCC68STATE_ENABLE_IMAGE_CAL    = 0x0a,   ///< begin image calibration (ISM bands).
-   LLCC68STATE_IMAGE_CAL_DONE      = 0x0b,   ///< image calibration finished.
+    LLCC68STATE_RESET               = 0x00,   ///< reset pin low/powering on.
+    LLCC68STATE_STARTUP             = 0x01,   ///< chip still waking up.
+    LLCC68STATE_STANDBY_RC          = 0x02,   ///< standby mode using RC oscillator.
+    LLCC68STATE_STANDBY_XOSC        = 0x03,   ///< standby mode using XOSC oscillator.
+    LLCC68STATE_FS                  = 0x04,   ///< fs mode, set the radio frequency.
+    LLCC68STATE_TX                  = 0x05,   ///< tx mode, transmitting.
+    LLCC68STATE_RX                  = 0x06,   ///< rx mode, receiving.
+    LLCC68STATE_SLEEP               = 0x07,   ///< sleep mode, using RTC timer in low power mode.
+    LLCC68STATE_ENABLE_CALIBRATING  = 0x08,   ///< begin calibration of all clocks.
+    LLCC68STATE_CALIBRATION_DONE    = 0x09,   ///< all clocks finished calibrating.
+    LLCC68STATE_ENABLE_IMAGE_CAL    = 0x0a,   ///< begin image calibration (ISM bands).
+    LLCC68STATE_IMAGE_CAL_DONE      = 0x0b,   ///< image calibration finished.
+    LLCC68STATE_PACKET_LOADED       = 0x0c,   ///< packet loaded into radio FIFO
 
 } radio_llcc68_state_t;
-//=========================== typedef =========================================
 
+typedef enum {
+    LLCC68_FREE   = 0x00,
+    LLCC68_BUSY   = 0x01,
+}radio_llcc68_busy_t;
+
+// region parameters 
+typedef enum {
+    CHINA_ISM               = FREQ_BAND_470_510,
+    EUROPE_ISM              = FREQ_BAND_863_870,
+    NORTH_AMERICA_ISM       = FREQ_BAND_902_928,
+}region_ism_t;
+
+typedef enum {
+    CHINA_MAX_DBM           = 19,
+    EUROPE_MAX_DBM          = FREQ_BAND_863_870,
+    NORTH_AMERICA_MAX_DBM   = FREQ_BAND_902_928,
+}region_dbm_t;
+
+typedef enum {
+    CHINA_MAX_BW           = 125,
+    EUROPE_MAX_BW          = 250,
+    NORTH_AMERICA_MAX_BW   = 500,
+}region_dbm_t;
+// lora parameters
 typedef enum {
     LORA_SF5      = 0x05,
     LORA_SF6      = 0x06,
@@ -140,7 +188,7 @@ typedef struct __attribute__((packed)){
 }radioTxParams_t;
 
 typedef struct __attribute__((packed)){
-    uint16_t           PreambleLength;
+    uint16_t          PreambleLength;
     headerType_t      HeaderType;
     uint8_t           PayloadLength;
     crcType_t         CrcType;
@@ -207,6 +255,17 @@ typedef struct __attribute__((packed)) {
 
 }radio_llcc68_opError_t;
 
+typedef struct {
+    radioModulationParams_t LoraModParams,
+    radioTxParams_t         RadioTxParams,
+    packetParams_t          PacketParams,
+    bufferBaseAddress_t     BufferBaseAddress,
+    irqParams_t             IrqParams,
+    loraChannel_t           Channel,
+}radio_llcc68_config_t;
+
+
+
 /*
 typedef enum {
    RADIOSTATE_STOPPED             = 0x00,   ///< Completely stopped.
@@ -254,6 +313,7 @@ void          radio_llcc68_rfOff(void);
 void          radio_llcc68_get_status(void);
 void          radio_llcc68_get_opError(void);
 irqStatus_t   radio_llcc68_irq_status(void);
+void          radio_llcc68_busy_wait(void);
 //void     radio_llcc68_rfOn(void);
 //void     radio_llcc68_rfOff(void);
 // TX

@@ -13,19 +13,23 @@
 
 //=========================== defines =========================================
 
-#define LENGTH_PACKET   125+LENGTH_CRC  ///< maximum length is 127 bytes
-#define LEN_PKT_TO_SEND 20+LENGTH_CRC
-#define RFFREQUENCY     470500000       ///< 470.5 MHz
-#define TIMER_PERIOD    (0xffff>>4)     ///< 0xffff = 2s@32kHz
-#define ID              0x99            ///< byte sent in the packets
+#define LENGTH_PACKET   125+LENGTH_CRC    ///< maximum length is 127 bytes
+#define LEN_PKT_TO_SEND 20+LENGTH_CRC     ///< temp max packet length
+#define RFFREQUENCY     470500000         ///< 470.5 MHz
+#define TIMER_PERIOD    (0xffff>>4)       ///< 0xffff = 2s@32kHz
+#define ID              0x99              ///< byte sent in the packets
 
 #define MAX_BUFFER_SIZE             10
 #define LORA_PREAMBLE_LENGTH        0x08
 
+#define IRQ_CHANNEL                 0     ///< GPIOTE interrupt channel number
+#define IRQ_NRF_PORT                PORT1 ///< P1.06 NRF interrupt port assignment
+#define IRQ_NRF_PIN                 6     ///< NRF interrupt pin assignment
+
 uint8_t stringToSend[]  = "+002 Ptest.24.00.12.-010\n";
 
 static const uint8_t TXRXOFFSET =   0x00; 
-static const uint8_t TIMEOUT[3] =   {0x13,0x88,0x00};  ///< // 10 s = 1,280,000 * 15.625 us
+static const uint8_t TIMEOUT[3] =   {0x13,0x88,0x00};  ///< 10 s = 1,280,000 * 15.625 us
 
 //=========================== variables =======================================
 
@@ -104,8 +108,14 @@ int mote_main(void){
     uart_enableInterrupts();
     app_vars.uartDone = 1;
     
-    // add callback functions radio
-    // ...
+    // P1.06 as radio trigger (rising edge detect)
+    // set callback function
+    //gpio_irq_config(IRQ_CHANNEL, 
+    //                IRQ_NRF_PORT, 
+    //                IRQ_NRF_PIN, 
+    //                GPIOTE_LOTOHI, 
+    //                cb_gpio_irq);
+    //gpio_irq_enable(IRQ_CHANNEL);
 
     // prepare packet
     
@@ -379,9 +389,13 @@ void llcc68_irq_test(void){
     memset(&packetParams, 0, sizeof(packetParams));
     memset(&radioTimeout, 0, sizeof(radioTimeout));
     
-    gpio_irq_set_callback(cb_gpio_irq);
-    gpio_irq_enable();
-
+    // P1.06 assigned to radio interrupt (DIO1)(rising edge detect)
+    gpio_irq_config(IRQ_CHANNEL, 
+                    IRQ_NRF_PORT, 
+                    IRQ_NRF_PIN, 
+                    GPIOTE_LOTOHI, 
+                    cb_gpio_irq);
+    gpio_irq_enable(IRQ_CHANNEL);
 
     for (int i = 0; i < app_vars.packet_len; i++){
         app_vars.packet[i] = (uint8_t)i;
@@ -406,6 +420,8 @@ void llcc68_irq_test(void){
       while((app_vars.irqStatus.TxDone & 1) == 0){
         // basic Tx step 13
         radio_llcc68_get_status();
+        app_vars.irqStatus = radio_llcc68_irq_status();
+        __NOP();
     }
     // basic Tx step 14
     // clear IRQ status
@@ -445,6 +461,9 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
 void cb_gpio_irq(void){
     app_vars.irqStatus = radio_llcc68_irq_status();
+
+    // Clear event
+    //NRF_GPIOTE->EVENTS_IN[channel] = 0;
 }
 
 void cb_timer(void) {
