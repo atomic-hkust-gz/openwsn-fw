@@ -8,16 +8,24 @@ typedef enum {
     TYPE_WRITE  = 1,
 }type_t;
 
+typedef enum {
+    LLCC68_FREE   = 0x00,
+    LLCC68_BUSY   = 0x01,
+}llcc68_busy_t;
+
+/*
 typedef struct { 
     uint16_t  addr;
     uint8_t   data;
 }registerSetting_t;
-
+*/
+/*
 typedef struct {
     uint16_t    channel_spacing;
     uint32_t    frequency_0;
     uint16_t    channel;
 }frequencySetting_t;
+*/
 
 //========================== defines ==========================================
 
@@ -114,11 +122,16 @@ typedef struct {
 
 //========================== prototypes ======================================
 
+void llcc68_init(void);
 void llcc68_spiWriteReg(uint16_t reg, uint8_t regValueToWrite);
 uint8_t llcc68_spiReadReg(uint16_t reg);
 void llcc68_txBufferWrite(uint8_t offset, uint8_t* buffer, uint8_t len);
 void llcc68_rxBufferRead(uint8_t offset, uint8_t* buffer, uint8_t len);
 void llcc68_noAddress_opcode(uint8_t opcode, type_t rw, uint8_t* buffer, uint8_t len);
+
+//=========================== callbacks =======================================
+
+//void llcc68_busy_cb(void);
 
 //========================== settings =========================================
 
@@ -137,8 +150,8 @@ void llcc68_noAddress_opcode(uint8_t opcode, type_t rw, uint8_t* buffer, uint8_t
 // format: { paDutyCycle, hpMax, deviceSel (0), paLut (1) }
 static const uint8_t PA_CONFIG_22_DBM[] = { 0x04, 0x07, 0x00, 0x01 };
 static const uint8_t PA_CONFIG_20_DBM[] = { 0x03, 0x05, 0x00, 0x01 };
-static const uint8_t PA_CONFIG_17_DBM[] = { 0x02, 0x03, 0x00, 0x01 }; // 17 dBm for china
-static const uint8_t PA_CONFIG_14_DBM[] = { 0x02, 0x02, 0x00, 0x01 }; // 14 dBm for japan
+static const uint8_t PA_CONFIG_17_DBM[] = { 0x02, 0x03, 0x00, 0x01 }; // 17 dBm for China
+static const uint8_t PA_CONFIG_14_DBM[] = { 0x02, 0x02, 0x00, 0x01 }; // 14 dBm for Japan/ Europe
 
 // RF_frequency configuration 
 // freq_val = (uint32_t)((double)RF_FREQUENCY / (double)32000000 * (double)(1 << 25));

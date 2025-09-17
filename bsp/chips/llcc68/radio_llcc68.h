@@ -15,30 +15,73 @@
 
 //=========================== define ==========================================
 
-#define LENGTH_CRC    2
+#define LENGTH_CRC      2
 #define REGION_CHINA
 // #define REGION_EUROPE
 // #define REGION_USA
 
+// LoRaWAN + region restrictions
 #if defined(REGION_CHINA)
-    #define REGION_ISM      = CHINA_ISM
-    #define REGION_CH_MAP   = CHINA_CHANNEL_MAP
-    #define REGION_MAX_DBM  = CHINA_MAX_DBM
+    #define REGION_ISM              FREQ_BAND_470_510 // image calibration
+    #define REGION_MAX_DBM          PA_CONFIG_17_DBM 
+    #define REGION_MAX_BW           LORA_BW_125
+    #define REGION_UPLINK_CH_MAX    96    // total uplink channels
+    #define REGION_DOWNLINK_CH_MAX  48    // total downlink channels
+    #define REGION_UPLINK_START     470300000   // 470.3 MHz
+    #define REGION_DOWNLINK_START   500300000   // 500.3 MHz
+    #define REGION_CH_SPACING_UP    200000      // 200 kHz
+    #define REGION_CH_SPACING_DOWN  200000      // 200 kHz
+    #define REGION_MIN_SF_UPLINK    LORA_SF7    // radio min is SF 5
+    #define REGION_MAX_SF_UPLINK    LORA_SF11   // 
+    #define REGION_MIN_SF_DOWNLINK  LORA_SF7    // 
+    #define REGION_MAX_SF_DOWNLINK  LORA_SF11   // actually max is SF12
+                                                  // radio max is SF11                                            
 #elif defined(REGION_EUROPE)
-    #define REGION_ISM      = EUROPE_ISM
-    #define REGION_CH_MAP   = EUROPE_CHANNEL_MAP
-    #define REGION_MAX_DBM  = EUROPE_MAX_DBM
+    #define REGION_ISM              FREQ_BAND_863_870 // image calibration
+    #define REGION_MAX_DBM          PA_CONFIG_14_DBM  // 14 dBm (ERP) or 16 dBm (EIRP)
+    #define REGION_MAX_BW           LORA_BW_125
+    #define REGION_UPLINK_CH_MAX    3     // total uplink channels
+    #define REGION_DOWNLINK_CH_MAX  3     // total downlink channels
+    #define REGION_UPLINK_START     868100000   // 868.1 MHz
+    #define REGION_DOWNLINK_START   868100000   // 868.1 MHz
+    #define REGION_CH_SPACING_UP    200000      // 200 kHz
+    #define REGION_CH_SPACING_DOWN  200000      // 200 kHz
+    #define REGION_MIN_SF_UPLINK    LORA_SF7    // radio min is SF 5
+    #define REGION_MAX_SF_UPLINK    LORA_SF11   // 
+    #define REGION_MIN_SF_DOWNLINK  LORA_SF7    // 
+    #define REGION_MAX_SF_DOWNLINK  LORA_SF11   // actually max is SF12
+                                                  // radio max is SF11
 #elif defined(REGION_USA)
-    #define REGION_ISM      = USA_ISM
-    #define REGION_CH_MAP   = USA_CHANNEL_MAP
-    #define REGION_MAX_DBM  = USA_MAX_DBM
-#else
-    #define REGION_ISM      = CHINA_ISM
-    #define REGION_CH_MAP   = CHINA_CHANNEL_MAP
-    #define REGION_MAX_DBM  = CHINA_MAX_DBM
+    #define REGION_ISM              FREQ_BAND_902_928 // image calibration
+    #define REGION_MAX_DBM          PA_CONFIG_22_DBM  // actually 30, radio max is 22 dBm 
+    #define REGION_MAX_BW           LORA_BW_500
+    #define REGION_UPLINK_CH_MAX    64    // total uplink channels
+    #define REGION_DOWNLINK_CH_MAX  8     // total downlink channels
+    #define REGION_UPLINK_START     902300000   // 902.3 MHz
+    #define REGION_DOWNLINK_START   923300000   // 923.3 MHz
+    #define REGION_CH_SPACING_UP    200000      // 200 kHz
+    #define REGION_CH_SPACING_DOWN  600000      // 600 kHz
+    #define REGION_MIN_SF_UPLINK    LORA_SF7    // radio min is SF 5
+    #define REGION_MAX_SF_UPLINK    LORA_SF10   // SF 7-10 uplink
+    #define REGION_MIN_SF_DOWNLINK  LORA_SF7    // SF 7-12 downlink
+    #define REGION_MAX_SF_DOWNLINK  LORA_SF11   // actually max is SF12
+                                                  // radio max is SF11
+#else // china region settings
+    #define REGION_ISM              FREQ_BAND_470_510 // image calibration
+    #define REGION_MAX_DBM          PA_CONFIG_17_DBM 
+    #define REGION_MAX_BW           LORA_BW_125
+    #define REGION_UPLINK_CH_MAX    96    // total uplink channels
+    #define REGION_DOWNLINK_CH_MAX  48    // total downlink channels
+    #define REGION_UPLINK_START     470300000   // 470.3 MHz
+    #define REGION_DOWNLINK_START   500300000   // 500.3 MHz
+    #define REGION_CH_SPACING_UP    200000      // 200 kHz
+    #define REGION_CH_SPACING_DOWN  200000      // 200 kHz
+    #define REGION_MIN_SF_UPLINK    LORA_SF7    // radio min is SF 5
+    #define REGION_MAX_SF_UPLINK    LORA_SF11   // 
+    #define REGION_MIN_SF_DOWNLINK  LORA_SF7    // 
+    #define REGION_MAX_SF_DOWNLINK  LORA_SF11   // actually max is SF12
+                                                  // radio max is SF11
 #endif
-
-
 //=========================== typedef =========================================
 // radio info
 typedef enum {
@@ -55,32 +98,8 @@ typedef enum {
     LLCC68STATE_ENABLE_IMAGE_CAL    = 0x0a,   ///< begin image calibration (ISM bands).
     LLCC68STATE_IMAGE_CAL_DONE      = 0x0b,   ///< image calibration finished.
     LLCC68STATE_PACKET_LOADED       = 0x0c,   ///< packet loaded into radio FIFO
-
 } radio_llcc68_state_t;
 
-typedef enum {
-    LLCC68_FREE   = 0x00,
-    LLCC68_BUSY   = 0x01,
-}radio_llcc68_busy_t;
-
-// region parameters 
-typedef enum {
-    CHINA_ISM               = FREQ_BAND_470_510,
-    EUROPE_ISM              = FREQ_BAND_863_870,
-    NORTH_AMERICA_ISM       = FREQ_BAND_902_928,
-}region_ism_t;
-
-typedef enum {
-    CHINA_MAX_DBM           = 19,
-    EUROPE_MAX_DBM          = FREQ_BAND_863_870,
-    NORTH_AMERICA_MAX_DBM   = FREQ_BAND_902_928,
-}region_dbm_t;
-
-typedef enum {
-    CHINA_MAX_BW           = 125,
-    EUROPE_MAX_BW          = 250,
-    NORTH_AMERICA_MAX_BW   = 500,
-}region_dbm_t;
 // lora parameters
 typedef enum {
     LORA_SF5      = 0x05,
@@ -90,26 +109,26 @@ typedef enum {
     LORA_SF9      = 0x09,
     LORA_SF10     = 0x0A, 
     LORA_SF11     = 0x0B,
-}loraSpreadingFactor_t;
+} loraSpreadingFactor_t;
 
 typedef enum {
     LORA_BW_125   = 0x04,
     LORA_BW_250   = 0x05,
     LORA_BW_500   = 0x06,
-}loraBandwidth_t;
+} loraBandwidth_t;
 
 typedef enum {
     LORA_CR_4_5   = 0x01,
     LORA_CR_4_6   = 0x02,
     LORA_CR_4_7   = 0x03,
     LORA_CR_4_8   = 0x04,
-}loraCodingRate_t;
+} loraCodingRate_t;
 
 // low data rate optimize (LDRO)
 typedef enum {
     LDRO_OFF      = 0x00,
     LDRO_ON       = 0x01,
-}LoraLdro_t;
+} LoraLdro_t;
 
 // image calibration over the ISM bands
 typedef enum {
@@ -119,14 +138,14 @@ typedef enum {
     BAND779_787   = 0xc1c5,
     BAND863_870   = 0xd7db,
     BAND902_928   = 0xe1e9,
-}ismBand_t;
+} ismBand_t;
 
 typedef enum {
     // -9 dBm (0xF7) to +22 dBm (0x16)
     TX_P22_DBM    = 0x16,
     TX_P10_DBM    = 0x0A,
     TX_N9_DBM     = 0xF7,
-}radioPower_t;
+} radioPower_t;
 
 typedef enum {
     RAMP_10U      = 0x00, // 10 us
@@ -137,22 +156,27 @@ typedef enum {
     RAMP_800U     = 0x05, // 800 us
     RAMP_1700U    = 0x06, // 1700 us
     RAMP_3400U    = 0x07, // 3400 us
-}radioRampUpTime_t;
+} radioRampUpTime_t;
 
 typedef enum {
     VARIABLE_LENGTH_PACKET    = 0x00,
     FIXED_LENGTH_PACKET       = 0x01,
-}headerType_t;
+} headerType_t;
 
 typedef enum {
     CRC_OFF       = 0x00,
     CRC_ON        = 0x01,
-}crcType_t;
+} crcType_t;
 
 typedef enum {
     STD_IQ        = 0x00,
     INVERT_IQ     = 0x01,
-}invertIq_t;
+} invertIq_t;
+
+typedef enum {
+    PUBLICSYNC    = PUBLICNETWORK,
+    PRIVATESYNC   = PRIVATENETWORK,
+} syncword_t;
 
 // status bytes
 typedef enum {
@@ -163,7 +187,7 @@ typedef enum {
     MODE_FS       = 0x04,
     MODE_RX       = 0x05,
     MODE_TX       = 0x06, 
-}chipMode_t;
+} chipMode_t;
 
 typedef enum {
     RESERVED0     = 0x00,
@@ -173,37 +197,37 @@ typedef enum {
     PROCESS_ERROR = 0x04,
     EXE_ERROR     = 0x05,
     TX_DONE       = 0x06,
-}commandStatus_t;
+} commandStatus_t;
 
 typedef struct __attribute__((packed)){
-    loraSpreadingFactor_t SpreadingFactor;
-    loraBandwidth_t       Bandwidth;
-    loraCodingRate_t      CodingRate;
-    LoraLdro_t            LowDataRateOptimize;
-}radioModulationParams_t;
+    loraSpreadingFactor_t spreadingFactor;
+    loraBandwidth_t       bandwidth;
+    loraCodingRate_t      codingRate;
+    LoraLdro_t            lowDataRateOptimize;
+} radioModulationParams_t;
 
 typedef struct __attribute__((packed)){
-    radioPower_t      TxPowerDbm;
-    radioRampUpTime_t TxRampTime;
-}radioTxParams_t;
+    radioPower_t      txPowerDbm;
+    radioRampUpTime_t txRampTime;
+} radioTxParams_t;
 
 typedef struct __attribute__((packed)){
-    uint16_t          PreambleLength;
-    headerType_t      HeaderType;
-    uint8_t           PayloadLength;
-    crcType_t         CrcType;
-    invertIq_t        InvertIq;
-}packetParams_t;
+    uint16_t          preambleLength;
+    headerType_t      headerType;
+    uint8_t           payloadLength;
+    crcType_t         crcType;
+    invertIq_t        invertIq;
+} packetParams_t;
 
 typedef struct __attribute__((packed)){
-    uint8_t           TxBaseAddress;
-    uint8_t           RxBaseAddress;
-}bufferBaseAddress_t;
+    uint8_t           txBaseAddress;
+    uint8_t           rxBaseAddress;
+} bufferBaseAddress_t;
 
 typedef struct __attribute__((packed)){
    // Timeout Duration = timeout[] * 15.625 us
-   uint8_t Timeout[3];
-}radioTimeout_t;
+   uint8_t timeout[3];
+} radioTimeout_t;
 
 // lora mode only irq status format: 
 // bit: 15|14|13|12|11|10|9            |8         |7       |6        |...
@@ -212,57 +236,56 @@ typedef struct __attribute__((packed)){
 // ---> 5           |4           |3 |2              |1      |0      |
 // ---> header error|header valid|na|preamble detect|rx done|tx done|
 typedef struct __attribute__((packed)) {
-    uint8_t TxDone          : 1;
-    uint8_t RxDone          : 1;
-    uint8_t PreambleDetect  : 1;
-    uint8_t SyncWordDetect  : 1;
-    uint8_t HeaderValid     : 1;
-    uint8_t HeaderError     : 1;
-    uint8_t CrcError        : 1;
-    uint8_t CadDone         : 1;
+    uint8_t txDone          : 1;
+    uint8_t rxDone          : 1;
+    uint8_t preambleDetect  : 1;
+    uint8_t syncWordDetect  : 1;
+    uint8_t headerValid     : 1;
+    uint8_t headerError     : 1;
+    uint8_t crcError        : 1;
+    uint8_t cadDone         : 1;
 
-    uint8_t CadDetected     : 1;
-    uint8_t Timeout         : 1;
+    uint8_t cadDetected     : 1;
+    uint8_t timeout         : 1;
     uint8_t reserved        : 6;
-}irqStatus_t;
+} irqStatus_t;
 
 typedef struct __attribute__((packed)) {
-    uint16_t IrqMask;
-    uint16_t Dio1Mask;
-    uint16_t Dio2Mask;
-    uint16_t Dio3Mask;
-}irqParams_t;
+    uint16_t irqMask;
+    uint16_t dio1Mask;
+    uint16_t dio2Mask;
+    uint16_t dio3Mask;
+} irqParams_t;
 
 typedef struct __attribute__((packed)) {
-    uint8_t         Reserved1       : 1;
-    commandStatus_t CommandStatus   : 3;
-    chipMode_t      ChipMode        : 3;
-    uint8_t         Reserved7       : 1;
-}radio_llcc68_status_t;
+    uint8_t         reserved1       : 1;
+    commandStatus_t commandStatus   : 3;
+    chipMode_t      chipMode        : 3;
+    uint8_t         reserved7       : 1;
+} radio_llcc68_status_t;
 
 typedef struct __attribute__((packed)) {
-    uint8_t Rc64Cal         : 1;
-    uint8_t Rc13MCal        : 1;
+    uint8_t rc64Cal         : 1;
+    uint8_t rc13MCal        : 1;
     uint8_t pllCal          : 1;
-    uint8_t AdcCal          : 1;
-    uint8_t ImgCal          : 1;
-    uint8_t XoscStart       : 1;
-    uint8_t PllLock         : 1;
-    uint8_t Reserved7       : 1;
+    uint8_t adcCal          : 1;
+    uint8_t imgCal          : 1;
+    uint8_t xoscStart       : 1;
+    uint8_t pllLock         : 1;
+    uint8_t reserved7       : 1;
 
-    uint8_t PaPamp          : 1;
-    uint8_t Reserved9_15    : 7;
+    uint8_t paPamp          : 1;
+    uint8_t reserved9_15    : 7;
 
 }radio_llcc68_opError_t;
 
 typedef struct {
-    radioModulationParams_t LoraModParams,
-    radioTxParams_t         RadioTxParams,
-    packetParams_t          PacketParams,
-    bufferBaseAddress_t     BufferBaseAddress,
-    irqParams_t             IrqParams,
-    loraChannel_t           Channel,
-}radio_llcc68_config_t;
+    radioModulationParams_t loraModParams;
+    radioTxParams_t         radioTxParams; //no rxParams needed
+    packetParams_t          packetParams;
+    uint8_t                 channel;
+    syncword_t              syncword;
+} radio_llcc68_config_t;
 
 
 
@@ -295,34 +318,31 @@ typedef void (*radio_capture_cbt)(PORT_TIMER_WIDTH timestamp);
 
 //=========================== prototypes ======================================
 
-// admin
+// radio init
 void          radio_llcc68_init(void);
-//void     radio_llcc68_setStartFrameCb(radio_capture_cbt cb);
-//void     radio_llcc68_setEndFrameCb(radio_capture_cbt cb);
-// reset
+// radio reset
 void          radio_llcc68_reset(void);
-// RF admin
-void          radio_llcc68_setFrequency(uint32_t frequency);
-void          radio_llcc68_loadPacket(uint8_t offset, uint8_t* buffer, uint8_t len);
-void          radio_llcc68_setModulation(radioModulationParams_t modParams);
-void          radio_llcc68_setPacketParams(packetParams_t packetParams);
-void          radio_llcc68_txEnable(void);
+// radio control
+void          radio_llcc68_loadPacket(uint8_t offset, 
+                                      uint8_t* buffer, 
+                                      uint8_t len);
+void          radio_llcc68_lora_config(radio_llcc68_config_t radio);
 void          radio_llcc68_txNow(radioTimeout_t timeout);
 void          radio_llcc68_rxNow(radioTimeout_t timeout);
-void          radio_llcc68_rfOff(void);
+// radio info
 void          radio_llcc68_get_status(void);
 void          radio_llcc68_get_opError(void);
 irqStatus_t   radio_llcc68_irq_status(void);
 void          radio_llcc68_busy_wait(void);
-//void     radio_llcc68_rfOn(void);
-//void     radio_llcc68_rfOff(void);
-// TX
-//void     radio_llcc68_loadPacket(uint8_t* packet, uint16_t len);
-//void     radio_llcc68_txEnable(void);
-//void     radio_llcc68_txNow(void);
+// channel mapping
+void          lorawan_channel_mapping(void);
+
+
+//void     radio_llcc68_setStartFrameCb(radio_capture_cbt cb);
+//void     radio_llcc68_setEndFrameCb(radio_capture_cbt cb);
+
 // RX
-//void     radio_llcc68_rxEnable(void);
-//void     radio_llcc68_rxNow(void);
+
 /*
 void     radio_getReceivedFrame(uint8_t* bufRead,
                                 uint16_t* lenRead,
@@ -333,12 +353,6 @@ void     radio_getReceivedFrame(uint8_t* bufRead,
                                    */
 
 // interrupt handlers
-void cb_compare(void);
-//void    radio_isr(void);
-
-/**
-\}
-\}
-*/
+//void cb_compare(void);
 
 #endif

@@ -1,9 +1,9 @@
 /**
-\brief This is a program which shows how to GPIO interrupt.
+\brief This is a program which shows how to use GPIO interrupt.
 
 
-Program will start in slow LED blink rate. When interrupt is triggered
-the LED blink rate will toggle between fast and slow LED blink rate.
+Program will start with all LEDs off. When interrupt is triggered
+the LEDs will toggle.
 
 \author Jacob Louie <jlouie475@connect.hkust-gz.edu.cn>, August 2025.
 */
@@ -14,11 +14,10 @@ the LED blink rate will toggle between fast and slow LED blink rate.
 #include "leds.h"
 #include "gpio_irq.h"
 
-#define SLOW_BLINK 0
-#define FAST_BLINK 1
-
-#define IRQCHANNEL 0
-#define GPIO_IRQ_PIN  6
+#define IRQCHANNEL                0
+#define IRQPORT               PORT1
+#define GPIO_IRQ_PIN              6
+#define RISING_EDGE   GPIOTE_LOTOHI
 
 //=========================== variables =======================================
 
@@ -42,9 +41,9 @@ void mote_main(void) {
     memset(&app_vars,0,sizeof(app_vars_t));
 
     gpio_irq_config(IRQCHANNEL, 
-                    PORT1, 
+                    IRQPORT, 
                     GPIO_IRQ_PIN, 
-                    GPIOTE_LOTOHI, 
+                    RISING_EDGE, 
                     cb_toggle);
     gpio_irq_enable(IRQCHANNEL);
 

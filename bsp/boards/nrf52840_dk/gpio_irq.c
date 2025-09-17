@@ -57,7 +57,7 @@ int gpio_irq_config(uint8_t channel,
     // set callback
     gpio_irq_vars[channel].cb= cb;
     // save settings
-    gpio_irq_vars[channel].pinNumber = pin;
+    gpio_irq_vars[channel].pinNumber  = pin;
     gpio_irq_vars[channel].portNumber = port;
     gpio_irq_vars[channel].configured = 1;
 
