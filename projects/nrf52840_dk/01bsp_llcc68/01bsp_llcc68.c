@@ -455,7 +455,7 @@ void llcc68_irq_test(void){
     
     while(1){
     // basic Tx step 7
-      radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, app_vars.packet_len);
+      //radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, app_vars.packet_len);
       memcpy(radioTimeout.timeout, TIMEOUT, sizeof(TIMEOUT));
 
       // basic Tx steps 8-12
@@ -464,7 +464,7 @@ void llcc68_irq_test(void){
       while((app_vars.irqStatus.txDone & 1) == 0){
         // basic Tx step 13
         radio_llcc68_get_status();
-        app_vars.irqStatus = radio_llcc68_irq_status();
+        //app_vars.irqStatus = radio_llcc68_irq_status();
         __NOP();
       }
     // basic Tx step 14
