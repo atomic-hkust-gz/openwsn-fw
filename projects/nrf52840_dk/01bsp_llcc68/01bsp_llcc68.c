@@ -24,7 +24,7 @@
 #define LORA_SPREADING_FACTOR       0x07      // sf7
 #define LORA_CODINGRATE             0x01      // cr 4/5
 #define LORA_PREAMBLE_LENGTH        0x08
-#define LORA_PAYLOAD_LENGTH         0x80      // 128
+#define LORA_PAYLOAD_LENGTH         0x0A      // 128
 // for testing
 #define MAX_BUFFER_SIZE             10
 #define CHANNEL_NUM                 2
@@ -114,7 +114,7 @@ int mote_main(void){
     ////memset(&packetParams, 0, sizeof(packetParams));
     ////memset(&radioTimeout, 0, sizeof(radioTimeout));
 
-   app_vars.packet_len = 20;
+   app_vars.packet_len = 10;
    llcc68_irq_test();
 
 } 
@@ -449,30 +449,35 @@ void llcc68_irq_test(void){
     radio_llcc68_lora_config(loraConfig);
     
     // start bsp timer
-    //sctimer_set_callback(cb_timer);
-    //sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
-    //sctimer_enable();
+    sctimer_set_callback(cb_timer);
+    sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
+    sctimer_enable();
     
     while(1){
-    // basic Tx step 7
-      //radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, app_vars.packet_len);
-      memcpy(radioTimeout.timeout, TIMEOUT, sizeof(TIMEOUT));
 
+      while(!(app_vars.flags & APP_FLAG_TIMER)){
+        // wait
+        __NOP();
+      }
+      app_vars.flags = 0;
+      // basic Tx step 7
+      radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, app_vars.packet_len);
+      memcpy(radioTimeout.timeout, TIMEOUT, sizeof(TIMEOUT));
+      
       // basic Tx steps 8-12
       radio_llcc68_txNow(radioTimeout);
+      app_vars.flags != APP_FLAG_START_FRAME;
       //radio_llcc68_get_opError();
       while((app_vars.irqStatus.txDone & 1) == 0){
         // basic Tx step 13
         radio_llcc68_get_status();
-        //app_vars.irqStatus = radio_llcc68_irq_status();
+        app_vars.irqStatus = radio_llcc68_irq_status();
         __NOP();
       }
-    // basic Tx step 14
-    // clear IRQ status
-    //memset(&irqStatus, IRQMASK, sizeof(irqStatus));
-    //llcc68_noAddress_opcode(CLEARIRQSTATUS, 
-    //    TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus)); 
-    //  14. Clear the IRQ TxDone flag
+      app_vars.flags = APP_FLAG_END_FRAME;
+      // basic Tx step 14
+      // clear IRQ status
+      radio_llcc68_irq_clear();
     }
     
 }

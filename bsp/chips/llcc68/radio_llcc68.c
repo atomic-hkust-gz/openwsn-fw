@@ -21,7 +21,7 @@
 // Pin assignments
 #define LLCC68_RESET_PIN NRF_GPIO_PIN_MAP(1,8)    // P1.08
 
-#define IRQMASK                     0x03FF//0x03F7//0x03FF
+#define IRQMASK                     0x03FF
 #define IRQTXDONE                   0x0001    // tx done 
 #define IRQRXDONE                   0x0002    // rx done
 #define IRQTIMEOUT                  0x0200    // rx/tx timeout
@@ -197,29 +197,33 @@ void radio_llcc68_lora_config(radio_llcc68_config_t radio){
         // invalid channel number
         // default to channel 0
         freqReg = (uint32_t)(((uint64_t)lorawan_ch_map[0] * 
-                                        32000000) / (1ULL << 25));
+                                        (1ULL << 25)) / 32000000ULL);
       }
       else {
         // freqReg = frequency(Hz) * 32 MHz(F_XTAL) / 2^25
         freqReg = (uint32_t)(((uint64_t)lorawan_ch_map[radio.channel] *
-                                         32000000) / (1ULL << 25));
+                                         (1ULL << 25)) / 32000000ULL);
       }
     #else
       if (radio.channel >= REGION_UPLINK_CH_MAX + REGION_DOWNLINK_CH_MAX) {
         // invalid channel number
         // default to channel 0
         freqReg = (uint32_t)(((uint64_t)lorawan_ch_map[0].frequency * 
-                                        32000000) / (1ULL << 25));
+                                        (1ULL << 25)) / 32000000ULL);
       }
       else {
         // freqReg = frequency(Hz) * 32 MHz(F_XTAL) / 2^25
         freqReg = (uint32_t)(((uint64_t)lorawan_ch_map[radio.channel].frequency * 
-                                        32000000) / (1ULL << 25));
+                                        (1ULL << 25)) / 32000000ULL);
       }
     #endif
 
     // set RF frequency
-    memcpy(mulitParam, &freqReg, sizeof(freqReg));
+    //memcpy(mulitParam, &freqReg, sizeof(freqReg));
+    mulitParam[0] = 0x89;
+    mulitParam[1] = 0xFD;
+    mulitParam[3] = 0xE8;
+    mulitParam[4] = 0x1B;
     llcc68_noAddress_opcode(SETRFFREQUENCY, 
                             TYPE_WRITE,
                             (uint8_t*)&mulitParam, 
@@ -357,6 +361,15 @@ void radio_llcc68_rxNow(radioTimeout_t rxMax){
                             TYPE_WRITE, 
                             (uint8_t*)&rxMax.timeout, 
                             sizeof(rxMax.timeout));
+}
+
+void radio_llcc68_irq_clear(void) {
+    irqStatus_t irqStatus;
+
+    // clear IRQ status
+    memset(&irqStatus, IRQMASK, sizeof(irqStatus));
+    llcc68_noAddress_opcode(CLEARIRQSTATUS, 
+        TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus));
 }
 
 // radio info

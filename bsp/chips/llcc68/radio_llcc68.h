@@ -329,6 +329,7 @@ void          radio_llcc68_loadPacket(uint8_t offset,
 void          radio_llcc68_lora_config(radio_llcc68_config_t radio);
 void          radio_llcc68_txNow(radioTimeout_t timeout);
 void          radio_llcc68_rxNow(radioTimeout_t timeout);
+void          radio_llcc68_irq_clear(void);
 // radio info
 void          radio_llcc68_get_status(void);
 void          radio_llcc68_get_opError(void);
