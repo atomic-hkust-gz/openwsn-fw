@@ -24,7 +24,7 @@
 #define LORA_SPREADING_FACTOR       0x07      // sf7
 #define LORA_CODINGRATE             0x01      // cr 4/5
 #define LORA_PREAMBLE_LENGTH        0x0080
-#define LORA_PAYLOAD_LENGTH         0x0A      // 128
+#define LORA_PAYLOAD_LENGTH         0x80      // 128
 // for testing
 #define MAX_BUFFER_SIZE             0x80
 #define CHANNEL_NUM                 2
@@ -39,6 +39,7 @@
 uint8_t stringToSend[]  = "+002 Ptest.24.00.12.-010\n";
 
 static const uint8_t TXRXOFFSET =   0x00; 
+//                                  { MSB,    , LSB}                                       
 static const uint8_t TIMEOUT[3] =   {0x13,0x88,0x00};  ///< 20 s = 1,280,000 * 15.625 us
 
 //=========================== variables =======================================
@@ -465,10 +466,12 @@ void llcc68_irq_test(void){
       memcpy(radioTimeout.timeout, TIMEOUT, sizeof(TIMEOUT));
       
       // basic Tx steps 8-12
-      radio_llcc68_txNow(radioTimeout);
+      //radio_llcc68_txNow(radioTimeout);
+      radio_llcc68_rxNow(radioTimeout);
       app_vars.flags != APP_FLAG_START_FRAME;
-      //radio_llcc68_get_opError();
-      while((app_vars.irqStatus.txDone & 1) == 0){
+
+      //while((app_vars.irqStatus.txDone & 1) == 0){
+      while((app_vars.irqStatus.rxDone & 1 | app_vars.irqStatus.timeout & 1) == 0){
         // basic Tx step 13
         board_sleep();
       }

@@ -24,6 +24,12 @@
 #define IRQMASK                     LSB_FIRST_16(0x3FFF)
 #define IRQTXDONE                   LSB_FIRST_16(0x0001)  // tx done 
 #define IRQRXDONE                   LSB_FIRST_16(0x0002)  // rx done
+#define IRQPREAMBLEDETECTED         LSB_FIRST_16(0x0004)  // preambleDetected 
+#define IRQHEADERVALID              LSB_FIRST_16(0x0010)  // headerValid
+#define IRQHEADERERROR              LSB_FIRST_16(0x0020)  // headerErr
+#define IRQCRCERROR                 LSB_FIRST_16(0x0040)  // crcErr
+#define IRQCADDONE                  LSB_FIRST_16(0x0080)  // cadDone 
+#define IRQCADDETECTED              LSB_FIRST_16(0x0100)  // cadDetected
 #define IRQTIMEOUT                  LSB_FIRST_16(0x0200)  // rx/tx timeout
 #define DIO2MASK                    0x0000
 #define DIO3MASK                    0x0000
@@ -283,9 +289,12 @@ void radio_llcc68_lora_config(radio_llcc68_config_t radio){
                             sizeof(irqStatus));
     
     // set IRQ/DIO params
-    // IrqMask needs to match DioXMask to be valid
-    irqParams.irqMask         = IRQTXDONE | IRQTIMEOUT; 
-    irqParams.dio1Mask        = IRQTXDONE | IRQTIMEOUT;
+    // IrqMask: irqStatus flag info enabled
+    // DioXMask: trigger interrupt when flag triggered
+    irqParams.irqMask         = IRQTXDONE | IRQRXDONE | IRQPREAMBLEDETECTED |
+                                IRQHEADERVALID | IRQHEADERERROR |IRQCRCERROR |
+                                IRQCADDONE |IRQCADDETECTED | IRQTIMEOUT;
+    irqParams.dio1Mask        = IRQTXDONE | IRQRXDONE | IRQTIMEOUT;
     irqParams.dio2Mask        = DIO2MASK;
     irqParams.dio3Mask        = DIO3MASK;
     llcc68_noAddress_opcode(SETDIOIRQPARAMS, 
@@ -324,31 +333,6 @@ void radio_llcc68_txNow(radioTimeout_t txMax){
 
 // Timeout Duration = timeout[] * 15.625 us
 void radio_llcc68_rxNow(radioTimeout_t rxMax){
-
-    irqStatus_t irqStatus;
-    irqParams_t irqParams;
-
-    memset(&irqStatus, 0, sizeof(irqStatus));
-    memset(&irqParams, 0, sizeof(irqParams));
-    
-    // clear IRQ status
-    memset(&irqStatus, IRQMASK, sizeof(irqStatus));
-    llcc68_noAddress_opcode(CLEARIRQSTATUS, 
-                            TYPE_WRITE, 
-                            (uint8_t*)&irqStatus,
-                            sizeof(irqStatus));
-
-    // set IRQ/DIO params
-    // IrqMask needs to match DioXMask to be valid
-    irqParams.irqMask         = IRQRXDONE | IRQTIMEOUT; 
-    irqParams.dio1Mask        = IRQRXDONE | IRQTIMEOUT;
-    irqParams.dio2Mask        = DIO2MASK;
-    irqParams.dio3Mask        = DIO3MASK;
-    llcc68_noAddress_opcode(SETDIOIRQPARAMS, 
-                            TYPE_WRITE, 
-                            (uint8_t*)&irqParams, 
-                            sizeof(irqParams));
-    
     // set Rx mode
     llcc68_noAddress_opcode(SETRX, 
                             TYPE_WRITE, 

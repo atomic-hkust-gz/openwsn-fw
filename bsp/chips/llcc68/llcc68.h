@@ -82,45 +82,45 @@ typedef struct {
 #define RESETSTATS            0x00
 
 // register table
-#define DIOXOUTPUTENABLE      (uint16_t)LSB_FIRST_16(0x0580)
-#define DIOXINPUTENABLE       (uint16_t)LSB_FIRST_16(0x0583)
-#define DIOXPULLUPCTRL        (uint16_t)LSB_FIRST_16(0x0584)
-#define DIOXPULLDOWNCTRL      (uint16_t)LSB_FIRST_16(0x0585)
-#define WHITENINGMSB          (uint16_t)LSB_FIRST_16(0x06B8)
-#define WHITENINGLSB          (uint16_t)LSB_FIRST_16(0x06B9)
-#define CRCMSB                (uint16_t)LSB_FIRST_16(0x06BC)
-#define CRCLSB                (uint16_t)LSB_FIRST_16(0x06BD)
-#define CRCMSBPOLY            (uint16_t)LSB_FIRST_16(0x06BE)
-#define CRCLSBPOLY            (uint16_t)LSB_FIRST_16(0x06BF)
-#define SYNCWORD0             (uint16_t)LSB_FIRST_16(0x06C0)
-#define SYNCWORD1             (uint16_t)LSB_FIRST_16(0x06C1)
-#define SYNCWORD2             (uint16_t)LSB_FIRST_16(0x06C2)
-#define SYNCWORD3             (uint16_t)LSB_FIRST_16(0x06C3)
-#define SYNCWORD4             (uint16_t)LSB_FIRST_16(0x06C4)
-#define SYNCWORD5             (uint16_t)LSB_FIRST_16(0x06C5)
-#define SYNCWORD6             (uint16_t)LSB_FIRST_16(0x06C6)
-#define SYNCWORD7             (uint16_t)LSB_FIRST_16(0x06C7)
-#define NODEADDRESS           (uint16_t)LSB_FIRST_16(0x06CD)
-#define BROADCASTADDRESS      (uint16_t)LSB_FIRST_16(0x06CE)
-#define IQPOLARITY            (uint16_t)LSB_FIRST_16(0x0736)
+#define DIOXOUTPUTENABLE      LSB_FIRST_16(0x0580)
+#define DIOXINPUTENABLE       LSB_FIRST_16(0x0583)
+#define DIOXPULLUPCTRL        LSB_FIRST_16(0x0584)
+#define DIOXPULLDOWNCTRL      LSB_FIRST_16(0x0585)
+#define WHITENINGMSB          LSB_FIRST_16(0x06B8)
+#define WHITENINGLSB          LSB_FIRST_16(0x06B9)
+#define CRCMSB                LSB_FIRST_16(0x06BC)
+#define CRCLSB                LSB_FIRST_16(0x06BD)
+#define CRCMSBPOLY            LSB_FIRST_16(0x06BE)
+#define CRCLSBPOLY            LSB_FIRST_16(0x06BF)
+#define SYNCWORD0             LSB_FIRST_16(0x06C0)
+#define SYNCWORD1             LSB_FIRST_16(0x06C1)
+#define SYNCWORD2             LSB_FIRST_16(0x06C2)
+#define SYNCWORD3             LSB_FIRST_16(0x06C3)
+#define SYNCWORD4             LSB_FIRST_16(0x06C4)
+#define SYNCWORD5             LSB_FIRST_16(0x06C5)
+#define SYNCWORD6             LSB_FIRST_16(0x06C6)
+#define SYNCWORD7             LSB_FIRST_16(0x06C7)
+#define NODEADDRESS           LSB_FIRST_16(0x06CD)
+#define BROADCASTADDRESS      LSB_FIRST_16(0x06CE)
+#define IQPOLARITY            LSB_FIRST_16(0x0736)
 // set to PUBLICNETWORK or PRIVATENETWORK
 #define LORASYNCWORDMSB       LSB_FIRST_16(0x0740) 
 #define LORASYNCWORDLSB       LSB_FIRST_16(0x0741)
-#define PUBLICNETWORK         LSB_FIRST_16(0x3444)
-#define PRIVATENETWORK        (uint16_t)LSB_FIRST_16(0x1424)
-#define RANDOMNUMBERGEN0      (uint16_t)LSB_FIRST_16(0x0819)
-#define RANDOMNUMBERGEN1      (uint16_t)LSB_FIRST_16(0x081A)
-#define RANDOMNUMBERGEN2      (uint16_t)LSB_FIRST_16(0x081B)
-#define RANDOMNUMBERGEN3      (uint16_t)LSB_FIRST_16(0x081C)
-#define TXMODULATION          (uint16_t)LSB_FIRST_16(0x0889)
-#define RXGAIN                (uint16_t)LSB_FIRST_16(0x08AC)
-#define TXCLAMPCONFIG         (uint16_t)LSB_FIRST_16(0x08D8)
-#define OCPCONFIG             (uint16_t)LSB_FIRST_16(0x08E7)
-#define RTCCTRL               (uint16_t)LSB_FIRST_16(0x0902)
-#define XTATRIM               (uint16_t)LSB_FIRST_16(0x0911)
-#define XTBTRIM               (uint16_t)LSB_FIRST_16(0x0912)
-#define DIO3OUTPUTVOLTAGE     (uint16_t)LSB_FIRST_16(0x0920)
-#define EVENTMASK             (uint16_t)LSB_FIRST_16(0x0944)
+#define PUBLICNETWORK         0x3444
+#define PRIVATENETWORK        0x1424
+#define RANDOMNUMBERGEN0      LSB_FIRST_16(0x0819)
+#define RANDOMNUMBERGEN1      LSB_FIRST_16(0x081A)
+#define RANDOMNUMBERGEN2      LSB_FIRST_16(0x081B)
+#define RANDOMNUMBERGEN3      LSB_FIRST_16(0x081C)
+#define TXMODULATION          LSB_FIRST_16(0x0889)
+#define RXGAIN                LSB_FIRST_16(0x08AC)
+#define TXCLAMPCONFIG         LSB_FIRST_16(0x08D8)
+#define OCPCONFIG             LSB_FIRST_16(0x08E7)
+#define RTCCTRL               LSB_FIRST_16(0x0902)
+#define XTATRIM               LSB_FIRST_16(0x0911)
+#define XTBTRIM               LSB_FIRST_16(0x0912)
+#define DIO3OUTPUTVOLTAGE     LSB_FIRST_16(0x0920)
+#define EVENTMASK             LSB_FIRST_16(0x0944)
 
 //========================== prototypes ======================================
 
@@ -167,6 +167,8 @@ static const uint8_t RF_FREQ_490_MHZ[] = { 0x00, 0x00, 0xA0, 0x1E }; // (490 MHz
 static const uint8_t RF_FREQ_868_MHZ[] = { 0x00, 0x00, 0x40, 0x36 }; // (868 MHz/32 MHz)*2^25 | or 868*2^20
 static const uint8_t RF_FREQ_915_MHZ[] = { 0x00, 0x00, 0x30, 0x39 }; // (915 MHz/32 MHz)*2^25 | or 915*2^20
 
+// image calibration over the ISM bands
+// Frequency band (MHz) = 0x Freq1(1byte) Freq2(1byte)
 static const uint8_t FREQ_BAND_430_440[] = { 0x6B, 0x6F }; // 
 static const uint8_t FREQ_BAND_470_510[] = { 0x75, 0x81 }; // China
 static const uint8_t FREQ_BAND_779_787[] = { 0xC1, 0xC5 }; // 

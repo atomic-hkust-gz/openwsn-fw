@@ -130,16 +130,6 @@ typedef enum {
     LDRO_ON       = 0x01,
 } LoraLdro_t;
 
-// image calibration over the ISM bands
-typedef enum {
-    // Frequency band (MHz) = 0x Freq1(1byte) Freq2(1byte)
-    BAND430_440   = 0x6b6f,
-    BAND470_510   = 0x7581,
-    BAND779_787   = 0xc1c5,
-    BAND863_870   = 0xd7db,
-    BAND902_928   = 0xe1e9,
-} ismBand_t;
-
 typedef enum {
     // -9 dBm (0xF7) to +22 dBm (0x16)
     TX_P22_DBM    = 0x16,
