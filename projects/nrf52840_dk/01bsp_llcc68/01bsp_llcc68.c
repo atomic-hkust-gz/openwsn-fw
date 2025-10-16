@@ -16,17 +16,17 @@
 #define LENGTH_PACKET   125+LENGTH_CRC    ///< maximum length is 127 bytes
 #define LEN_PKT_TO_SEND 20+LENGTH_CRC     ///< temp max packet length
 #define RFFREQUENCY     470500000         ///< 470.5 MHz
-#define TIMER_PERIOD    (0xffff>>4)       ///< 0xffff = 2s@32kHz
+#define TIMER_PERIOD    (0xfffff>>4)       ///< 0xfffff = 4s@32kHz
 #define ID              0x99              ///< byte sent in the packets
 
 // lora configuration
 #define LORA_BANDWIDTH              0x04      // 0x04 = 125 kHz
 #define LORA_SPREADING_FACTOR       0x07      // sf7
 #define LORA_CODINGRATE             0x01      // cr 4/5
-#define LORA_PREAMBLE_LENGTH        0x08
+#define LORA_PREAMBLE_LENGTH        0x0080
 #define LORA_PAYLOAD_LENGTH         0x0A      // 128
 // for testing
-#define MAX_BUFFER_SIZE             10
+#define MAX_BUFFER_SIZE             0x80
 #define CHANNEL_NUM                 2
 
 
@@ -39,7 +39,7 @@
 uint8_t stringToSend[]  = "+002 Ptest.24.00.12.-010\n";
 
 static const uint8_t TXRXOFFSET =   0x00; 
-static const uint8_t TIMEOUT[3] =   {0x13,0x88,0x00};  ///< 10 s = 1,280,000 * 15.625 us
+static const uint8_t TIMEOUT[3] =   {0x13,0x88,0x00};  ///< 20 s = 1,280,000 * 15.625 us
 
 //=========================== variables =======================================
 
@@ -114,7 +114,7 @@ int mote_main(void){
     ////memset(&packetParams, 0, sizeof(packetParams));
     ////memset(&radioTimeout, 0, sizeof(radioTimeout));
 
-   app_vars.packet_len = 10;
+   app_vars.packet_len = LORA_PAYLOAD_LENGTH;
    llcc68_irq_test();
 
 } 
@@ -438,7 +438,7 @@ void llcc68_irq_test(void){
         .txRampTime           = RAMP_200U,
     };
     loraConfig.packetParams   = (packetParams_t){
-        .preambleLength       = LORA_PAYLOAD_LENGTH,
+        .preambleLength       = LORA_PREAMBLE_LENGTH,
         .headerType           = FIXED_LENGTH_PACKET,
         .payloadLength        = MAX_BUFFER_SIZE,
         .crcType              = CRC_ON,
@@ -470,14 +470,13 @@ void llcc68_irq_test(void){
       //radio_llcc68_get_opError();
       while((app_vars.irqStatus.txDone & 1) == 0){
         // basic Tx step 13
-        radio_llcc68_get_status();
-        app_vars.irqStatus = radio_llcc68_irq_status();
-        __NOP();
+        board_sleep();
       }
       app_vars.flags = APP_FLAG_END_FRAME;
       // basic Tx step 14
       // clear IRQ status
       radio_llcc68_irq_clear();
+      app_vars.irqStatus = radio_llcc68_irq_status();
     }
     
 }

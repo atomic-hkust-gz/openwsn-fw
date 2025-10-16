@@ -21,10 +21,10 @@
 // Pin assignments
 #define LLCC68_RESET_PIN NRF_GPIO_PIN_MAP(1,8)    // P1.08
 
-#define IRQMASK                     0x03FF
-#define IRQTXDONE                   0x0001    // tx done 
-#define IRQRXDONE                   0x0002    // rx done
-#define IRQTIMEOUT                  0x0200    // rx/tx timeout
+#define IRQMASK                     LSB_FIRST_16(0x3FFF)
+#define IRQTXDONE                   LSB_FIRST_16(0x0001)  // tx done 
+#define IRQRXDONE                   LSB_FIRST_16(0x0002)  // rx done
+#define IRQTIMEOUT                  LSB_FIRST_16(0x0200)  // rx/tx timeout
 #define DIO2MASK                    0x0000
 #define DIO3MASK                    0x0000
 #define LORA_TX_BASE_ADDR             0x00
@@ -117,9 +117,9 @@ void radio_llcc68_init(void) {
         TYPE_WRITE, (uint8_t*)&irqStatus, sizeof(irqStatus));
 
     // enable DIO2 as RF switch ctrl
-    value = llcc68_spiReadReg(SETDIO2ASRFSWITCHCTRL);
-    value = value | 0x01;
-    llcc68_spiWriteReg(SETDIO2ASRFSWITCHCTRL,value);
+    value = 0x01;
+    llcc68_noAddress_opcode(SETDIO2ASRFSWITCHCTRL, 
+        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
     
     #if defined(DEBUG)
       // check for device errors 
@@ -184,12 +184,12 @@ void radio_llcc68_lora_config(radio_llcc68_config_t radio){
     value = RC_13MHz;
     llcc68_noAddress_opcode(SETSTANDBY, 
         TYPE_WRITE, (uint8_t*)&value, sizeof(value));
-    for(i = 0; i < 0xfff; i++){};
+
     // set packet type
     value = PACKET_TYPE_LORA;
     llcc68_noAddress_opcode(SETPACKETTYPE, 
         TYPE_WRITE, (uint8_t*)&value, sizeof(value));
-    for(i = 0; i < 0xfff; i++){};
+
     // check if valid channel number
     // need to add channel mask
     #if defined(REGION_EUROPE)
@@ -228,19 +228,19 @@ void radio_llcc68_lora_config(radio_llcc68_config_t radio){
                             TYPE_WRITE,
                             (uint8_t*)&mulitParam, 
                             sizeof(mulitParam));
-    for(i = 0; i < 0xfff; i++){};
+
     // set power amplifier configuration
     memcpy(mulitParam, REGION_MAX_DBM, sizeof(REGION_MAX_DBM));
     llcc68_noAddress_opcode(SETPACONFIG, 
                             TYPE_WRITE, 
                             (uint8_t*)&mulitParam, 
                             sizeof(REGION_MAX_DBM));
-    for(i = 0; i < 0xfff; i++){};
+
     llcc68_noAddress_opcode(SETTXPARAMS, 
                             TYPE_WRITE, 
                             (uint8_t*)&radio.radioTxParams, 
                             sizeof(radio.radioTxParams));
-    for(i = 0; i < 0xfff; i++){};
+
     bufferBaseAddress = (bufferBaseAddress_t){
         .txBaseAddress    = LORA_TX_BASE_ADDR,
         .rxBaseAddress    = LORA_RX_BASE_ADDR,
@@ -249,13 +249,7 @@ void radio_llcc68_lora_config(radio_llcc68_config_t radio){
                             TYPE_WRITE, 
                             (uint8_t*)&bufferBaseAddress, 
                             sizeof(bufferBaseAddress));
-    //debug temp
-    uint8_t temp[8] = {0,1,2,3,4,5,6,7};
-    //radio_llcc68_loadPacket(0x00,(uint8_t*)&temp, sizeof(temp));
-    llcc68_txBufferWrite(0x00,(uint8_t*)&temp, sizeof(temp));
-    //radio_llcc68_get_status();
-    //radio_llcc68_get_opError();
-    for(i = 0; i < 0xffff; i++){__NOP();};
+
     llcc68_noAddress_opcode(SETMODULATIONPARAMS, 
                             TYPE_WRITE, 
                             (uint8_t*)&radio.loraModParams, 
@@ -273,12 +267,13 @@ void radio_llcc68_lora_config(radio_llcc68_config_t radio){
         value = value | 0x04; 
     }
     llcc68_spiWriteReg(TXMODULATION, value);
-    for(i = 0; i < 0xfff; i++){};
+
+    radio.packetParams.preambleLength = LSB_FIRST_16(
+                             radio.packetParams.preambleLength);
     llcc68_noAddress_opcode(SETPACKETPARAMS, 
                             TYPE_WRITE, 
                             (uint8_t*)&radio.packetParams, 
                             sizeof(radio.packetParams));
-    for(i = 0; i < 0xfff; i++){};
     
     // clear IRQ status
     memset(&irqStatus, IRQMASK, sizeof(irqStatus));
@@ -286,7 +281,7 @@ void radio_llcc68_lora_config(radio_llcc68_config_t radio){
                             TYPE_WRITE,
                             (uint8_t*)&irqStatus, 
                             sizeof(irqStatus));
-    for(i = 0; i < 0xfff; i++){};
+    
     // set IRQ/DIO params
     // IrqMask needs to match DioXMask to be valid
     irqParams.irqMask         = IRQTXDONE | IRQTIMEOUT; 
@@ -301,11 +296,9 @@ void radio_llcc68_lora_config(radio_llcc68_config_t radio){
     // set sync word (private/public) 
     // set MSB
     value = (radio.syncword >> 8) & 0xFF;
-    for(i = 0; i < 0xfff; i++){};
     llcc68_spiWriteReg(LORASYNCWORDMSB,value);
     // set LSB
     value = radio.syncword & 0xFF;
-    for(i = 0; i < 0xfff; i++){};
     llcc68_spiWriteReg(LORASYNCWORDLSB,value);
 
     #if defined(DEBUG)

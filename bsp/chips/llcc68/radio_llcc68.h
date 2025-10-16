@@ -236,6 +236,12 @@ typedef struct __attribute__((packed)){
 // ---> 5           |4           |3 |2              |1      |0      |
 // ---> header error|header valid|na|preamble detect|rx done|tx done|
 typedef struct __attribute__((packed)) {
+    // MSB
+    uint8_t cadDetected     : 1;
+    uint8_t timeout         : 1;
+    uint8_t reserved        : 6;
+
+    // LSB
     uint8_t txDone          : 1;
     uint8_t rxDone          : 1;
     uint8_t preambleDetect  : 1;
@@ -244,10 +250,6 @@ typedef struct __attribute__((packed)) {
     uint8_t headerError     : 1;
     uint8_t crcError        : 1;
     uint8_t cadDone         : 1;
-
-    uint8_t cadDetected     : 1;
-    uint8_t timeout         : 1;
-    uint8_t reserved        : 6;
 } irqStatus_t;
 
 typedef struct __attribute__((packed)) {
@@ -265,6 +267,11 @@ typedef struct __attribute__((packed)) {
 } radio_llcc68_status_t;
 
 typedef struct __attribute__((packed)) {
+    // MSB
+    uint8_t paPamp          : 1;
+    uint8_t reserved9_15    : 7;
+    
+    // LSB
     uint8_t rc64Cal         : 1;
     uint8_t rc13MCal        : 1;
     uint8_t pllCal          : 1;
@@ -273,9 +280,6 @@ typedef struct __attribute__((packed)) {
     uint8_t xoscStart       : 1;
     uint8_t pllLock         : 1;
     uint8_t reserved7       : 1;
-
-    uint8_t paPamp          : 1;
-    uint8_t reserved9_15    : 7;
 
 }radio_llcc68_opError_t;
 
