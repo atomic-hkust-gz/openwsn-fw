@@ -21,7 +21,7 @@
 // Pin assignments
 #define LLCC68_RESET_PIN NRF_GPIO_PIN_MAP(1,8)    // P1.08
 
-#define IRQMASK                     LSB_FIRST_16(0x3FFF)
+#define IRQMASK                     LSB_FIRST_16(0xFFFF)
 #define IRQTXDONE                   LSB_FIRST_16(0x0001)  // tx done 
 #define IRQRXDONE                   LSB_FIRST_16(0x0002)  // rx done
 #define IRQPREAMBLEDETECTED         LSB_FIRST_16(0x0004)  // preambleDetected 
@@ -169,6 +169,29 @@ void radio_llcc68_loadPacket(uint8_t offset,
     #endif
 
     radio_vars.state = LLCC68STATE_PACKET_LOADED;
+}
+
+void radio_llcc68_readPacket(uint8_t* buffer) {
+
+    uint8_t rx_buf[2];
+    llcc68_noAddress_opcode(GETRXBUFFERSTATUS, TYPE_READ, rx_buf, sizeof(rx_buf));
+    // [0] = payloadLengthRx 
+    // [1] = rxStartBufferPointer
+    llcc68_rxBufferRead(rx_buf[1], buffer, rx_buf[0]);
+
+    #if defined(DEBUG)
+      // check for device errors 
+      radio_llcc68_get_status();
+      radio_llcc68_get_opError();
+    #endif
+
+    radio_vars.state = LLCC68STATE_PACKET_READ;
+}
+
+void radio_llcc68_getPacketStats(packetStats_t* packetStats){
+
+    llcc68_noAddress_opcode(GETPACKETSTATUS, 
+        TYPE_READ, packetStats, sizeof(packetStats));
 }
 
 void radio_llcc68_lora_config(radio_llcc68_config_t radio){
@@ -371,6 +394,7 @@ irqStatus_t radio_llcc68_irq_status(void) {
     return *(irqStatus_t *)rx_buf;
 }
 
+//=========================== private =========================================
 // channel mapping
 void lorawan_channel_mapping(void){
     uint8_t channel;
@@ -393,53 +417,6 @@ void lorawan_channel_mapping(void){
         }
     #endif
 }
-
-
-/*
-void radio_llcc68_getReceivedFrame(uint8_t* pBufRead,
-                            uint8_t* pLenRead,
-                            uint8_t  maxBufLen,
-                             int8_t* pRssi,
-                            uint8_t* pLqi,
-                               bool* pCrc)
-{
-    // check for length parameter; if too long, payload won't fit into memory
-    uint8_t len;
-
-    len = radio_vars.payload[0];
-
-    if (len == 0) {
-        return; 
-    }
-
-    if (len > MAX_PACKET_SIZE) { 
-        len = MAX_PACKET_SIZE; 
-    }
-
-    if (len > maxBufLen) { 
-        len = maxBufLen; 
-    }
-
-    // copy payload
-    memcpy(pBufRead, &radio_vars.payload[1], len);
-
-    // store other parameters
-    *pLenRead = len;
-    *pLqi = radio_vars.payload[radio_vars.payload[0]-1];
-
-    // For the RSSI calculation, see 
-    //
-    // - http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.nrf52840.ps/radio.html?cp=2_0_0_5_19_11_6#ieee802154_rx and
-    // - https://www.metageek.com/training/resources/understanding-rssi.html
-    //
-    // Our RSSI will be in the range -91 dB (worst) to 0 dB (best)
-    *pRssi = (*pLqi > 91)?(0):(((int8_t) *pLqi) - 91);
-
-    *pCrc = (NRF_RADIO->CRCSTATUS == 1U);
-}
-*/
-//=========================== private =========================================
-
 
 
 //=========================== callbacks =======================================

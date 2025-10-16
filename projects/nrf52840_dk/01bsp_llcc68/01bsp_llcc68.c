@@ -76,9 +76,8 @@ typedef struct {
                 irqStatus_t     irqStatus;
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
-                int8_t          rxpk_rssi;
-                uint8_t         rxpk_lqi;
-                bool            rxpk_crc;
+                packetStats_t   packetStats;
+
 } app_vars_t;
 
 app_vars_t app_vars;
@@ -423,7 +422,11 @@ void llcc68_irq_test(void){
                     cb_gpio_irq);
     gpio_irq_enable(IRQ_CHANNEL);
    
-    for (int i = 0; i < app_vars.packet_len; i++){
+    app_vars.packet[0] = 't';
+    app_vars.packet[1] = 'e';
+    app_vars.packet[2] = 's';
+    app_vars.packet[3] = 't';
+    for (int i = 4; i < app_vars.packet_len; i++){
         app_vars.packet[i] = (uint8_t)i;
     }
 
@@ -475,6 +478,8 @@ void llcc68_irq_test(void){
         // basic Tx step 13
         board_sleep();
       }
+      radio_llcc68_readPacket(app_vars.packet);
+      radio_llcc68_getPacketStats(&app_vars.packetStats);
       app_vars.flags = APP_FLAG_END_FRAME;
       // basic Tx step 14
       // clear IRQ status
