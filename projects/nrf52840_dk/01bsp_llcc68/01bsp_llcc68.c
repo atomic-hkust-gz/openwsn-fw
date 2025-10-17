@@ -73,10 +73,10 @@ typedef struct {
 
                 uint8_t         flags;
                 app_state_t     state;
-                irqStatus_t     irqStatus;
+    radio_llcc68_irqStatus_t    irqStatus;
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
-                packetStats_t   packetStats;
+    radio_llcc68_packetStats_t  packetStats;
 
 } app_vars_t;
 
@@ -400,8 +400,7 @@ void llcc68_function_test(void){
     rxPayload[1] = llcc68_spiReadReg(0x0040);
     rxPayload[2] = llcc68_spiReadReg(0x0020);
     rxPayload[3] = llcc68_spiReadReg(0x00C0);
-    radio_llcc68_get_opError();
-    radio_llcc68_get_status();
+    
     // llcc68_readBuffer()
     //llcc68_rxBufferRead((uint8_t)0x00, rxPayload, sizeof(rxPayload));
 }
@@ -479,12 +478,12 @@ void llcc68_irq_test(void){
         board_sleep();
       }
       radio_llcc68_readPacket(app_vars.packet);
-      radio_llcc68_getPacketStats(&app_vars.packetStats);
+      app_vars.packetStats = radio_llcc68_getPacketStats();
       app_vars.flags = APP_FLAG_END_FRAME;
       // basic Tx step 14
       // clear IRQ status
       radio_llcc68_irq_clear();
-      app_vars.irqStatus = radio_llcc68_irq_status();
+      app_vars.irqStatus = radio_llcc68_getIrqstatus();
     }
     
 }
@@ -516,7 +515,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_gpio_irq(void) {
-    app_vars.irqStatus = radio_llcc68_irq_status();
+    app_vars.irqStatus = radio_llcc68_getIrqstatus();
 }
 
 void cb_timer(void) {

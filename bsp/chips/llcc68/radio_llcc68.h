@@ -96,7 +96,8 @@ typedef enum {
     LLCC68STATE_ENABLE_CALIBRATING  = 0x08,   ///< begin calibration of all clocks.
     LLCC68STATE_CALIBRATION_DONE    = 0x09,   ///< all clocks finished calibrating.
     LLCC68STATE_ENABLE_IMAGE_CAL    = 0x0a,   ///< begin image calibration (ISM bands).
-    LLCC68STATE_IMAGE_CAL_DONE      = 0x0b,   ///< image calibration finished.
+    LLCC68STATE_FREQUENCY_SET       = 0x0b,   ///< done configuring the frequency.
+    LLCC68STATE_CONFIG_SET          = 0x0b,   ///< done configuring radio.
     LLCC68STATE_PACKET_LOADED       = 0x0c,   ///< packet loaded into radio FIFO
     LLCC68STATE_PACKET_READ         = 0x0d,   ///< packet retrieved from radio FIFO
 } radio_llcc68_state_t;
@@ -238,6 +239,13 @@ typedef struct __attribute__((packed)){
    uint8_t timeout[3];
 } radioTimeout_t;
 
+typedef struct __attribute__((packed)) {
+    uint16_t irqMask;
+    uint16_t dio1Mask;
+    uint16_t dio2Mask;
+    uint16_t dio3Mask;
+} irqParams_t;
+
 // lora mode only irq status format: 
 // bit: 15|14|13|12|11|10|9            |8         |7       |6        |...
 //      na|na|na|na|na|na|rx/tx timeout|cad detect|cad done|crc error|...
@@ -259,14 +267,7 @@ typedef struct __attribute__((packed)) {
     uint8_t headerError     : 1;
     uint8_t crcError        : 1;
     uint8_t cadDone         : 1;
-} irqStatus_t;
-
-typedef struct __attribute__((packed)) {
-    uint16_t irqMask;
-    uint16_t dio1Mask;
-    uint16_t dio2Mask;
-    uint16_t dio3Mask;
-} irqParams_t;
+} radio_llcc68_irqStatus_t;
 
 typedef struct __attribute__((packed)) {
     uint8_t         reserved1       : 1;
@@ -274,6 +275,12 @@ typedef struct __attribute__((packed)) {
     chipMode_t      chipMode        : 3;
     uint8_t         reserved7       : 1;
 } radio_llcc68_status_t;
+
+typedef struct {
+    int8_t                  rssiPkt;
+    int8_t                  snrPkt;
+    int8_t                  signalRssiPk;
+} radio_llcc68_packetStats_t;
 
 typedef struct __attribute__((packed)) {
     // MSB
@@ -290,7 +297,7 @@ typedef struct __attribute__((packed)) {
     uint8_t pllLock         : 1;
     uint8_t reserved7       : 1;
 
-}radio_llcc68_opError_t;
+} radio_llcc68_opError_t;
 
 typedef struct {
     radioModulationParams_t loraModParams;
@@ -299,12 +306,6 @@ typedef struct {
     uint8_t                 channel;
     syncword_t              syncword;
 } radio_llcc68_config_t;
-
-typedef struct {
-    int8_t                  rssiPkt;
-    uint8_t                 snrPkt;
-    int8_t                  signalRssiPk;
-} packetStats_t;
 
 //=========================== variables =======================================
 
@@ -319,18 +320,18 @@ void          radio_llcc68_loadPacket(uint8_t offset,
                                       uint8_t* buffer, 
                                       uint8_t len);
 void          radio_llcc68_readPacket(uint8_t* offset);
-void          radio_llcc68_getPacketStats(packetStats_t* packetStats);
 void          radio_llcc68_lora_config(radio_llcc68_config_t radio);
 void          radio_llcc68_txNow(radioTimeout_t timeout);
 void          radio_llcc68_rxNow(radioTimeout_t timeout);
 void          radio_llcc68_irq_clear(void);
 // radio info
-void          radio_llcc68_get_status(void);
-void          radio_llcc68_get_opError(void);
-irqStatus_t   radio_llcc68_irq_status(void);
-void          radio_llcc68_busy_wait(void);
-// channel mapping
+radio_llcc68_status_t      radio_llcc68_getStatus(void);
+radio_llcc68_opError_t     radio_llcc68_getOpError(void);
+radio_llcc68_irqStatus_t   radio_llcc68_getIrqstatus(void);
+radio_llcc68_packetStats_t radio_llcc68_getPacketStats(void);
+// private 
 void          lorawan_channel_mapping(void);
+
 
 
 //void     radio_llcc68_setStartFrameCb(radio_capture_cbt cb);
