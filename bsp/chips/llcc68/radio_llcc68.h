@@ -83,6 +83,9 @@
                                                   // radio max is SF11
 #endif
 //=========================== typedef =========================================
+#define MAX_PACKET_SIZE                 127
+#define MAX_BUFFER_SIZE                0x80
+
 // radio info
 typedef enum {
     LLCC68STATE_RESET               = 0x00,   ///< reset pin low/powering on.
@@ -102,24 +105,6 @@ typedef enum {
     LLCC68STATE_PACKET_READ         = 0x0d,   ///< packet retrieved from radio FIFO
 } radio_llcc68_state_t;
 
-/*
-typedef enum {
-   RADIOSTATE_STOPPED             = 0x00,   ///< Completely stopped.
-   RADIOSTATE_RFOFF               = 0x01,   ///< Listening for commands, but RF chain is off.
-   RADIOSTATE_SETTING_FREQUENCY   = 0x02,   ///< Configuring the frequency.
-   RADIOSTATE_FREQUENCY_SET       = 0x03,   ///< Done configuring the frequency.
-   RADIOSTATE_LOADING_PACKET      = 0x04,   ///< Loading packet into the radio's TX buffer.
-   RADIOSTATE_PACKET_LOADED       = 0x05,   ///< Packet is fully loaded in the radio's TX buffer.
-   RADIOSTATE_ENABLING_TX         = 0x06,   ///< The RF TX chaing is being enabled (includes locking the PLL).
-   RADIOSTATE_TX_ENABLED          = 0x07,   ///< Radio ready to transmit.
-   RADIOSTATE_TRANSMITTING        = 0x08,   ///< Busy transmitting bytes.
-   RADIOSTATE_ENABLING_RX         = 0x09,   ///< The RF RX chain is being enabled (includes locking the PLL).
-   RADIOSTATE_LISTENING           = 0x0a,   ///< RF chain is on, listening, but no packet received yet.
-   RADIOSTATE_RECEIVING           = 0x0b,   ///< Busy receiving bytes.
-   RADIOSTATE_TXRX_DONE           = 0x0c,   ///< Frame has been sent/received completely.
-   RADIOSTATE_TURNING_OFF         = 0x0d,   ///< Turning the RF chain off.
-} radio_state_t;
-*/
 // lora parameters
 typedef enum {
     LORA_SF5      = 0x05,
@@ -210,28 +195,30 @@ typedef enum {
 } commandStatus_t;
 
 typedef struct __attribute__((packed)){
-    loraSpreadingFactor_t spreadingFactor;
-    loraBandwidth_t       bandwidth;
-    loraCodingRate_t      codingRate;
-    LoraLdro_t            lowDataRateOptimize;
+    loraSpreadingFactor_t spreadingFactor;    // 0x05(SF7) to 0x0B(SF11)
+    loraBandwidth_t       bandwidth;          // 0x04(125KHz) to 0x06(500kHz)
+    loraCodingRate_t      codingRate;         // 0x01(4/5) to 0x04(4/8)
+    LoraLdro_t            lowDataRateOptimize;// 0x00(off) 0x01(on)
 } radioModulationParams_t;
 
 typedef struct __attribute__((packed)){
-    radioPower_t      txPowerDbm;
-    radioRampUpTime_t txRampTime;
+    radioPower_t      txPowerDbm;       // 9(0xF7) to +22(0x16)
+    radioRampUpTime_t txRampTime;       // 0x00(10us) to 0x07(3400us)
 } radioTxParams_t;
 
 typedef struct __attribute__((packed)){
-    uint16_t          preambleLength;
-    headerType_t      headerType;
-    uint8_t           payloadLength;
-    crcType_t         crcType;
-    invertIq_t        invertIq;
+    uint16_t          preambleLength;   // 0x0001 to 0xFFFF
+    headerType_t      headerType;       // 0x00 Variable length
+                                        // 0x01 Fixed length packet
+    uint8_t           payloadLength;    // 0x00 to 0xFF   
+    crcType_t         crcType;          // 0x00(crc OFF) or 0x01(crc on)
+    invertIq_t        invertIq;         // 0x00(standard IQ setup) or
+                                        // 0x01(inverted IQ setup)
 } packetParams_t;
 
 typedef struct __attribute__((packed)){
-    uint8_t           txBaseAddress;
-    uint8_t           rxBaseAddress;
+    uint8_t           txBaseAddress;    // 0x00
+    uint8_t           rxBaseAddress;    // 0x80
 } bufferBaseAddress_t;
 
 typedef struct __attribute__((packed)){
@@ -239,6 +226,7 @@ typedef struct __attribute__((packed)){
    uint8_t timeout[3];
 } radioTimeout_t;
 
+// same format as irqStatus
 typedef struct __attribute__((packed)) {
     uint16_t irqMask;
     uint16_t dio1Mask;
@@ -319,16 +307,17 @@ void          radio_llcc68_reset(void);
 void          radio_llcc68_loadPacket(uint8_t offset, 
                                       uint8_t* buffer, 
                                       uint8_t len);
-void          radio_llcc68_readPacket(uint8_t* offset);
 void          radio_llcc68_lora_config(radio_llcc68_config_t radio);
 void          radio_llcc68_txNow(radioTimeout_t timeout);
 void          radio_llcc68_rxNow(radioTimeout_t timeout);
 void          radio_llcc68_irq_clear(void);
+void          radio_llcc68_getReceivedFrame(uint8_t* pBufRead,
+                                            uint8_t* pLenRead,
+                         radio_llcc68_packetStats_t* packetStatts);
 // radio info
 radio_llcc68_status_t      radio_llcc68_getStatus(void);
 radio_llcc68_opError_t     radio_llcc68_getOpError(void);
 radio_llcc68_irqStatus_t   radio_llcc68_getIrqstatus(void);
-radio_llcc68_packetStats_t radio_llcc68_getPacketStats(void);
 // private 
 void          lorawan_channel_mapping(void);
 

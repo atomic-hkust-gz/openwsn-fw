@@ -206,23 +206,6 @@ void radio_llcc68_loadPacket(uint8_t offset,
     #endif
 }
 
-void radio_llcc68_readPacket(uint8_t* buffer) {
-
-    uint8_t rx_buf[2];
-    llcc68_noAddress_opcode(GETRXBUFFERSTATUS, TYPE_READ, rx_buf, sizeof(rx_buf));
-    // [0] = payloadLengthRx 
-    // [1] = rxStartBufferPointer
-    llcc68_rxBufferRead(rx_buf[1], buffer, rx_buf[0]);
-
-    #if defined(DEBUG)
-      // check for device errors 
-      radio_vars.status = radio_llcc68_getStatus();
-      radio_vars.opError = radio_llcc68_getOpError();
-
-      radio_vars.state = LLCC68STATE_PACKET_READ;
-    #endif
-}
-
 void radio_llcc68_lora_config(radio_llcc68_config_t radio){
 
     uint8_t value;
@@ -411,6 +394,55 @@ void radio_llcc68_rxNow(radioTimeout_t rxMax){
     #endif
 }
 
+void radio_llcc68_getReceivedFrame(uint8_t* pBufRead,
+                                   uint8_t* pLenRead,
+                radio_llcc68_packetStats_t* packetStats)
+{
+
+    uint8_t rx_buf[3];
+    uint8_t len;
+    uint8_t pntBuf;
+
+    // get packet info
+    llcc68_noAddress_opcode(GETRXBUFFERSTATUS, TYPE_READ, rx_buf, sizeof(uint8_t) * 2);
+    // [0] = payloadLengthRx 
+    // [1] = rxStartBufferPointer
+    len = rx_buf[0];
+    pntBuf = rx_buf[1];
+
+    if (len == 0) {
+        return; 
+    }
+    // rxBuffer has looped
+    if (len > MAX_PACKET_SIZE) { 
+        len = MAX_PACKET_SIZE; 
+    }
+
+    // save packet
+    llcc68_rxBufferRead(rx_buf[1], pBufRead, rx_buf[0]);
+    
+    // save packet length
+    *pLenRead = rx_buf[0];
+
+    // get packet stats
+    llcc68_noAddress_opcode(GETPACKETSTATUS, 
+        TYPE_READ, rx_buf, sizeof(rx_buf));
+    
+    rx_buf[0] = -1 * rx_buf[0] >> 1;   // rssiPkt (dBm)
+    rx_buf[1] =      rx_buf[1] >> 2;   // snrPkt (dB)
+    rx_buf[2] = -1 * rx_buf[2] >> 1;   // signalRssiPk (dB)
+    
+    memcpy(packetStats, rx_buf, sizeof(radio_llcc68_packetStats_t));
+
+    #if defined(DEBUG)
+      // check for device errors 
+      radio_vars.status = radio_llcc68_getStatus();
+      radio_vars.opError = radio_llcc68_getOpError();
+
+      radio_vars.state = LLCC68STATE_PACKET_READ;
+    #endif
+}
+
 void radio_llcc68_irq_clear(void) {
     
     radio_llcc68_irqStatus_t irqStatus;
@@ -452,18 +484,6 @@ radio_llcc68_irqStatus_t radio_llcc68_getIrqstatus(void) {
         TYPE_READ, rx_buf, sizeof(rx_buf));
 
     return *(radio_llcc68_irqStatus_t *)rx_buf;
-}
-
-radio_llcc68_packetStats_t radio_llcc68_getPacketStats(void){
-    int8_t rx_buf[3];
-    llcc68_noAddress_opcode(GETPACKETSTATUS, 
-        TYPE_READ, rx_buf, sizeof(rx_buf));
-    
-    rx_buf[0] = rx_buf[0] >> 1;   // rssiPkt (dBm)
-    rx_buf[1] = rx_buf[1] >> 2;   // snrPkt (dB)
-    rx_buf[2] = rx_buf[2] >> 1;   // signalRssiPk (dB)
-    
-    return *(radio_llcc68_packetStats_t *)rx_buf;
 }
 
 //=========================== private =========================================
