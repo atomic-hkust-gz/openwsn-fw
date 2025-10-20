@@ -1,7 +1,8 @@
 /**
-\brief This program is the tx1 for AMUNA
+\brief This program is the tx2 for AMUNA
 \author Manjiang Cao <mcao999@connect.hkust-gz.edu.cn>, Sept 2025.
 */
+
 
 #include "stdint.h"
 #include "string.h"
@@ -13,6 +14,7 @@
 #include "aod.h"
 #include "uart.h"
 #include "timer.h"
+#include "debugpins.h"
 
 //=========================== defines =========================================
 
@@ -23,13 +25,12 @@
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
-//#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
-#define LEN_UART_BUFFER ((NUM_SAMPLES*4)*2+7)
+#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
+//#define LEN_UART_BUFFER ((NUM_SAMPLES*4)*2+7)
 #define LENGTH_SERIAL_FRAME  127            // length of the serial frame
 
 #define ENABLE_DF       1
 
-uint16_t length = 0;
 
 const static uint8_t ble_device_addr[6] = { 
     0xaa, 0xbb, 0xcc, 0xcc, 0xbb, 0xaa
@@ -45,14 +46,9 @@ const static uint8_t ble_uuid[16]       = {
 #define DEBUG_RADIO_PIN 11
 
 #define SEND_DURATION     (16000000/200)*100    //5ms@ (16000000/200)
+#define SEND_OFFSET       (16000000/5000)*1        //200us @ (16000000/5000)
 
 //=========================== variables =======================================
-
-enum {
-    APP_FLAG_START_FRAME = 0x01,
-    APP_FLAG_END_FRAME   = 0x02,
-    APP_FLAG_TIMER       = 0x04,
-};
 
 typedef enum {
     APP_STATE_TX          = 0x01,
@@ -68,28 +64,44 @@ typedef struct {
 
 app_dbg_t app_dbg;
 
- typedef struct {
-                 app_state_t     state;
- 
-                 uint8_t         pkt_sqn;
-                 uint32_t        time_slotStartAt;
- 
-                 uint8_t         packet[LENGTH_PACKET];
-                 uint8_t         packet_len;
- 
-                 uint8_t         tx_now;
- } app_vars_t;
- 
- app_vars_t app_vars;
+typedef struct {
 
+                uint8_t         slot_timerId;
+                uint8_t         inner_timerId;
+                app_state_t     state;
+
+                uint8_t         slot_offset;
+                uint8_t         pkt_sqn;
+                uint32_t        time_slotStartAt;
+
+                uint8_t         packet[LENGTH_PACKET];
+                uint8_t         packet_len;
+                uint8_t         rxpk_packet[LENGTH_PACKET];
+                uint8_t         rxpk_packet_len;
+                int8_t          rxpk_rssi;
+                uint8_t         rxpk_lqi;
+                bool            rxpk_crc;
+
+                uint8_t         rx_doneAt;
+                uint8_t         tx_now;
+
+                uint32_t       start_timestamp;
+                uint32_t       end_timestamp;
+                uint32_t       time_interval;
+
+                bool           isTargetPkt;
+
+} app_vars_t;
+
+app_vars_t app_vars;
 //=========================== prototypes ======================================
 
-void     cb_startFrame(PORT_TIMER_WIDTH timestamp);
-void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
+void      cb_startFrame(PORT_TIMER_WIDTH timestamp);
+void      cb_endFrame(PORT_TIMER_WIDTH timestamp);
 
-void     cb_timer(void);
-void     assemble_ibeacon_packet(uint8_t);
-void     nrf_gpio_cfg_output(uint8_t port_number, uint32_t pin_number);
+void      cb_timer(void);
+void      assemble_ibeacon_packet(uint8_t);
+void      nrf_gpio_cfg_output(uint8_t port_number, uint32_t pin_number);
 //=========================== main ============================================
 
 /**
@@ -103,15 +115,17 @@ int mote_main(void) {
 
     // initialize board
     board_init();
+    debugpins_init();
 
     radio_rfOff();
     app_vars.state = APP_STATE_OFF;
 
     nrf_gpio_cfg_output(0, DEBUG_RADIO_PIN);
+
 #if ENABLE_DF == 1
     //antenna_CHW_rx_switch_init();
     radio_configure_direction_finding_antenna_switch();
-    radio_configure_direction_finding_manual_AoA();
+    radio_configure_direction_finding_manual_AoD();
     //set_antenna_CHW_switches();
 #endif
 
@@ -128,22 +142,15 @@ int mote_main(void) {
     timer_start();
 
     timer_set_callback(0, cb_timer);
-    timer_capture_now(0);
-    app_vars.time_slotStartAt = timer_getCapturedValue(0) + SEND_DURATION;
-    timer_schedule(0, app_vars.time_slotStartAt);
 
     // prepare radio
     radio_rfOn();
     // freq type only effects on scum port
-    radio_setFrequency(CHANNEL, FREQ_TX);
-    app_vars.packet_len = sizeof(app_vars.packet);
-    assemble_ibeacon_packet(app_vars.pkt_sqn);
-    radio_loadPacket(app_vars.packet, LENGTH_PACKET);
+    radio_setFrequency(CHANNEL, FREQ_RX);
 
-    radio_txEnable();
-    app_vars.state = APP_STATE_TX;
-
-
+    radio_rxEnable();
+    app_vars.state = APP_STATE_RX;
+    radio_rxNow();
 
     while(1) {
         board_sleep();
@@ -181,7 +188,7 @@ void assemble_ibeacon_packet(uint8_t sqn) {
      app_vars.packet[i++]  = 0xff;
      app_vars.packet[i++]  = 0x00;               // minor
      app_vars.packet[i++]  = sqn;                // 34 byte
-     app_vars.packet[i++]  = 0x01;               // tx id
+     app_vars.packet[i++]  = 0x02;               // tx id
 }
 //=========================== callbacks =======================================
 
@@ -196,21 +203,66 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     app_dbg.num_endFrame++;
+    
+    radio_rfOff();
+
+    if (app_vars.state == APP_STATE_RX) {
+        
+        app_vars.isTargetPkt = FALSE;
+        
+        radio_getReceivedFrame(
+            app_vars.rxpk_packet,
+            &app_vars.rxpk_packet_len,
+            sizeof(app_vars.rxpk_packet),
+            &app_vars.rxpk_rssi,
+            &app_vars.rxpk_lqi,
+            &app_vars.rxpk_crc
+        );
+        
+        if (app_vars.rxpk_packet[0] == 0x42 & app_vars.rxpk_packet[1] == 0x21) {
+            app_vars.isTargetPkt = TRUE;      //Check if received packet is a legal plast system packet
+        }
+
+        if (app_vars.isTargetPkt) {
+            app_vars.time_slotStartAt = timestamp + SEND_OFFSET;
+            timer_schedule(0, app_vars.time_slotStartAt);
+            
+            app_vars.pkt_sqn = app_vars.rxpk_packet[33];
+            app_vars.packet_len = sizeof(app_vars.packet);
+            
+            radio_rfOn();
+            radio_setFrequency(CHANNEL, FREQ_TX);
+            assemble_ibeacon_packet(app_vars.pkt_sqn);
+            radio_loadPacket(app_vars.packet, LENGTH_PACKET);
+            
+            radio_configure_direction_finding_antenna_switch();
+            radio_configure_direction_finding_manual_AoA();
+
+            radio_txEnable();
+            app_vars.state = APP_STATE_TX;
+            return;
+        } else {
+            radio_rfOn();
+            radio_configure_direction_finding_manual_AoD();
+            radio_setFrequency(CHANNEL, FREQ_RX);
+            radio_rxEnable();
+            radio_rxNow();
+        }
+    }
 
     if (app_vars.state == APP_STATE_TX) {
-        app_vars.time_slotStartAt = timestamp + SEND_DURATION;
-        timer_schedule(0, app_vars.time_slotStartAt);
-        app_vars.pkt_sqn++;
-        assemble_ibeacon_packet(app_vars.pkt_sqn);
-        radio_loadPacket(app_vars.packet, LENGTH_PACKET);
-
-        radio_txEnable();
-        app_vars.state = APP_STATE_TX;
+        radio_rfOn();
+        radio_setFrequency(CHANNEL, FREQ_RX);
+        radio_configure_direction_finding_manual_AoD();
+        radio_rxEnable();
+        app_vars.state = APP_STATE_RX;
+        radio_rxNow();
     }
 }
 
 void cb_timer(void) {
     leds_error_toggle();
     app_dbg.num_timer++;
+
     radio_txNow();
 }

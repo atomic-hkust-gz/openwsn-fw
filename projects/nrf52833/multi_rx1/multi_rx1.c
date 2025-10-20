@@ -27,7 +27,7 @@ remainder of the packet contains an incrementing bytes.
 
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
-#define CHANNEL         0              ///< 0~39
+#define CHANNEL         17              ///< 0~39
 #define TIMER_PERIOD    (0xffff>>2)     ///< 0xffff = 2s@32kHz
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
@@ -37,6 +37,9 @@ remainder of the packet contains an incrementing bytes.
 #define LENGTH_SERIAL_FRAME  127            // length of the serial frame
 
 #define ENABLE_DF       1
+
+#define DEBUG_RADIO_PIN 11
+
 
 uint16_t length = 0;
 
@@ -120,6 +123,7 @@ void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
 void     cb_uartTxDone(void);
 uint8_t  cb_uartRxCb(void);
 
+void nrf_gpio_cfg_output(uint8_t port_number, uint32_t pin_number);
 //=========================== main ============================================
 
 /**
@@ -155,6 +159,8 @@ int mote_main(void) {
     uart_setCallbacks(cb_uartTxDone,cb_uartRxCb);
     uart_enableInterrupts();
 
+    nrf_gpio_cfg_output(0, DEBUG_RADIO_PIN);
+
     // add radio callback functions
     radio_setStartFrameCb(cb_startFrame);
     radio_setEndFrameCb(cb_endFrame);
@@ -165,7 +171,7 @@ int mote_main(void) {
     radio_setFrequency(CHANNEL, FREQ_TX);
 
 #if ENABLE_DF == 1
-    radio_configure_direction_finding_manual_AoD();
+    radio_configure_direction_finding_manual_AoA();
 #endif
 
     // switch in RX by default
@@ -221,14 +227,14 @@ int mote_main(void) {
                     uart_writeByte(app_vars.uart_buffer_to_send[0]);
 
                     app_vars.tx1_done = 0;
-                    //app_vars.tx1_packet_sqn = 0;
+                    app_vars.tx1_packet_sqn = 0;
                     app_vars.tx2_done = 0;
-                    //app_vars.tx2_packet_sqn = 0;
+                    app_vars.tx2_packet_sqn = 0;
                 } 
                 app_vars.tx1_done = 0;
-                //app_vars.tx1_packet_sqn = 0;
+                app_vars.tx1_packet_sqn = 0;
                 app_vars.tx2_done = 0;
-                //app_vars.tx2_packet_sqn = 0;
+                app_vars.tx2_packet_sqn = 0;
 
             }
 
@@ -254,18 +260,17 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
+
+    //NRF_P0->OUTSET =  1 << DEBUG_RADIO_PIN;
+    //NRF_P0->OUTCLR =  1 << DEBUG_RADIO_PIN;
+
     bool     expectedFrame;
-    uint8_t  i;
-    uint32_t  rx_done_timestamp;
-    timer_capture_now(0);
-    rx_done_timestamp = timer_getCapturedValue(0);
-    // set flag
-    //app_vars.flags |= APP_FLAG_END_FRAME;
+    //uint8_t  i;
 
     // update debug stats
     app_dbg.num_endFrame++;
     
-
+    
     memset(&app_vars.rxpk_buf[0],0,LENGTH_PACKET);
     
     app_vars.rxpk_len = sizeof(app_vars.rxpk_buf);
@@ -295,14 +300,14 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
         if (app_vars.rxpk_buf[34] == 1) {
             app_vars.tx1_done = 1;
-            app_vars.tx1_done_timestamp = rx_done_timestamp;
+            app_vars.tx1_done_timestamp = timer_getCapturedValue(1);
             app_vars.tx1_packet_sqn = app_vars.rxpk_buf[33];
             app_vars.num_samples = radio_get_df_samples(app_vars.tx1_sample_buffer,NUM_SAMPLES);
         }
 
         if (app_vars.rxpk_buf[34] == 2) {
             app_vars.tx2_done = 1;
-            app_vars.tx2_done_timestamp = rx_done_timestamp;
+            app_vars.tx2_done_timestamp = timer_getCapturedValue(1);
             app_vars.tx2_packet_sqn = app_vars.rxpk_buf[33];
             app_vars.num_samples = radio_get_df_samples(app_vars.tx2_sample_buffer,NUM_SAMPLES);
 

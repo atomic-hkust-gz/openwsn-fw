@@ -39,11 +39,12 @@
 
 #define BLE_ACCESS_ADDR           0x8E89BED6  // the actual address is 0xD6, 0xBE, 0x89, 0x8E
 
-#define RADIO_TXPOWER             0 // in 2-compilant format
+#define RADIO_TXPOWER             0xec // in 2-compilant format  0xec == -40db
 
 // the maxmium should be ((1<<14)-1), but need larger .bss size
 #define MAX_IQSAMPLES            0x58
 
+#define DEBUG_RADIO_PIN 11
 //=========================== variables =======================================
 
 typedef struct {
@@ -585,11 +586,15 @@ void RADIO_IRQHandler(void) {
 //=========================== callbacks =======================================
 
 kick_scheduler_t    radio_isr(void){
+    
+    NRF_P0->OUTSET =  1 << DEBUG_RADIO_PIN;
+    NRF_P0->OUTCLR =  1 << DEBUG_RADIO_PIN;
 
     uint32_t time_stampe;
 
-    time_stampe = NRF_RTC0->COUNTER;
-    timer_capture_now(0);
+    //time_stampe = NRF_RTC0->COUNTER;
+    //timer_capture_now(4);
+    //time_stampe = timer_getCapturedValue(4);
 
     // start of frame (payload)
     if (NRF_RADIO->EVENTS_ADDRESS){
@@ -607,21 +612,21 @@ kick_scheduler_t    radio_isr(void){
 
      // CTE presence
     if (NRF_RADIO->EVENTS_CTEPRESENT){
-
         NRF_RADIO->EVENTS_CTEPRESENT = (uint32_t)0;
         return KICK_SCHEDULER;
     }
 
     // END 
     if (NRF_RADIO->EVENTS_END) {
-        
+        //timer_capture_now(1);
         NRF_RADIO->EVENTS_END = (uint32_t)0;
         return KICK_SCHEDULER;
     }
 
     // end of frame
     if (NRF_RADIO->EVENTS_PHYEND) {
-        
+        //timer_capture_now(1);
+        time_stampe = timer_getCapturedValue(1);
         if (radio_vars.endFrame_cb!=NULL){
             radio_vars.endFrame_cb(time_stampe);
         }
