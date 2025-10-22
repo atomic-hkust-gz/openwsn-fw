@@ -85,6 +85,7 @@
 //=========================== typedef =========================================
 #define MAX_PACKET_SIZE                 127
 #define MAX_BUFFER_SIZE                0x80
+#define PREAMBLE_LENGTH_32           0x0080
 
 // radio info
 typedef enum {

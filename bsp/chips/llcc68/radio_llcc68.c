@@ -336,7 +336,8 @@ void radio_llcc68_lora_config(radio_llcc68_config_t radio){
     irqParams.irqMask         = IRQTXDONE | IRQRXDONE | IRQPREAMBLEDETECTED |
                                 IRQHEADERVALID | IRQHEADERERROR |IRQCRCERROR |
                                 IRQCADDONE |IRQCADDETECTED | IRQTIMEOUT;
-    irqParams.dio1Mask        = IRQTXDONE | IRQRXDONE | IRQTIMEOUT;
+    irqParams.dio1Mask        = IRQTXDONE | IRQRXDONE | IRQPREAMBLEDETECTED |
+                                IRQTIMEOUT;
     irqParams.dio2Mask        = DIO2MASK;
     irqParams.dio3Mask        = DIO3MASK;
     llcc68_noAddress_opcode(SETDIOIRQPARAMS, 

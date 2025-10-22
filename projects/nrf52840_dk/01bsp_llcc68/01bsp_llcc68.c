@@ -20,13 +20,12 @@
 #define ID              0x99              ///< byte sent in the packets
 
 // lora configuration
-#define LORA_BANDWIDTH              0x04      // 0x04 = 125 kHz
-#define LORA_SPREADING_FACTOR       0x07      // sf7
-#define LORA_CODINGRATE             0x01      // cr 4/5
-#define LORA_PREAMBLE_LENGTH        0x0080
-#define LORA_PAYLOAD_LENGTH         0x80      // 128
+#define LORA_BANDWIDTH              LORA_BW_125
+#define LORA_SPREADING_FACTOR       LORA_SF7         
+#define LORA_CODINGRATE             LORA_CR_4_5 
+#define LORA_PREAMBLE_LENGTH        PREAMBLE_LENGTH_32
+#define LORA_PAYLOAD_LENGTH         MAX_BUFFER_SIZE
 // for testing
-//#define MAX_BUFFER_SIZE             0x80
 #define CHANNEL_NUM                 2
 
 
@@ -365,7 +364,7 @@ void llcc68_irq_test(void){
     loraConfig.packetParams   = (packetParams_t){
         .preambleLength       = LORA_PREAMBLE_LENGTH,
         .headerType           = FIXED_LENGTH_PACKET,
-        .payloadLength        = MAX_BUFFER_SIZE,
+        .payloadLength        = LORA_PAYLOAD_LENGTH,
         .crcType              = CRC_ON,
         .invertIq             = STD_IQ,
     };
@@ -392,22 +391,23 @@ void llcc68_irq_test(void){
       // basic Tx steps 8-12
       //radio_llcc68_txNow(radioTimeout);
       radio_llcc68_rxNow(radioTimeout);
-      app_vars.flags != APP_FLAG_START_FRAME;
+      app_vars.state = APP_STATE_RX;
 
       //while((app_vars.irqStatus.txDone & 1) == 0){
       while((app_vars.irqStatus.rxDone & 1 | app_vars.irqStatus.timeout & 1) == 0){
         // basic Tx step 13
         board_sleep();
       }
-      radio_llcc68_getReceivedFrame(
-                  app_vars.packet,
-                  &app_vars.packet_len,
-                  &app_vars.packetStats
-              );
-      app_vars.flags = APP_FLAG_END_FRAME;
+      if (app_vars.irqStatus.rxDone & 1){
+        radio_llcc68_getReceivedFrame(
+                    app_vars.packet,
+                    &app_vars.packet_len,
+                    &app_vars.packetStats);
+      }
+      // app_vars.flags = APP_FLAG_END_FRAME;
       // basic Tx step 14
       // clear IRQ status
-      radio_llcc68_irq_clear();
+      // radio_llcc68_irq_clear();
       app_vars.irqStatus = radio_llcc68_getIrqstatus();
     }
     
@@ -441,6 +441,24 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
 void cb_gpio_irq(void) {
     app_vars.irqStatus = radio_llcc68_getIrqstatus();
+    radio_llcc68_irq_clear();
+    // start frame
+    if (app_vars.irqStatus.preambleDetect & 1){
+      if (app_vars.state == APP_STATE_RX) {
+        app_dbg.num_rx_startFrame++;
+      }
+      app_vars.flags |= APP_FLAG_START_FRAME;
+    }
+    
+    // end frame
+    else if (app_vars.irqStatus.txDone & 1 |
+        app_vars.irqStatus.rxDone & 1)
+    {
+      if (app_vars.state == APP_STATE_RX) {
+        app_dbg.num_rx_endFrame++;
+      }
+      app_vars.flags |= APP_FLAG_END_FRAME;
+    } 
 }
 
 void cb_timer(void) {
