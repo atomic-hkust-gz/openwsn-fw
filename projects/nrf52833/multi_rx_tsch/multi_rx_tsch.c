@@ -22,6 +22,7 @@ remainder of the packet contains an incrementing bytes.
 #include "aod.h"
 #include "uart.h"
 #include "timer.h"
+#include <math.h>
 
 //=========================== defines =========================================
 
@@ -33,7 +34,9 @@ remainder of the packet contains an incrementing bytes.
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 //#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
-#define LEN_UART_BUFFER (NUM_SAMPLES*4+10)
+//#define LEN_UART_BUFFER (NUM_SAMPLES*4+10)
+#define LEN_UART_BUFFER (14)
+
 #define LENGTH_SERIAL_FRAME  127            // length of the serial frame
 
 #define ENABLE_DF       1
@@ -131,6 +134,8 @@ typedef struct {
                 uint8_t         tx_packet_sqn;
                 uint32_t        tx_done_timestamp;
 
+                uint32_t        example_sample;
+
 
                 //uint8_t         uart_txFrame[LENGTH_SERIAL_FRAME];
 } app_vars_t;
@@ -146,7 +151,9 @@ void      cb_uartTxDone(void);
 uint8_t   cb_uartRxCb(void);
 
 
-uint32_t phase_linear_regression_correction(const uint32_t *array, size_t start_index, size_t end_index)
+uint32_t phase_linear_regression_correction(const uint32_t *array, size_t start_index, size_t end_index);
+
+void      trans_sample_serials(uint32_t example_sample, uint32_t done_timestamp, uint8_t pkt_sqn, uint8_t pkt_inner_sqn);
 
 void nrf_gpio_cfg_output(uint8_t port_number, uint32_t pin_number);
 //=========================== main ============================================
@@ -213,40 +220,45 @@ int mote_main(void) {
         }
 
         leds_error_toggle();
-        if (app_vars.rxpk_crc && ENABLE_DF) {
 
+        switch (app_vars.rxpk_done) {
+        case 1:
+            app_vars.example_sample = phase_linear_regression_correction(app_vars.inner0_pkt_sample_buffer, 9, NUM_SAMPLES);
+            //app_vars.example_sample = app_vars.inner0_pkt_sample_buffer[9];
             app_vars.uartDone = 0;
-            trans_sample_serials(app_vars.inner0_pkt_sample_buffer, app_vars.inner0_pkt_done_timestamp, app_vars.inner0_pkt_sqn, 0);
+            trans_sample_serials(app_vars.example_sample, app_vars.inner0_pkt_done_timestamp, app_vars.inner0_pkt_sqn, 0);           
+        
+        case 2:
+            app_vars.example_sample = phase_linear_regression_correction(app_vars.inner1_pkt_sample_buffer, 9, NUM_SAMPLES);
+            //app_vars.example_sample = app_vars.inner1_pkt_sample_buffer[9];
+            app_vars.uartDone = 0;
+            trans_sample_serials(app_vars.example_sample, app_vars.inner1_pkt_done_timestamp, app_vars.inner1_pkt_sqn, 1);
 
-            while (app_vars.uartDone == 0) {
-                continue;
-            }
-            
+        case 3:
+            app_vars.example_sample = phase_linear_regression_correction(app_vars.inner2_pkt_sample_buffer, 9, NUM_SAMPLES);
+            //app_vars.example_sample = app_vars.inner2_pkt_sample_buffer[0];
             app_vars.uartDone = 0;
-            trans_sample_serials(app_vars.inner1_pkt_sample_buffer, app_vars.inner1_pkt_done_timestamp, app_vars.inner1_pkt_sqn, 1);
-            while (app_vars.uartDone == 0) {
-                continue;
-            }
-            
-            app_vars.uartDone = 0;
-            trans_sample_serials(app_vars.inner2_pkt_sample_buffer, app_vars.inner2_pkt_done_timestamp, app_vars.inner2_pkt_sqn, 2);
-            while (app_vars.uartDone == 0) {
-                continue;
-            }
+            trans_sample_serials(app_vars.example_sample, app_vars.inner2_pkt_done_timestamp, app_vars.inner2_pkt_sqn, 2);  
 
+        case 4:
+            app_vars.example_sample = phase_linear_regression_correction(app_vars.inner3_pkt_sample_buffer, 9, NUM_SAMPLES);
+            //app_vars.example_sample = app_vars.inner3_pkt_sample_buffer[0];
             app_vars.uartDone = 0;
-            trans_sample_serials(app_vars.inner3_pkt_sample_buffer, app_vars.inner3_pkt_done_timestamp, app_vars.inner3_pkt_sqn, 3);
-            while (app_vars.uartDone == 0) {
-                continue;
-            }
-            
-            app_vars.uartDone = 0;
-            trans_sample_serials(app_vars.inner4_pkt_sample_buffer, app_vars.inner4_pkt_done_timestamp, app_vars.inner4_pkt_sqn, 4);
-            while (app_vars.uartDone == 0) {
-                continue;
-            }
+            trans_sample_serials(app_vars.example_sample, app_vars.inner3_pkt_done_timestamp, app_vars.inner3_pkt_sqn, 3);  
 
-            trans_sample_serials(app_vars.tx2_pkt_sample_buffer, app_vars.tx2_pkt_done_timestamp, app_vars.tx2_pkt_sqn, 5);
+        case 5:
+            app_vars.example_sample = phase_linear_regression_correction(app_vars.inner4_pkt_sample_buffer, 9, NUM_SAMPLES);
+            //app_vars.example_sample = app_vars.inner4_pkt_sample_buffer[0];
+            app_vars.uartDone = 0;
+            trans_sample_serials(app_vars.example_sample, app_vars.inner4_pkt_done_timestamp, app_vars.inner4_pkt_sqn, 4);  
+
+        case 6:
+            app_vars.example_sample = phase_linear_regression_correction(app_vars.tx2_pkt_sample_buffer, 9, NUM_SAMPLES);
+            //app_vars.example_sample = app_vars.tx2_pkt_sample_buffer[0];
+            app_vars.uartDone = 0;
+            trans_sample_serials(app_vars.example_sample, app_vars.tx2_pkt_done_timestamp, app_vars.tx2_pkt_sqn, 5);  
+        default:
+            continue;
         }
 
     }
@@ -254,6 +266,82 @@ int mote_main(void) {
 
 //=========================== private =========================================
 
+uint32_t phase_linear_regression_correction(const uint32_t *array, size_t start_index, size_t end_index) {
+    
+
+    if (array == NULL || start_index >= end_index) {
+        return 0;
+    }
+    
+    size_t n = end_index - start_index + 1;
+    
+    double *phases = (double*)malloc(n * sizeof(double));
+    if (phases == NULL) {
+        return 0;
+    }
+    
+
+    double previous_phase = 0.0;
+    for (size_t i = 0; i < n; i++) {
+        size_t current_index = start_index + i;
+        uint32_t sample = array[current_index];
+        
+        int16_t i_sample = (int16_t)(sample & 0xFFFF);
+        int16_t q_sample = (int16_t)((sample >> 16) & 0xFFFF);
+        
+
+        double phase = atan2((double)q_sample, (double)i_sample);
+        
+        // Phase unwrapping
+        if (i > 0) {
+            double phase_diff = phase - previous_phase;
+
+            if (phase_diff > M_PI) {
+                phase -= 2 * M_PI;
+            } else if (phase_diff < -M_PI) {
+                phase += 2 * M_PI;
+            }
+        }
+        
+        phases[i] = phase;
+        previous_phase = phase;
+    }
+    
+    double sum_x = 0.0, sum_x2 = 0.0;
+    double sum_phase = 0.0, sum_x_phase = 0.0;
+    
+    for (size_t i = 0; i < n; i++) {
+        double x = (double)i;
+        sum_x += x;
+        sum_x2 += x * x;
+        sum_phase += phases[i];
+        sum_x_phase += x * phases[i];
+    }
+    
+    double denominator = n * sum_x2 - sum_x * sum_x;
+    if (denominator == 0.0) {
+        free(phases);
+        return 0;
+    }
+    
+    double slope_b = (n * sum_x_phase - sum_x * sum_phase) / denominator;
+    double intercept_a = (sum_phase - slope_b * sum_x) / n;
+    
+    double corrected_start_phase = intercept_a;
+    
+    double magnitude = 160.0;  
+    
+    int16_t corrected_i = (int16_t)(cos(corrected_start_phase) * magnitude);
+    int16_t corrected_q = (int16_t)(sin(corrected_start_phase) * magnitude);
+    
+    // 组合结果
+    uint32_t result = ((uint32_t)((uint16_t)corrected_q) << 16) | 
+                      ((uint32_t)((uint16_t)corrected_i) & 0xFFFF);
+    
+    free(phases);
+
+    return result;
+}
 
 //=========================== callbacks =======================================
 
@@ -315,6 +403,8 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             app_vars.num_samples = radio_get_df_samples(app_vars.inner0_pkt_sample_buffer,NUM_SAMPLES);
             app_vars.inner0_pkt_sqn = app_vars.rxpk_buf[33];
 
+            app_vars.rxpk_done = 1;
+
             radio_rxEnable();
             radio_rxNow();
             return;
@@ -324,6 +414,8 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             app_vars.inner1_pkt_done_timestamp = timestamp;
             app_vars.num_samples = radio_get_df_samples(app_vars.inner1_pkt_sample_buffer,NUM_SAMPLES);
             app_vars.inner1_pkt_sqn = app_vars.rxpk_buf[33];
+            
+            app_vars.rxpk_done = 2;
 
             radio_rxEnable();
             radio_rxNow();
@@ -333,7 +425,8 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             app_vars.inner2_pkt_done_timestamp = timestamp;
             app_vars.num_samples = radio_get_df_samples(app_vars.inner2_pkt_sample_buffer,NUM_SAMPLES);
             app_vars.inner2_pkt_sqn = app_vars.rxpk_buf[33];
-
+            
+            app_vars.rxpk_done = 3;
 
             radio_rxEnable();
             radio_rxNow();
@@ -343,6 +436,8 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             app_vars.inner3_pkt_done_timestamp = timestamp;
             app_vars.num_samples = radio_get_df_samples(app_vars.inner3_pkt_sample_buffer,NUM_SAMPLES);
             app_vars.inner3_pkt_sqn = app_vars.rxpk_buf[33];
+            
+            app_vars.rxpk_done = 4;
 
             radio_rxEnable();
             radio_rxNow();
@@ -353,7 +448,7 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             app_vars.num_samples = radio_get_df_samples(app_vars.inner4_pkt_sample_buffer,NUM_SAMPLES);
             app_vars.inner4_pkt_sqn = app_vars.rxpk_buf[33];
             
-            app_vars.rxpk_done = 1;
+            app_vars.rxpk_done = 5;
 
             radio_rxEnable();
             radio_rxNow();
@@ -411,29 +506,26 @@ uint8_t cb_uartRxCb(void) {
 }
 
 
-void trans_sample_serials(uint32_t sample_buffer[NUM_SAMPLES], uint32_t done_timestamp, uint8_t pkt_sqn, uint8_t pkt_inner_sqn) {
-    
-    uint16_t i;
-    
-    for (i=0;i<app_vars.num_samples;i++) {
-        app_vars.uart_buffer_to_send[4*i+0] = (sample_buffer[i] >>24) & 0x000000ff;
-        app_vars.uart_buffer_to_send[4*i+1] = (sample_buffer[i] >>16) & 0x000000ff;
-        app_vars.uart_buffer_to_send[4*i+2] = (sample_buffer[i] >> 8) & 0x000000ff;
-        app_vars.uart_buffer_to_send[4*i+3] = (sample_buffer[i] >> 0) & 0x000000ff;
-    }
+void trans_sample_serials(uint32_t example_sample, uint32_t done_timestamp, uint8_t pkt_sqn, uint8_t pkt_inner_sqn) {
+    uint8_t i;
+    i = 0;
+    app_vars.uart_buffer_to_send[i++] = (example_sample >> 24) & 0x000000ff;
+    app_vars.uart_buffer_to_send[i++] = (example_sample >> 16) & 0x000000ff;
+    app_vars.uart_buffer_to_send[i++] = (example_sample >>  8) & 0x000000ff;
+    app_vars.uart_buffer_to_send[i++] = (example_sample >>  0) & 0x000000ff;
 
-    app_vars.uart_buffer_to_send[352] = (done_timestamp >> 24) & 0x000000ff;
-    app_vars.uart_buffer_to_send[353] = (done_timestamp >> 16) & 0x000000ff;
-    app_vars.uart_buffer_to_send[354] = (done_timestamp >>  8) & 0x000000ff;
-    app_vars.uart_buffer_to_send[355] = (done_timestamp >>  0) & 0x000000ff;
+    app_vars.uart_buffer_to_send[i++] = (done_timestamp >> 24) & 0x000000ff;
+    app_vars.uart_buffer_to_send[i++] = (done_timestamp >> 16) & 0x000000ff;
+    app_vars.uart_buffer_to_send[i++] = (done_timestamp >>  8) & 0x000000ff;
+    app_vars.uart_buffer_to_send[i++] = (done_timestamp >>  0) & 0x000000ff;
 
-    app_vars.uart_buffer_to_send[356] = pkt_sqn;
-    app_vars.uart_buffer_to_send[357] = pkt_inner_sqn;
+    app_vars.uart_buffer_to_send[i++] = pkt_sqn;
+    app_vars.uart_buffer_to_send[i++] = pkt_inner_sqn;
 
-    app_vars.uart_buffer_to_send[358]     = 0xff;
-    app_vars.uart_buffer_to_send[359]     = 0xff; 
-    app_vars.uart_buffer_to_send[360]     = 0xff;
-    app_vars.uart_buffer_to_send[361]     = 0xff;
+    app_vars.uart_buffer_to_send[i++]     = 0xff;
+    app_vars.uart_buffer_to_send[i++]     = 0xff; 
+    app_vars.uart_buffer_to_send[i++]     = 0xff;
+    app_vars.uart_buffer_to_send[i++]     = 0xff;
     app_vars.uart_lastTxByteIndex = 0;
             
     leds_debug_toggle();

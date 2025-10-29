@@ -39,7 +39,7 @@
 
 #define BLE_ACCESS_ADDR           0x8E89BED6  // the actual address is 0xD6, 0xBE, 0x89, 0x8E
 
-#define RADIO_TXPOWER             0xec // in 2-compilant format  0xec == -40db
+#define RADIO_TXPOWER             0xe2 // in 2-compilant format  0xec == -20db
 
 // the maxmium should be ((1<<14)-1), but need larger .bss size
 #define MAX_IQSAMPLES            0x58
@@ -625,7 +625,7 @@ kick_scheduler_t    radio_isr(void){
 
     // end of frame
     if (NRF_RADIO->EVENTS_PHYEND) {
-        //timer_capture_now(1);
+        timer_capture_now(1);
         time_stampe = timer_getCapturedValue(1);
         if (radio_vars.endFrame_cb!=NULL){
             radio_vars.endFrame_cb(time_stampe);

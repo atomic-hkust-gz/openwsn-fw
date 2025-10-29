@@ -33,7 +33,7 @@ remainder of the packet contains an incrementing bytes.
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 //#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
-#define LEN_UART_BUFFER ((NUM_SAMPLES*4)*2+7)
+#define LEN_UART_BUFFER ((NUM_SAMPLES*4)*2+9)
 #define LENGTH_SERIAL_FRAME  127            // length of the serial frame
 
 #define ENABLE_DF       1
@@ -214,12 +214,12 @@ int mote_main(void) {
                     app_vars.uart_buffer_to_send[706] = (app_vars.time_interval >>  8) & 0x000000ff;
                     app_vars.uart_buffer_to_send[707] = (app_vars.time_interval >>  0) & 0x000000ff;
 
-                    //app_vars.uart_buffer_to_send[708] = app_vars.tx1_packet_sqn;
-                    //app_vars.uart_buffer_to_send[709] = app_vars.tx2_packet_sqn;
+                    app_vars.uart_buffer_to_send[708] = app_vars.tx1_packet_sqn;
+                    app_vars.uart_buffer_to_send[709] = app_vars.tx2_packet_sqn;
 
-                    app_vars.uart_buffer_to_send[708]     = 0xff;
-                    app_vars.uart_buffer_to_send[709]     = 0xff; 
                     app_vars.uart_buffer_to_send[710]     = 0xff;
+                    app_vars.uart_buffer_to_send[711]     = 0xff; 
+                    app_vars.uart_buffer_to_send[712]     = 0xff;
 
                     app_vars.uart_lastTxByteIndex = 0;
                     
