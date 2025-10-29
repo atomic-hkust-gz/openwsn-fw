@@ -135,32 +135,34 @@ int mote_main(void){
     //llcc68_irq_test();
     // -------------------------------------      
     if (TXRXMODE == APP_STATE_TX) {
-      app_vars.packet[0] = 'T';
-      app_vars.packet[1] = 'x';
-      app_vars.packet[2] = ' ';
-      app_vars.packet[3] = 's';
-      app_vars.packet[4] = 'e';
-      app_vars.packet[5] = 'n';
-      app_vars.packet[6] = 'd';
-      app_vars.packet[7] = 'e';
-      app_vars.packet[8] = 'r';
-      for (i = 9; i < app_vars.packet_len; i++){
-          app_vars.packet[i] = (uint8_t)i;
-      }
+        app_vars.packet[0] = 'T';
+        app_vars.packet[1] = 'x';
+        app_vars.packet[2] = ' ';
+        app_vars.packet[3] = 's';
+        app_vars.packet[4] = 'e';
+        app_vars.packet[5] = 'n';
+        app_vars.packet[6] = 'd';
+        app_vars.packet[7] = 'e';
+        app_vars.packet[8] = 'r';
+        for (i = 9; i < app_vars.packet_len; i++){
+            app_vars.packet[i] = (uint8_t)i;
+        }
+    } else {
+        if (TXRXMODE == APP_STATE_RX) {
+            app_vars.packet[0] = 'R';
+            app_vars.packet[1] = 'x';
+            app_vars.packet[2] = ' ';
+            app_vars.packet[3] = 't';
+            app_vars.packet[4] = 'e';
+            app_vars.packet[5] = 'm';
+            app_vars.packet[6] = 'p';
+            for (i = 7; i < app_vars.packet_len; i++){
+                app_vars.packet[i] = (uint8_t)i;
+            }
+        } else { 
+            return;
+        }
     }
-    else if (TXRXMODE == APP_STATE_RX) {
-      app_vars.packet[0] = 'R';
-      app_vars.packet[1] = 'x';
-      app_vars.packet[2] = ' ';
-      app_vars.packet[3] = 't';
-      app_vars.packet[4] = 'e';
-      app_vars.packet[5] = 'm';
-      app_vars.packet[6] = 'p';
-      for (i = 7; i < app_vars.packet_len; i++){
-          app_vars.packet[i] = (uint8_t)i;
-      }
-    }
-    else { exit(0); }
 
     // lora radio config
     loraConfig.loraModParams  = (radioModulationParams_t){
@@ -189,47 +191,48 @@ int mote_main(void){
     sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
     sctimer_enable();
  
-    while(1){
+    while(1) {
 
-      while(!(app_vars.flags & APP_FLAG_TIMER)){
-        // wait for periodic timer
-        __NOP();
-      }
-      app_vars.flags = 0;
-      memcpy(radioTimeout.timeout, TIMEOUT, sizeof(TIMEOUT));
+        while(!(app_vars.flags & APP_FLAG_TIMER)) {
+            // wait for periodic timer
+            board_sleep ();
+        }
+
+        app_vars.flags = 0;
+        memcpy(radioTimeout.timeout, TIMEOUT, sizeof(TIMEOUT));
       
-      // tx node
-      if (TXRXMODE == APP_STATE_TX) {
-        // load tx packet
-        fill_packet_count(app_dbg.num_tx_sent);
-        radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, app_vars.packet_len);
+        // tx node
+        if (TXRXMODE == APP_STATE_TX) {
+          // load tx packet
+          fill_packet_count(app_dbg.num_tx_sent);
+          radio_llcc68_loadPacket(TXRXOFFSET, app_vars.packet, app_vars.packet_len);
 
-        radio_llcc68_txNow(radioTimeout);
-        while((app_vars.irqStatus.txDone & 1 | 
-               app_vars.irqStatus.timeout & 1) == 0){
-          board_sleep();
+          radio_llcc68_txNow(radioTimeout);
+          while((app_vars.irqStatus.txDone & 1 | 
+                 app_vars.irqStatus.timeout & 1) == 0){
+              board_sleep();
+          }
         }
-      }
-      // rx node
-      else {
-        // clear payload
-        memset(&app_vars.packet, 0, sizeof( app_vars.packet));
+        // rx node
+        else {
+            // clear payload
+            memset(&app_vars.packet, 0, sizeof( app_vars.packet));
 
-        radio_llcc68_rxNow(radioTimeout);
-        while((app_vars.irqStatus.rxDone & 1 | 
-               app_vars.irqStatus.timeout & 1) == 0){
-          board_sleep();
+            radio_llcc68_rxNow(radioTimeout);
+            while((app_vars.irqStatus.rxDone & 1 | 
+                   app_vars.irqStatus.timeout & 1) == 0){
+                board_sleep();
+            }
+
+            if (app_vars.irqStatus.rxDone & 1){
+                radio_llcc68_getReceivedFrame(
+                          app_vars.packet,
+                          &app_vars.packet_len,
+                          &app_vars.packetStats);
+                uart_string_fill(app_dbg.num_rx_endFrame, app_vars.packetStats);
+            }        
         }
-
-        if (app_vars.irqStatus.rxDone & 1){
-          radio_llcc68_getReceivedFrame(
-                      app_vars.packet,
-                      &app_vars.packet_len,
-                      &app_vars.packetStats);
-          uart_string_fill(app_dbg.num_rx_endFrame, app_vars.packetStats);
-        }        
-      }
-      app_vars.irqStatus = radio_llcc68_getIrqstatus();
+        app_vars.irqStatus = radio_llcc68_getIrqstatus();
     }  
 }
 
