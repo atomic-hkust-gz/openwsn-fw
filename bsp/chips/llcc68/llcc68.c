@@ -231,9 +231,3 @@ static inline void llcc68_busy_wait(void){
     } while(llcc68_var.busy != LLCC68_FREE);
 }
 
-//=========================== callbacks =======================================
-
-// BUSY pin is going low (falling edge) and ready to communicate 
-//void llcc68_busy_cb(void){
-//    llcc68_var.busy = LLCC68_FREE;
-//}

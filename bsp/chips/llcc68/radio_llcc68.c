@@ -71,13 +71,13 @@ static radio_llcc68_vars_t radio_vars;
 void radio_llcc68_init(void) { 
     radio_llcc68_irqStatus_t irqStatus;
     uint8_t value;
-    uint8_t mulitParam[4];
+    uint8_t multiParam[4];
 
     // clear internal variables
     memset(&radio_vars, 0, sizeof(radio_vars));
     memset(&lorawan_ch_map, 0, sizeof(lorawan_ch_map));
     memset(&irqStatus, 0, sizeof(irqStatus));
-    memset(&mulitParam, 0, sizeof(mulitParam));
+    memset(&multiParam, 0, sizeof(multiParam));
     
     #if defined(DEBUG)
       radio_vars.state = LLCC68STATE_STANDBY_RC; 
@@ -121,9 +121,9 @@ void radio_llcc68_init(void) {
     #endif
 
      // image calibration for ISM band
-     memcpy(mulitParam, REGION_ISM, sizeof(REGION_ISM));
+     memcpy(multiParam, REGION_ISM, sizeof(REGION_ISM));
      llcc68_noAddress_opcode(CALIBRATEIMAGE, 
-        TYPE_WRITE, (uint8_t*)&mulitParam, sizeof(REGION_ISM));
+        TYPE_WRITE, (uint8_t*)&multiParam, sizeof(REGION_ISM));
     
     #if defined(DEBUG)
       radio_vars.state = LLCC68STATE_ENABLE_IMAGE_CAL;
@@ -137,6 +137,11 @@ void radio_llcc68_init(void) {
     #if defined(DEBUG)
       radio_vars.state = LLCC68STATE_STANDBY_RC;
     #endif
+
+    // set regulator mode
+    value = LDO_MODE;
+    llcc68_noAddress_opcode(SETREGULATORMODE, 
+        TYPE_WRITE, (uint8_t*)&value, sizeof(value));
 
     // clear IRQ status
     memset(&irqStatus, IRQMASK, sizeof(irqStatus));
@@ -209,7 +214,7 @@ void radio_llcc68_loadPacket(uint8_t offset,
 void radio_llcc68_lora_config(radio_llcc68_config_t radio){
 
     uint8_t value;
-    uint8_t mulitParam[4];
+    uint8_t multiParam[4];
     uint32_t freqReg;
     bufferBaseAddress_t bufferBaseAddress;
     radio_llcc68_irqStatus_t irqStatus;
@@ -264,24 +269,27 @@ void radio_llcc68_lora_config(radio_llcc68_config_t radio){
     #endif
 
     // set RF frequency
-    //memcpy(mulitParam, &freqReg, sizeof(freqReg));
-    mulitParam[0] = 0x89;
-    mulitParam[1] = 0xFD;
-    mulitParam[3] = 0xE8;
-    mulitParam[4] = 0x1B;
+    multiParam[0] = 0x89;
+    multiParam[1] = 0xFD;
+    multiParam[3] = 0xE8;
+    multiParam[4] = 0x1B;
+    //multiParam[0] = (uint8_t)(freqReg & 0xFF);
+    //multiParam[1] = (uint8_t)((freqReg >> 8) & 0xFF);
+    //multiParam[2] = (uint8_t)((freqReg >> 16) & 0xFF);
+    //multiParam[3] = (uint8_t)((freqReg >> 24) & 0xFF);
     llcc68_noAddress_opcode(SETRFFREQUENCY, 
                             TYPE_WRITE,
-                            (uint8_t*)&mulitParam, 
-                            sizeof(mulitParam));
+                            (uint8_t*)&multiParam, 
+                            sizeof(multiParam));
     #if defined(DEBUG)
       radio_vars.state = LLCC68STATE_FREQUENCY_SET;
     #endif
 
     // set power amplifier configuration
-    memcpy(mulitParam, REGION_MAX_DBM, sizeof(REGION_MAX_DBM));
+    memcpy(multiParam, REGION_MAX_DBM, sizeof(REGION_MAX_DBM));
     llcc68_noAddress_opcode(SETPACONFIG, 
                             TYPE_WRITE, 
-                            (uint8_t*)&mulitParam, 
+                            (uint8_t*)&multiParam, 
                             sizeof(REGION_MAX_DBM));
 
     llcc68_noAddress_opcode(SETTXPARAMS, 

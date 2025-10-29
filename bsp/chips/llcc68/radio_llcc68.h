@@ -155,6 +155,11 @@ typedef enum {
 } radioRampUpTime_t;
 
 typedef enum {
+    LDO_MODE      = 0x00, // only ldo
+    DC_DC_MODE    = 0x01, // dc + ldo
+} regulatorMode_t;
+
+typedef enum {
     VARIABLE_LENGTH_PACKET    = 0x00,
     FIXED_LENGTH_PACKET       = 0x01,
 } headerType_t;
