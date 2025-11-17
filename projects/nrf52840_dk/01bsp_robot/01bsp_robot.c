@@ -414,7 +414,7 @@ bool     moving_decision(
         app_vars.rssi_avg = rssi_sum/RSSI_HISTORY_LEN;
         return false;
     } else {
-        if (rssi_sum/RSSI_HISTORY_LEN <= TARGET_RSSI) {
+        if (rssi_sum/RSSI_HISTORY_LEN >= TARGET_RSSI) {
             // target reached stop moving
             to_move = false;
         } else {
