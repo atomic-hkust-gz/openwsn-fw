@@ -15,7 +15,6 @@
 #include "radio.h"
 #include "sensors.h"
 #include "i2c.h"
-#include "pwm.h"
 
 
 //=========================== variables =======================================
@@ -31,7 +30,6 @@ extern int mote_main(void);
 int main(void) {
     return mote_main();
 }
-
 
 //=========================== public ==========================================
 
@@ -49,7 +47,6 @@ void board_init(void) {
     radio_init();
 
     i2c_init();
-    pwm_multi_init();
 
     // configure dcdc
     enable_dcdc();

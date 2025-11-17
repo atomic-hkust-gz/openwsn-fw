@@ -134,6 +134,9 @@ int mote_main(void) {
     sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
     sctimer_enable();
 
+    pwm_multi_init();
+    while(app_vars.timer_counts==0); 
+
     pwm_start(PWM_0);  
     pwm_start(PWM_1);
 
