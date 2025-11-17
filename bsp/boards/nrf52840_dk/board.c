@@ -15,6 +15,7 @@
 #include "radio.h"
 #include "sensors.h"
 #include "i2c.h"
+#include "pwm.h"
 
 
 //=========================== variables =======================================
@@ -48,6 +49,7 @@ void board_init(void) {
     radio_init();
 
     i2c_init();
+    pwm_multi_init();
 
     // configure dcdc
     enable_dcdc();

@@ -67,16 +67,16 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="43" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openapps/openapps.c" path="../../openapps/uinject/uinject.c" left="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="43" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openapps/openapps.c" path="../../openapps/uinject/uinject.c" left="0" top="18" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="13" y="17" useTextEdit="1" path="../common/03oos_openwsn/03oos_openwsn.c" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="5" y="26" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/projects/common/03oos_openwsn/03oos_openwsn.c" path="../../kernel/openos/scheduler.c" left="0" top="17" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="13" y="42" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/projects/common/03oos_openwsn/03oos_openwsn.c" path="../../openstack/openstack.c" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="91" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openapps/openapps.h" path="../../openapps/openapps.c" left="0" top="44" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="13" y="42" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/projects/common/03oos_openwsn/03oos_openwsn.c" path="../../openstack/openstack.c" left="0" top="17" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="91" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openapps/openapps.h" path="../../openapps/openapps.c" left="0" top="66" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="17" y="70" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openapps/uinject/uinject.c" path="../../openapps/cjoin/cojp_cbor.c" left="0" top="70" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openapps/openapps.c" path="../../openapps/uinject/uinject.h" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="20" y="183" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openstack/openstack.h" path="../../inc/opendefs.h" left="0" top="159" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="24" y="1" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openapps/openapps.c" path="../../inc/config.h" left="0" top="1" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="290" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openapps/uinject/uinject.h" path="../../drivers/common/opentimers.c" left="0" top="260" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="290" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openapps/uinject/uinject.h" path="../../drivers/common/opentimers.c" left="0" top="265" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="29" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/projects/common/03oos_openwsn/03oos_openwsn.c" path="../../bsp/boards/nrf52840_dk/board.c" left="0" top="14" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="../../openweb/openweb.c" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="../../openweb/openweb.h" left="0" top="0" codecName="Default"/>
@@ -84,15 +84,14 @@
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/inc/opendefs.h" path="../../bsp/boards/toolchain_defs.h" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="14" y="12" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/openstack/openstack.c" path="../../openapps/openapps.h" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/inc/opendefs.h" path="../../inc/af.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="46" y="672" useTextEdit="1" path="nrf52840_dk.emProject" left="0" top="647" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="164" useTextEdit="1" path="../common/01bsp_radio_ble_tx/01bsp_radio_ble_tx.c" left="0" top="111" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="17" y="69" useTextEdit="1" path="../common/01bsp_leds/01bsp_leds.c" left="0" top="13" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="25" useTextEdit="1" path="01bsp_rtt/01bsp_rtt.c" left="0" selected="1" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="../../../../nrf5340/openwsn-fw/projects/nrf5340_net/nrf5340_net.emSession" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="4" y="61" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/projects/common/01bsp_radio_ble_tx/01bsp_radio_ble_tx.c" path="../../bsp/boards/nrf52840_dk/radio.c" left="0" top="33" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="40" y="91" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/timer.c" left="0" top="57" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="46" y="672" useTextEdit="1" path="nrf52840_dk.emProject" left="0" top="648" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="164" useTextEdit="1" path="../common/01bsp_radio_ble_tx/01bsp_radio_ble_tx.c" left="0" top="140" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="17" y="69" useTextEdit="1" path="../common/01bsp_leds/01bsp_leds.c" left="0" top="45" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="16" useTextEdit="1" path="01bsp_rtt/01bsp_rtt.c" left="0" selected="1" top="1" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="4" y="61" useTextEdit="1" openedFrom="C:/Users/11422/Desktop/nrf52840/openwsn-fw/projects/common/01bsp_radio_ble_tx/01bsp_radio_ble_tx.c" path="../../bsp/boards/nrf52840_dk/radio.c" left="0" top="37" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="40" y="91" useTextEdit="1" path="../../bsp/boards/nrf52840_dk/timer.c" left="0" top="67" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="../common/01bsp_aod_rx/01bsp_aod_rx.c" left="0" top="123" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="14" y="34" useTextEdit="1" path="../common/01bsp_eui64/01bsp_eui64.c" left="0" top="9" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="14" y="34" useTextEdit="1" path="../common/01bsp_eui64/01bsp_eui64.c" left="0" top="10" codecName="Default"/>
  </Files>
- <EMStudioWindow activeProject="01bsp_rtt" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="C:/Users/11422/Desktop/RTT/openwsn-fw/bsp/boards/nrf52840_dk/eui64.c&#xa;&#xa;C:/Users/11422/Desktop/RTT/openwsn-fw/bsp/boards/nrf52840_dk/sdk/thumb_crt0.s&#xa;&#xa;C:/Users/11422/Desktop/RTT/openwsn-fw/projects/common/01bsp_eui64/01bsp_eui64.c&#xa;" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <EMStudioWindow activeProject="01bsp_rtt" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="C:/Users/11422/Desktop/RTT/openwsn-fw/bsp/boards/nrf52840_dk/eui64.c&#xa;&#xa;C:/Users/11422/Desktop/RTT/openwsn-fw/bsp/boards/nrf52840_dk/sdk/thumb_crt0.s&#xa;&#xa;C:/Users/11422/Desktop/RTT/openwsn-fw/projects/common/01bsp_eui64/01bsp_eui64.c&#xa;" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>
