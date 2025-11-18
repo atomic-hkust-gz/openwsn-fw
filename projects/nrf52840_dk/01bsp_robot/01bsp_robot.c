@@ -294,6 +294,8 @@ int mote_main(void) {
                     i  += sizeof(mask);
                     memcpy(&app_vars.packet[i], app_vars.robot_id, 8);
                     i  += 8;
+                    memcpy(&app_vars.packet[i], app_vars.follow_neighbor_id, 8);
+                    i  += 8;
 
                     // start transmitting packet
                     radio_loadPacket(app_vars.packet,i+2);
