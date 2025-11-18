@@ -88,7 +88,7 @@ void     cb_timer(void);
 void     cb_uart_tx_done(void);
 uint8_t  cb_uart_rx(void);
 
-bool     moving_decision(
+void     moving_decision(
     float* moving_speed, 
     float* moving_direction, 
     float* rotation_speed
@@ -359,11 +359,8 @@ void cb_timer(void) {
         return;
     }
 
-    if (
-        moving_decision(&app_vars.velocity, &app_vars.direction, &app_vars.rotation_speed)
-    ) {
-        car_control(app_vars.velocity, app_vars.direction, app_vars.rotation_speed);
-    }
+    moving_decision(&app_vars.velocity, &app_vars.direction, &app_vars.rotation_speed);
+    car_control(app_vars.velocity, app_vars.direction, app_vars.rotation_speed);
 
     leds_debug_toggle();
 }
@@ -392,22 +389,21 @@ uint8_t cb_uart_rx(void) {
     return 0;
 }
 
-bool     moving_decision(
+void     moving_decision(
     float* moving_speed, 
     float* moving_direction, 
     float* rotation_speed
 ) {
     uint8_t i;
-    bool to_move;
 
     int16_t rssi_sum;
 
-    to_move   = false;
     rssi_sum  = 0;
     for (i=0;i<RSSI_HISTORY_LEN;i++) {
         if (app_vars.rssi_history[i] == 0) {
-            // not enough rssi samples yet
-            return false;
+            // not enough rssi samples yet, don't move in this case 
+            *moving_speed     = 0;
+            return;
         } else {
             rssi_sum += app_vars.rssi_history[i];
         }
@@ -415,28 +411,29 @@ bool     moving_decision(
 
     if (app_vars.rssi_avg == 0) {
         app_vars.rssi_avg = rssi_sum/RSSI_HISTORY_LEN;
-        return false;
+        // no history rssi_avg, don't move in this case
+        *moving_speed     = 0;
+        return;
     } else {
         if (rssi_sum/RSSI_HISTORY_LEN >= TARGET_RSSI) {
             // target reached stop moving
-            to_move = false;
+            *moving_speed     = 0;
+            *moving_direction = 0;
         } else {
             if (rssi_sum/RSSI_HISTORY_LEN - app_vars.rssi_avg > MOVING_RSSI_THRESHOLD) {
                 // this is the right direction, keep moving with current direction
-                to_move = true;
+                *moving_speed     = 100;
             } else {
                 // change a direction and keep moving
+                *moving_speed     = 100;
                 *moving_direction += 90;    
                 if (*moving_direction>=360) {
                     *moving_direction -= 360;
                 }
-                to_move = true;
             }
         }
     }
     app_vars.rssi_avg = rssi_sum/RSSI_HISTORY_LEN;
-
-    return to_move;
 }
 
 
