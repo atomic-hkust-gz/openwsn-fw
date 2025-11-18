@@ -138,8 +138,8 @@ typedef enum {
  * @brief PWM解码器更新模式配置
  */
 typedef enum {
-    pwm_DECODER_MODE_RefreshCount = 0,  // 按REFRESH计数更新
-    pwm_DECODER_MODE_NextStep = 1       // 按NEXTSTEP任务更新
+    PWM_DECODER_MODE_RefreshCount = 0,  // 按REFRESH计数更新
+    PWM_DECODER_MODE_NextStep = 1       // 按NEXTSTEP任务更新
 } pwm_decoder_mode;
 
 /**

@@ -82,10 +82,5 @@ void cb_compare(void) {
       app_vars.direction -= 360;
    }
 
-   pwm_set(0, 17, 1000);
-   //pwm_set(0, 18, 1000);
-   //pwm_set(0, 19, 1000);
-   //pwm_set(0, 20, 1000);
-
-   //car_control(app_vars.velocity, app_vars.direction, app_vars.rotation_speed);
+   car_control(app_vars.velocity, app_vars.direction, app_vars.rotation_speed);
 }

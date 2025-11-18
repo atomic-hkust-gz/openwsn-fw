@@ -3,8 +3,8 @@
  * @brief NRF5340 PWM控制器驱动实现
  * @details 提供PWM控制器的底层配置和操作函数
  * @details 请先根据自身需求对配置表进行修改
- * @details 接着在主函数中调用pwm_multi_init(void)；进行初始化
- * @details 最后仅需调用pwm_set(uint8_t port, uint8_t pin, uint16_t duty);对应即可输出pwm信号
+ * @details 接着在主函数中调用nrf_pwm_multi_init(void)；进行初始化
+ * @details 最后仅需调用nrf_pwm_set(uint8_t port, uint8_t pin, uint16_t duty);对应即可输出pwm信号
  */
 #include "pwm.h"
 #include <string.h>
@@ -35,7 +35,7 @@ static const pwm_instance_config_t pwm_instance_configs[] = {
         .prescaler = PWM_PRESCALER_DIV_1,
         .countertop = 1250,
         .decoder_load = PWM_DECODER_LOAD_INDIVIDUAL,
-        .decoder_mode = pwm_DECODER_MODE_RefreshCount,
+        .decoder_mode = PWM_DECODER_MODE_RefreshCount,
         .use_interrupt = false
     },
    {
@@ -44,7 +44,7 @@ static const pwm_instance_config_t pwm_instance_configs[] = {
         .prescaler = PWM_PRESCALER_DIV_1,
         .countertop = 1250,
         .decoder_load = PWM_DECODER_LOAD_INDIVIDUAL,
-        .decoder_mode = pwm_DECODER_MODE_RefreshCount,
+        .decoder_mode = PWM_DECODER_MODE_RefreshCount,
         .use_interrupt = false
     }
 };
@@ -60,26 +60,15 @@ typedef struct {
 } pwm_channel_config_t;
 
 /** 通道配置表 */
-//static const pwm_channel_config_t pwm_channel_configs[] = {
-//    {PWM_0, PWM_CHANNEL_0, 0,  2, 0, PWM_POLARITY_RISING},  // P0.28
-//    {PWM_0, PWM_CHANNEL_1, 0, 28, 0, PWM_POLARITY_RISING},  // P0.29
-//    {PWM_0, PWM_CHANNEL_2, 0,  4, 0, PWM_POLARITY_RISING},  // P1.00
-//    {PWM_0, PWM_CHANNEL_3, 0,  5, 0, PWM_POLARITY_RISING},  // P1.01
-//    {PWM_1, PWM_CHANNEL_0, 1,  9, 0, PWM_POLARITY_RISING},  // P0.30
-//    {PWM_1, PWM_CHANNEL_1, 0, 11, 0, PWM_POLARITY_RISING},  // P0.31
-//    {PWM_1, PWM_CHANNEL_2, 0, 3, 0, PWM_POLARITY_RISING},  // P0.30
-//    {PWM_1, PWM_CHANNEL_3, 0, 88, 0, PWM_POLARITY_RISING},  // P0.31
-//};
-
 static const pwm_channel_config_t pwm_channel_configs[] = {
-    {PWM_0, PWM_CHANNEL_0, 0, 17, 0, PWM_POLARITY_RISING},  // P0.17
-    {PWM_0, PWM_CHANNEL_1, 0, 18, 0, PWM_POLARITY_RISING},  // P0.18
-    {PWM_0, PWM_CHANNEL_2, 0, 19, 0, PWM_POLARITY_RISING},  // P0.19
-    {PWM_0, PWM_CHANNEL_3, 0, 20, 0, PWM_POLARITY_RISING},  // P0.20
-    {PWM_1, PWM_CHANNEL_0, 0, 21, 0, PWM_POLARITY_RISING},  // P0.21
-    {PWM_1, PWM_CHANNEL_1, 0, 22, 0, PWM_POLARITY_RISING},  // P0.22
-    {PWM_1, PWM_CHANNEL_2, 0, 3, 0, PWM_POLARITY_RISING},   // P0.3  (not used)
-    {PWM_1, PWM_CHANNEL_3, 0, 88, 0, PWM_POLARITY_RISING}   // P0.88 (not used)
+    {PWM_0, PWM_CHANNEL_0, 1, 8, 0, PWM_POLARITY_RISING},  // P1.8
+    {PWM_0, PWM_CHANNEL_1, 1, 7, 0, PWM_POLARITY_RISING},  // P1.7
+    {PWM_0, PWM_CHANNEL_2, 1, 6, 0, PWM_POLARITY_RISING},  // P1.6
+    {PWM_0, PWM_CHANNEL_3, 1, 5, 0, PWM_POLARITY_RISING},  // P1.5
+    {PWM_1, PWM_CHANNEL_0, 1, 4, 0, PWM_POLARITY_RISING},  // P1.4
+    {PWM_1, PWM_CHANNEL_1, 1, 3, 0, PWM_POLARITY_RISING},  // P1.3
+    {PWM_1, PWM_CHANNEL_2, 1, 2, 0, PWM_POLARITY_RISING},  // P1.2 (not used)
+    {PWM_1, PWM_CHANNEL_3, 1, 1, 0, PWM_POLARITY_RISING}   // P1.1 (not used)
 };
 
 #define PWM_CHANNEL_CONFIG_COUNT (sizeof(pwm_channel_configs) / sizeof(pwm_channel_configs[0]))
