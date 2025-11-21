@@ -16,7 +16,7 @@
 
 #define LENGTH_PACKET   125+LENGTH_CRC  ///< maximum length is 127 bytes
 #define LEN_PKT_TO_SEND 20+LENGTH_CRC
-#define CHANNEL         11             ///< 11=2.405GHz
+#define CHANNEL         25             ///< 11=2.405GHz
 #define TIMER_PERIOD    (0xffff>>4)    ///< 0xffff = 2s@32kHz
 #define RSSI_HISTORY_LEN 16
 #define MOVING_RSSI_THRESHOLD 1        /// unit: dbm
@@ -349,7 +349,7 @@ void cb_timer(void) {
 
     sctimer_setCompare(sctimer_readCounter()+TIMER_PERIOD);
 
-    if (app_vars.robot_id[7]==0xeb) {
+    if (app_vars.robot_id[7]==TARGET_ID) {
         // target node don't move
         return;
     }
