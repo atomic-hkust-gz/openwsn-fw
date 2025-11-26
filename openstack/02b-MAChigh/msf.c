@@ -7,7 +7,11 @@
 #include "openrandom.h"
 #include "idmanager.h"
 #include "icmpv6rpl.h"
-#include "IEEE802154E.h"
+#if (RADIO_MODE == 1)
+    #include "LoRa.h"
+#else
+    #include "IEEE802154E.h"
+#endif
 #include "openqueue.h"
 #include "packetfunctions.h"
 #include "openserial.h"

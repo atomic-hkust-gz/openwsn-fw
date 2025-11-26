@@ -6,7 +6,11 @@
 #include "sixtop.h"
 #include "idmanager.h"
 #include "msf.h"
-#include "IEEE802154E.h"
+#if (RADIO_MODE == 1)
+    #include "LoRa.h"
+#else
+    #include "IEEE802154E.h"
+#endif
 #include "icmpv6rpl.h"
 #include "neighbors.h"
 

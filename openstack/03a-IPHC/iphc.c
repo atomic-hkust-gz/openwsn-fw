@@ -4,7 +4,11 @@
 #include "packetfunctions.h"
 #include "idmanager.h"
 #include "openserial.h"
-#include "IEEE802154E.h"
+#if (RADIO_MODE == 1)
+    #include "LoRa.h"
+#else
+    #include "IEEE802154E.h"
+#endif
 #include "frag.h"
 #include "forwarding.h"
 #include "neighbors.h"

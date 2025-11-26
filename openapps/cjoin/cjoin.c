@@ -16,7 +16,11 @@
 #include "openrandom.h"
 #include "scheduler.h"
 #include "idmanager.h"
-#include "IEEE802154E.h"
+#if (RADIO_MODE == 1)
+    #include "LoRa.h"
+#else
+    #include "IEEE802154E.h"
+#endif
 #include "IEEE802154_security.h"
 #include "cojp_cbor.h"
 #include "eui64.h"

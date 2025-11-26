@@ -173,8 +173,8 @@ void ieee154e_init(void) {
     memset(&ieee154e_dbg, 0, sizeof(ieee154e_dbg_t));
 
     // set singleChannel to 0 to enable channel hopping.
-#if IEEE802154E_SINGLE_CHANNEL
-    ieee154e_vars.singleChannel     = IEEE802154E_SINGLE_CHANNEL;
+#if RADIO_SINGLE_CHANNEL
+    ieee154e_vars.singleChannel     = RADIO_SINGLE_CHANNEL;
 #else
     ieee154e_vars.singleChannel = 0; // 0 means channel hopping
 #endif
@@ -607,8 +607,8 @@ port_INLINE void activity_synchronize_newSlot(void) {
         radio_rfOff();
 
         // update record of current channel
-#if IEEE802154E_SINGLE_CHANNEL
-        ieee154e_vars.freq = IEEE802154E_SINGLE_CHANNEL;
+#if RADIO_SINGLE_CHANNEL
+        ieee154e_vars.freq = RADIO_SINGLE_CHANNEL;
 #else
         ieee154e_vars.freq = (openrandom_get16b() & 0x0F) + 11;
 #endif
@@ -639,8 +639,8 @@ port_INLINE void activity_synchronize_newSlot(void) {
             radio_rfOff();
 
             // update record of current channel
-#if IEEE802154E_SINGLE_CHANNEL
-            ieee154e_vars.freq = IEEE802154E_SINGLE_CHANNEL;
+#if RADIO_SINGLE_CHANNEL
+            ieee154e_vars.freq = RADIO_SINGLE_CHANNEL;
 #else
             ieee154e_vars.freq = (openrandom_get16b() & 0x0F) + 11;
 #endif

@@ -11,7 +11,11 @@
 #include "opendefs.h"
 #include "openserial.h"
 #include "scheduler.h"
-#include "IEEE802154E.h"
+#if (RADIO_MODE == 1)
+    #include "LoRa.h"
+#else
+    #include "IEEE802154E.h"
+#endif
 #include "neighbors.h"
 #include "sixtop.h"
 #include "icmpv6echo.h"

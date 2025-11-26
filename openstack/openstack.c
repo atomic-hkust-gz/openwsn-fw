@@ -18,7 +18,11 @@
 #include "opentimers.h"
 //-- 02a-TSCH
 #include "adaptive_sync.h"
-#include "IEEE802154E.h"
+#if (RADIO_MODE == 1)
+    #include "LoRa.h"
+#else
+    #include "IEEE802154E.h"
+#endif
 //-- 02b-RES
 #include "schedule.h"
 #include "sixtop.h"
@@ -68,7 +72,12 @@ void openstack_init(void) {
     adaptive_sync_init();
 #endif
 
+#if (RADIO_MODE == 1)
+    lora_init();
+#else
     ieee154e_init();
+#endif
+    
     //-- 02b-RES
     schedule_init();
     sixtop_init();

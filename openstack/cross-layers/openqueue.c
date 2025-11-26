@@ -3,7 +3,11 @@
 #include "openqueue.h"
 #include "openserial.h"
 #include "packetfunctions.h"
-#include "IEEE802154E.h"
+#if (RADIO_MODE == 1)
+    #include "LoRa.h"
+#else
+    #include "IEEE802154E.h"
+#endif
 #include "radio.h"
 #include "IEEE802154_security.h"
 #include "sixtop.h"

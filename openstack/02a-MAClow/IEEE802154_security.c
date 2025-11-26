@@ -11,7 +11,11 @@
 #include "config.h"
 #include "packetfunctions.h"
 #include "IEEE802154.h"
-#include "IEEE802154E.h"
+#if (RADIO_MODE == 1)
+    #include "LoRa.h"
+#else
+    #include "IEEE802154E.h"
+#endif
 #include "idmanager.h"
 #include "openserial.h"
 #include "neighbors.h"

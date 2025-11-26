@@ -342,16 +342,29 @@
 #endif
 #endif
 
+
 /**
- * \def IEEE802154E_SINGLE_CHANNEL
+ * \def RADIO_MODE
+ *
+ * Sets the radio being used
+ * choose between IEEE802.15.4 [0] or LoRa [1]
+ *
+ */
+#ifndef RADIO_MODE
+#define RADIO_MODE      1
+#endif
+
+/**
+ * \def RADIO_SINGLE_CHANNEL
  *
  * Sets channel to a fixed value (acceptable values are [11 - 26] and [0])
  * When the channel is set to 0, frequency hopping is enabled, otherwise a single channel is used.
  *
  */
-#ifndef IEEE802154E_SINGLE_CHANNEL
-#define IEEE802154E_SINGLE_CHANNEL      0
+#ifndef RADIO_SINGLE_CHANNEL
+#define RADIO_SINGLE_CHANNEL      1
 #endif
+
 
 /**
  * \def PACKETQUEUE_LENGTH

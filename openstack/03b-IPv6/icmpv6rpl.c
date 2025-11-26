@@ -9,7 +9,11 @@
 #include "scheduler.h"
 #include "idmanager.h"
 #include "opentimers.h"
-#include "IEEE802154E.h"
+#if (RADIO_MODE == 1)
+    #include "LoRa.h"
+#else
+    #include "IEEE802154E.h"
+#endif
 #include "IEEE802154_security.h"
 #include "schedule.h"
 #include "msf.h"

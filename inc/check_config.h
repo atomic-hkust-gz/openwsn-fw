@@ -70,10 +70,19 @@
 
 #endif
 
-#if ((IEEE802154E_SINGLE_CHANNEL != 0) && \
-    ((IEEE802154E_SINGLE_CHANNEL < 11) || \
-    (IEEE802154E_SINGLE_CHANNEL > 26)))
-#error 'Illegal value for OPENWSN_IEEE802154E_SINGLE_CHANNEL'
+#if (RADIO_MODE == 0) && \
+    (RADIO_SINGLE_CHANNEL != 0) && \
+    ((RADIO_SINGLE_CHANNEL < 11) || (RADIO_SINGLE_CHANNEL > 26))
+    #error "Illegal value for SINGLE_CHANNEL in Mode 0 (Must be 0 or 11-26)"
+
+#elif (RADIO_MODE == 1) && \
+      (RADIO_SINGLE_CHANNEL != 0) && \
+      ((RADIO_SINGLE_CHANNEL < 1) || (RADIO_SINGLE_CHANNEL > 5))
+    #error "Illegal value for SINGLE_CHANNEL in Mode 1 (Must be 0 or 1-5)"
+
+#elif (RADIO_MODE != 0) && (RADIO_MODE != 1)
+    #error "Invalid RADIO_MODE selected (Must be 0 or 1)"
+
 #endif
 
 #if !OPENWSN_COAP_C && (\
