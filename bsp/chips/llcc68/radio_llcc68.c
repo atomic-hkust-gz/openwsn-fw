@@ -21,6 +21,12 @@
 // Pin assignments
 #define LLCC68_RESET_PIN NRF_GPIO_PIN_MAP(1,8)    // P1.08
 
+// radio interrupt configuration
+#define IRQ_CHANNEL                 0             // gpiote interrupt channel number
+#define IRQ_NRF_PORT                PORT1         // p1.06 nrf interrupt port assignment
+#define IRQ_NRF_PIN                 6             // nrf interrupt pin assignment
+#define IRQ_RISING_EDGE             GPIOTE_LOTOHI //rising edge triggered
+
 #define IRQMASK                     LSB_FIRST_16(0xFFFF)
 #define IRQTXDONE                   LSB_FIRST_16(0x0001)  // tx done 
 #define IRQRXDONE                   LSB_FIRST_16(0x0002)  // rx done
@@ -68,7 +74,7 @@ static radio_llcc68_vars_t radio_vars;
 //=========================== public ==========================================
 
 // radio init
-void radio_llcc68_init(void) { 
+void radio_llcc68_init(gpioIrq_cbt cb) { 
     radio_llcc68_irqStatus_t irqStatus;
     uint8_t value;
     uint8_t multiParam[4];
@@ -94,6 +100,14 @@ void radio_llcc68_init(void) {
     // nrf pin configure
     nrf_gpio_cfg_output(LLCC68_RESET_PIN);
     radio_llcc68_reset();
+
+    // P1.06 assigned to radio interrupt (DIO1)(rising edge detect)
+    gpio_irq_config(IRQ_CHANNEL, 
+                    IRQ_NRF_PORT, 
+                    IRQ_NRF_PIN, 
+                    IRQ_RISING_EDGE, 
+                    cb);
+    gpio_irq_enable(IRQ_CHANNEL);
 
     // tx clamp config
     // data sheet section 15.2.2 workaround

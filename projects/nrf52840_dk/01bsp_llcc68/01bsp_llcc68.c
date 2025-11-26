@@ -32,13 +32,6 @@
 // for testing
 #define CHANNEL_NUM                 2
 
-
-// radio interrupt configuration
-#define IRQ_CHANNEL                 0             ///< gpiote interrupt channel number
-#define IRQ_NRF_PORT                PORT1         ///< p1.06 nrf interrupt port assignment
-#define IRQ_NRF_PIN                 6             ///< nrf interrupt pin assignment
-#define IRQ_RISING_EDGE             GPIOTE_LOTOHI ///< rising edge triggered
-
 static const uint8_t TXRXOFFSET =   0x00; 
 //                                  { MSB,    , LSB}                                       
 static const uint8_t TIMEOUT[3] =   {0x13,0x88,0x00};  ///< 20 s = 1,280,000 * 15.625 us
@@ -107,7 +100,7 @@ int mote_main(void){
    
     // initialize board & radio
     board_init();
-    radio_llcc68_init();
+    radio_llcc68_init(cb_gpio_irq);
 
     // clear local variables
     memset(&app_vars,0,sizeof(app_vars_t));
@@ -119,14 +112,6 @@ int mote_main(void){
     uart_setCallbacks(cb_uart_tx_done,cb_uart_rx);
     uart_enableInterrupts();
     app_vars.uartDone = 1;
- 
-    // P1.06 assigned to radio interrupt (DIO1)(rising edge detect)
-    gpio_irq_config(IRQ_CHANNEL, 
-                    IRQ_NRF_PORT, 
-                    IRQ_NRF_PIN, 
-                    IRQ_RISING_EDGE, 
-                    cb_gpio_irq);
-    gpio_irq_enable(IRQ_CHANNEL);
 
     // prepare packet
     app_vars.packet_len = sizeof(app_vars.packet);
@@ -160,15 +145,15 @@ int mote_main(void){
                 app_vars.packet[i] = (uint8_t)i;
             }
         } else { 
-            return;
+            return 0;
         }
     }
 
     // lora radio config
     loraConfig.loraModParams  = (radioModulationParams_t){
-        .spreadingFactor      = LORA_SF7,
-        .bandwidth            = LORA_BW_125,
-        .codingRate           = LORA_CR_4_5,
+        .spreadingFactor      = LORA_SPREADING_FACTOR,
+        .bandwidth            = LORA_BANDWIDTH,
+        .codingRate           = LORA_CODINGRATE,
         .lowDataRateOptimize  = LDRO_OFF,
     };
     loraConfig.radioTxParams  = (radioTxParams_t){
@@ -177,7 +162,7 @@ int mote_main(void){
     };
     loraConfig.packetParams   = (packetParams_t){
         .preambleLength       = LORA_PREAMBLE_LENGTH,
-        .headerType           = FIXED_LENGTH_PACKET,
+        .headerType           = VARIABLE_LENGTH_PACKET,
         .payloadLength        = LORA_PAYLOAD_LENGTH,
         .crcType              = CRC_ON,
         .invertIq             = STD_IQ,
@@ -215,9 +200,6 @@ int mote_main(void){
         }
         // rx node
         else {
-            // clear payload
-            memset(&app_vars.packet, 0, sizeof( app_vars.packet));
-
             radio_llcc68_rxNow(radioTimeout);
             while((app_vars.irqStatus.rxDone & 1 | 
                    app_vars.irqStatus.timeout & 1) == 0){

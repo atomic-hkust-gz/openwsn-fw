@@ -12,6 +12,7 @@
 */
 
 #include "llcc68.h"
+#include "gpio_irq.h"
 
 //=========================== define ==========================================
 
@@ -85,7 +86,7 @@
 //=========================== typedef =========================================
 #define MAX_PACKET_SIZE                 127
 #define MAX_BUFFER_SIZE                0x80
-#define PREAMBLE_LENGTH_32           0x0080
+#define PREAMBLE_LENGTH_32           0x0020   // symbols
 
 // radio info
 typedef enum {
@@ -160,8 +161,8 @@ typedef enum {
 } regulatorMode_t;
 
 typedef enum {
-    VARIABLE_LENGTH_PACKET    = 0x00,
-    FIXED_LENGTH_PACKET       = 0x01,
+    VARIABLE_LENGTH_PACKET    = 0x00, // explicit header
+    FIXED_LENGTH_PACKET       = 0x01, // implicit header
 } headerType_t;
 
 typedef enum {
@@ -306,7 +307,7 @@ typedef struct {
 //=========================== prototypes ======================================
 
 // radio init
-void          radio_llcc68_init(void);
+void          radio_llcc68_init(gpioIrq_cbt cb);
 // radio reset
 void          radio_llcc68_reset(void);
 // radio control

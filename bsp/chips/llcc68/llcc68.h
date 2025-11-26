@@ -13,20 +13,6 @@ typedef enum {
     LLCC68_BUSY   = 0x01,
 }llcc68_busy_t;
 
-/*
-typedef struct { 
-    uint16_t  addr;
-    uint8_t   data;
-}registerSetting_t;
-*/
-/*
-typedef struct {
-    uint16_t    channel_spacing;
-    uint32_t    frequency_0;
-    uint16_t    channel;
-}frequencySetting_t;
-*/
-
 //========================== defines ==========================================
 #define LSB_FIRST_16(x) (uint16_t)((((x) & 0xFF) << 8) | (((x) >> 8) & 0xFF))
 
