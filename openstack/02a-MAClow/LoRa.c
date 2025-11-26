@@ -169,11 +169,37 @@ Call this function once before any other function in this module, possibly
 during boot-up.
 */
 void lora_init(void) {
-    radio_llcc68_init(lora_frame);
-
+    radio_llcc68_config_t loraConfig;
+    
     // initialize variables
     memset(&lora_vars, 0, sizeof(lora_vars_t));
+    memset(&loraConfig, 0, sizeof(radio_llcc68_config_t));
     memset(&lora_dbg, 0, sizeof(lora_dbg_t));
+
+    radio_llcc68_init(lora_frame);
+
+    // lora radio config
+    loraConfig.loraModParams  = (radioModulationParams_t){
+        .spreadingFactor      = LORA_SPREADING_FACTOR,
+        .bandwidth            = LORA_BANDWIDTH,
+        .codingRate           = LORA_CODINGRATE,
+        .lowDataRateOptimize  = LDRO_OFF,
+    };
+    loraConfig.radioTxParams  = (radioTxParams_t){
+        .txPowerDbm           = TX_P22_DBM,
+        .txRampTime           = RAMP_200U,
+    };
+    loraConfig.packetParams   = (packetParams_t){
+        .preambleLength       = LORA_PREAMBLE_LENGTH,
+        .headerType           = VARIABLE_LENGTH_PACKET,
+        .payloadLength        = LORA_PAYLOAD_LENGTH,
+        .crcType              = CRC_ON,
+        .invertIq             = STD_IQ,
+    };
+    loraConfig.channel        = RADIO_SINGLE_CHANNEL;
+    loraConfig.syncword       = PRIVATESYNC;
+    radio_llcc68_lora_config(loraConfig);
+
 
     // set singleChannel to 0 to enable channel hopping.
 #if RADIO_SINGLE_CHANNEL
@@ -181,6 +207,8 @@ void lora_init(void) {
 #else
     lora_vars.singleChannel = 0; // 0 means channel hopping
 #endif
+
+
     lora_vars.isAckEnabled = TRUE;
     lora_vars.isSecurityEnabled = FALSE;
     lora_vars.slotDuration = TsSlotDuration;
@@ -464,8 +492,86 @@ This function excutes in ISR mode.
 
 */
 void lora_frame(PORT_TIMER_WIDTH capturedTime) {
-
-
+     PORT_TIMER_WIDTH referenceTime = capturedTime - lora_vars.startOfSlotReference;
+    
+    lora_vars.irqStatus = radio_llcc68_getIrqstatus();
+    radio_llcc68_irq_clear();
+    
+    // start frame
+    if (lora_vars.irqStatus.preambleDetect & 1){
+      // need to add something for tx Start of frame
+      if (lora_vars.isSync == FALSE) {
+        activity_synchronize_startOfFrame(referenceTime);
+      } else {
+          switch (lora_vars.state) {
+              case S_TXDATADELAY:
+                  activity_ti4(referenceTime);
+                  break;
+              case S_RXACKREADY:
+                  /*
+                  It is possible to receive in this state for radio where there is no way of differentiated between
+                  "ready to listen" and "listening" (e.g. CC2420). We must therefore expect to the start of a packet in
+                  this "ready" state.
+                   */
+                  // no break!
+              case S_RXACKLISTEN:
+                  activity_ti8(referenceTime);
+                  break;
+              case S_RXDATAREADY:
+                  /* Similarly as above. */
+                  // no break!
+              case S_RXDATALISTEN:
+                  activity_ri4(referenceTime);
+                  break;
+              case S_TXACKDELAY:
+                  activity_ri8(referenceTime);
+                  break;
+              default:
+                  // log the error
+                  LOG_ERROR(COMPONENT_IEEE802154E, ERR_WRONG_STATE_IN_NEWSLOT,
+                            (errorparameter_t)lora_vars.state,
+                            (errorparameter_t)lora_vars.slotOffset);
+                  // abort
+                  endSlot();
+                  break;
+          }
+      }
+      lora_dbg.num_startOfFrame++;
+    }
+    
+    // end frame
+    else if (lora_vars.irqStatus.txDone & 1 |
+        lora_vars.irqStatus.rxDone & 1) 
+    {
+          if (lora_vars.isSync == FALSE) {
+          activity_synchronize_endOfFrame(referenceTime);
+      } else {
+          switch (lora_vars.state) {
+              case S_TXDATA:
+                  activity_ti5(referenceTime);
+                  break;
+              case S_RXACK:
+                  activity_ti9(referenceTime);
+                  break;
+              case S_RXDATA:
+                  activity_ri5(referenceTime);
+                  break;
+              case S_TXACK:
+                  activity_ri9(referenceTime);
+                  break;
+              default:
+                  // log the error
+                  LOG_ERROR(COMPONENT_IEEE802154E, ERR_WRONG_STATE_IN_ENDOFFRAME,
+                            (errorparameter_t) lora_vars.state,
+                            (errorparameter_t) lora_vars.slotOffset
+                  );
+                  // abort
+                  endSlot();
+                  break;
+          }
+      }
+      lora_dbg.num_endOfFrame++; 
+    } 
 }
 
 

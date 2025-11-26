@@ -12,6 +12,7 @@
 #include "board.h"
 #include "opentimers.h"
 #include "schedule.h"
+#include "radio_llcc68.h"
 
 //=========================== debug define ====================================
 
@@ -29,6 +30,14 @@ static const uint8_t ebIEsBytestream[] = {
 };
 
 //=========================== define ==========================================
+
+// lora configuration
+#define LORA_BANDWIDTH              LORA_BW_125
+#define LORA_SPREADING_FACTOR       LORA_SF7         
+#define LORA_CODINGRATE             LORA_CR_4_5 
+#define LORA_PREAMBLE_LENGTH        PREAMBLE_LENGTH_32
+#define LORA_PAYLOAD_LENGTH         MAX_BUFFER_SIZE
+
 
 #define EB_ASN0_OFFSET               4
 #define EB_JP_OFFSET                 9
@@ -253,6 +262,7 @@ typedef struct {
 
 typedef struct {
     // misc
+    radio_llcc68_irqStatus_t irqStatus;
     asn_t asn;                                      // current absolute slot number
     slotOffset_t slotOffset;                        // current slot offset
     slotOffset_t nextActiveSlotOffset;              // next active slot offset
@@ -346,6 +356,8 @@ uint16_t ieee154e_getTimeCorrection(void);
 void ieee154e_getTicsInfo(uint32_t *numTicsOn, uint32_t *numTicsTotal);
 
 // events
+void lora_frame(PORT_TIMER_WIDTH capturedTime);
+
 void ieee154e_startOfFrame(PORT_TIMER_WIDTH capturedTime);
 
 void ieee154e_endOfFrame(PORT_TIMER_WIDTH capturedTime);
@@ -362,5 +374,5 @@ bool debugPrint_macStats(void);
 \}
 */
 
-#endif /* OPENWSN_IEEE802154E_H */
+#endif /* OPENWSN_LORA_H */
 
