@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Robot Network</title>
+  <style>
+  body {
+    margin: 0;
+    font-family: sans-serif;
+    overflow: hidden;
+    font-size: 18px;              /* <-- Global base font size */
+  }
+
+  #info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 6px;
+    font-size: 18px;              /* <-- Bigger legend text */
+    z-index: 10;
+    line-height: 1.4em;
+  }
+
+  #panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px;                 /* increased space */
+    height: 100%;
+    background: rgba(255,255,255,0.93);
+    border-left: 2px solid #ccc;
+    padding: 16px;
+    box-sizing: border-box;
+    font-size: 18px;              /* <-- larger side panel text */
+    z-index: 11;
+    overflow-y: auto;
+  }
+
+  #panel h2 {
+    margin-top: 0;
+    font-size: 22px;               /* <-- larger section title */
+  }
+
+  #panel table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;               /* <-- larger table text */
+  }
+
+  #panel th, #panel td {
+    border-bottom: 1px solid #ddd;
+    padding: 6px 4px;
+    text-align: left;
+  }
+
+  text {
+    font-size: 16px !important;    /* <-- robot labels larger */
+  }
+</style>
+
+</head>
+<body>
+<div id="info">
+  Robot network<br>
+  Link color by RSSI:<br>
+  &nbsp;&nbsp;<span style="color:#ff0000">red</span> for &lt; –60 dBm,<br>
+  &nbsp;&nbsp;gradient red→yellow→green for –60..–30 dBm,<br>
+  &nbsp;&nbsp;<span style="color:#00ff00">green</span> for &gt; –30 dBm.
+</div>
+
+<div id="panel">
+  <h2>No robot selected</h2>
+  <p>Click a robot icon to see its neighbors and RSSI.</p>
+</div>
+
+<svg id="canvas"></svg>
+
+<!-- Socket.IO & D3 -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<script>
+  const svg = d3.select("#canvas");
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  svg.attr("width", width).attr("height", height);
+
+  const socket = io();
+
+  // Data structures
+  const nodesMap = new Map();   // id -> node object
+  const linksMap = new Map();   // "a-b" -> {key, source, target, rssi, timestamp}
+
+  // Side panel element
+  const panel = document.getElementById("panel");
+
+  // fade behavior (ms)
+  const LINK_FADE_AGE = 5000;   // start fading after 5s
+  const LINK_MAX_AGE  = 15000;  // remove link after 15s
+
+  let nodes = [];
+  let links = [];
+
+  const linkGroup  = svg.append("g");
+  const nodeGroup  = svg.append("g");
+
+  let linkSelection   = linkGroup.selectAll("line");
+  let robotSelection  = nodeGroup.selectAll("image");
+  let labelSelection  = nodeGroup.selectAll("text");
+
+  const simulation = d3.forceSimulation()
+    .force("link", d3.forceLink().id(d => d.id).distance(120))
+    .force("charge", d3.forceManyBody().strength(-250))
+    .force("center", d3.forceCenter(width / 2, height / 2));
+
+  // --- RSSI -> color with gradient ---
+  function rssiColor(rssi) {
+    // Strong: solid green
+    if (rssi > -30) return "#00ff00";
+
+    // Weak: solid red
+    if (rssi < -60) return "#ff0000";
+
+    // Gradient range -60..-30 dBm
+    let t = (rssi + 60) / 30; // 0 at -60, 1 at -30
+
+    let r, g;
+    if (t < 0.5) {
+      // Red -> Yellow
+      r = 255;
+      g = Math.floor(510 * t); // 0..255
+    } else {
+      // Yellow -> Green
+      r = Math.floor(255 - 510 * (t - 0.5)); // 255..0
+      g = 255;
+    }
+    return `rgb(${r},${g},0)`;
+  }
+
+  function drag(sim) {
+    function dragstarted(event, d) {
+      if (!event.active) sim.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+    function dragended(event, d) {
+      if (!event.active) sim.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+    return d3.drag()
+      .on("start", dragstarted)
+      .on("drag", dragged)
+      .on("end", dragended);
+  }
+
+  function updatePanelForNode(nodeId) {
+    const neighborRows = [];
+
+    // build neighbors from linksMap
+    for (const link of linksMap.values()) {
+      let otherId = null;
+      if (link.source.id === nodeId) otherId = (typeof link.target === "object") ? link.target.id : link.target;
+      else if (link.target.id === nodeId) otherId = (typeof link.source === "object") ? link.source.id : link.source;
+      if (!otherId) continue;
+
+      neighborRows.push({
+        neighbor: otherId,
+        rssi: link.rssi,
+        lastSeen: new Date(link.timestamp)
+      });
+    }
+
+    neighborRows.sort((a,b) => b.rssi - a.rssi); // strongest first
+
+    if (neighborRows.length === 0) {
+      panel.innerHTML = `
+        <h2>Robot ${nodeId}</h2>
+        <p>No neighbors yet.</p>
+      `;
+      return;
+    }
+
+    let html = `<h2>Robot ${nodeId}</h2>
+                <table>
+                  <tr><th>Neighbor</th><th>RSSI (dBm)</th><th>Last seen</th></tr>`;
+    for (const row of neighborRows) {
+      html += `<tr>
+        <td>${row.neighbor}</td>
+        <td>${row.rssi}</td>
+        <td>${row.lastSeen.toLocaleTimeString()}</td>
+      </tr>`;
+    }
+    html += `</table>`;
+    panel.innerHTML = html;
+  }
+
+  function updateGraph() {
+    const now = Date.now();
+
+    // expire old links
+    for (const [key, link] of linksMap) {
+      if (now - link.timestamp > LINK_MAX_AGE) {
+        linksMap.delete(key);
+      }
+    }
+
+    nodes = Array.from(nodesMap.values());
+    links = Array.from(linksMap.values());
+
+    // --- Links ---
+    linkSelection = linkGroup.selectAll("line")
+      .data(links, d => d.key);
+
+    linkSelection.exit().remove();
+
+    const linkEnter = linkSelection.enter()
+      .append("line")
+      .attr("stroke-width", 2);
+
+    linkSelection = linkEnter.merge(linkSelection)
+      .attr("stroke", d => rssiColor(d.rssi));
+
+    // --- Robot icons as nodes (images) ---
+    robotSelection = nodeGroup.selectAll("image")
+      .data(nodes, d => d.id);
+
+    robotSelection.exit().remove();
+
+    const robotEnter = robotSelection.enter()
+      .append("image")
+      .attr("href", "/static/robot.png")
+      .attr("width", 40)
+      .attr("height", 40)
+      .on("click", (event, d) => {
+        updatePanelForNode(d.id);
+        event.stopPropagation();
+      })
+      .call(drag(simulation));
+
+    robotSelection = robotEnter.merge(robotSelection);
+
+	// --- Labels (last 2 bytes) ---
+	labelSelection = nodeGroup.selectAll("text")
+	  .data(nodes, d => d.id);
+
+	labelSelection.exit().remove();
+
+	const labelEnter = labelSelection.enter()
+	  .append("text")
+	  .attr("font-size", 16)
+	  .attr("text-anchor", "start")
+	  .text(d => d.id.slice(-4));   // <---- updated
+
+
+    labelSelection = labelEnter.merge(labelSelection);
+
+    simulation
+      .nodes(nodes)
+      .on("tick", ticked);
+
+    simulation.force("link")
+      .links(links);
+
+    simulation.alpha(0.8).restart();
+  }
+
+  function ticked() {
+    const now = Date.now();
+
+    // Position links
+    linkSelection
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y)
+      .attr("stroke-opacity", d => {
+        const age = now - d.timestamp;
+        if (age <= LINK_FADE_AGE) return 1;
+        if (age >= LINK_MAX_AGE) return 0;
+        return 1 - (age - LINK_FADE_AGE) / (LINK_MAX_AGE - LINK_FADE_AGE);
+      });
+
+    // Position robot images (centered on node position)
+    robotSelection
+      .attr("x", d => d.x - 20)
+      .attr("y", d => d.y - 20);
+
+    // Position labels next to robots
+    labelSelection
+      .attr("x", d => d.x + 22)
+      .attr("y", d => d.y + 4);
+  }
+
+  // Receive updates from backend
+  socket.on("link_update", (data) => {
+    const node = data.node;
+    const neighbor = data.neighbor;
+    const rssi = data.rssi;
+    const now = Date.now();
+
+    if (!nodesMap.has(node))     nodesMap.set(node, { id: node });
+    if (!nodesMap.has(neighbor)) nodesMap.set(neighbor, { id: neighbor });
+
+    const key = [node, neighbor].sort().join("-");
+    linksMap.set(key, {
+      key: key,
+      source: node,
+      target: neighbor,
+      rssi: rssi,
+      timestamp: now
+    });
+
+    updateGraph();
+  });
+</script>
+</body>
+</html>
