@@ -23,7 +23,7 @@
 #define TARGET_RSSI     -30            /// unit: dbm
 #define TARGET_ID       0xeb
 
-uint8_t stringToSend[]  = "0x00112233aabbccdd\n";
+uint8_t stringToSend[]  = "00112233aabbccdd \r\n";
 const uint8_t mask[] = "wsan-robot";
 
 //=========================== variables =======================================
@@ -239,16 +239,8 @@ int mote_main(void) {
                             app_vars.rssi_index = 0;
                         }
 
-                        i = 0;
-                        j = 0;
-                        stringToSend[i++]     = '0';
-                        stringToSend[i++]     = 'x';
-
-                        for (j=0;j<sizeof(app_vars.robot_id);j++) {
-                            stringToSend[i++] = byte_to_hexchar((app_vars.packet[j]>>8)&0x0f);
-                            stringToSend[i++] = byte_to_hexchar((app_vars.packet[j]>>0)&0x0f);
-                        }
-
+                        memcpy(&stringToSend[0], &app_vars.packet[0], 16);
+                        stringToSend[16] = app_vars.rxpk_rssi;
                         stringToSend[sizeof(stringToSend)-2] = '\r';
                         stringToSend[sizeof(stringToSend)-1] = '\n';
 
