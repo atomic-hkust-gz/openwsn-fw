@@ -40,10 +40,13 @@
 
 #define BLE_ACCESS_ADDR           0x8E89BED6  // the actual address is 0xD6, 0xBE, 0x89, 0x8E
 
-#define RADIO_TXPOWER             0 // in 2-compilant format
+#define RADIO_TXPOWER             0xec // in 2-compilant format 0xd8
 
 // the maxmium should be ((1<<14)-1), but need larger .bss size
 #define MAX_IQSAMPLES            0x58  //used to be ((1<<8)-1) 0x140 == 320 0x440 = 1088 0x240 = 576   1us=0x48    //0x58 in Plast 0x5c for scum
+
+
+#define DEBUG_RADIO_PIN      11 
 
 //=========================== variables =======================================
 
@@ -589,11 +592,20 @@ void RADIO_IRQHandler(void) {
 //=========================== callbacks =======================================
 
 kick_scheduler_t    radio_isr(void){
+    
+    NRF_P1_NS->OUTSET =  1 << DEBUG_RADIO_PIN;
+    NRF_P1_NS->OUTCLR =  1 << DEBUG_RADIO_PIN;
 
-    uint32_t time_stampe;
+    uint32_t time_stamp;
+    
+    //get timestamp with RTC timer, for NetAoD project
+    time_stamp = NRF_RTC0_NS->COUNTER;
 
-    time_stampe = NRF_RTC0_NS->COUNTER;
-    //timer_capture_now(NRF_TIMER0_NS,0);
+
+    //get timestamp with 16MHz timer, for multiple nodes antenna array project
+
+    //timer0_capture_now(0);
+    //time_stamp = timer0_getCapturedValue(0);
 
     // start of frame (payload)
     if (NRF_RADIO_NS->EVENTS_ADDRESS){
@@ -602,7 +614,7 @@ kick_scheduler_t    radio_isr(void){
         NRF_RADIO_NS->TASKS_RSSISTART = (uint32_t)1;
 
         if (radio_vars.startFrame_cb!=NULL){
-            radio_vars.startFrame_cb(time_stampe);
+            radio_vars.startFrame_cb(time_stamp);
         }
         
         NRF_RADIO_NS->EVENTS_ADDRESS = (uint32_t)0;
@@ -626,8 +638,13 @@ kick_scheduler_t    radio_isr(void){
     // end of frame
     if (NRF_RADIO_NS->EVENTS_PHYEND) {
         
+
+        //togglo debug pin at the EoF
+        //NRF_P1_NS->OUTSET =  1 << DEBUG_RADIO_PIN;
+        //NRF_P1_NS->OUTCLR =  1 << DEBUG_RADIO_PIN;
+
         if (radio_vars.endFrame_cb!=NULL){
-            radio_vars.endFrame_cb(time_stampe);
+            radio_vars.endFrame_cb(time_stamp);
         }
         
         NRF_RADIO_NS->EVENTS_PHYEND = (uint32_t)0;

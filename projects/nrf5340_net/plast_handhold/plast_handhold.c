@@ -76,6 +76,7 @@ typedef struct {
                 uint8_t         slot_timerId;
                 uint8_t         inner_rxtimerId;
                 uint8_t         inner_txtimerId;
+                uint8_t         inner_rx_stop_timerId;
                 uint8_t         target_tag_id;
                 app_state_t     state;
 
@@ -116,6 +117,7 @@ void     cb_endFrame(PORT_TIMER_WIDTH timestamp);
 
 void     cb_slot_timer(void);
 void     cb_inner_slot_rxtimer(void);
+void     cb_inner_slot_rxstoptimer(void);
 void     cb_inner_slot_txtimer(void);
 
 void     cb_uartTxDone(void);
@@ -136,7 +138,6 @@ int mote_main(void) {
 
     // initialize board
     board_init();
-
     // turn radio off
     radio_rfOff();
     app_vars.state = APP_STATE_OFF;
@@ -161,6 +162,7 @@ int mote_main(void) {
     app_vars.slot_timerId = 0;
     app_vars.inner_rxtimerId = 1;
     app_vars.inner_txtimerId = 2;
+    app_vars.inner_rx_stop_timerId = 3;
 
     //initial debugs GPIO
     nrf_gpio_cfg_output(DEBUG_PORT, DEBUG_PIN0);
@@ -171,7 +173,7 @@ int mote_main(void) {
     sctimer_set_callback(app_vars.slot_timerId, cb_slot_timer);
     sctimer_set_callback(app_vars.inner_rxtimerId, cb_inner_slot_rxtimer);    //in slot 0, set when to turn on the radio for receiving the sync pacekt
     sctimer_set_callback(app_vars.inner_txtimerId, cb_inner_slot_txtimer);    //in slot 1, set when to turn on the radio for sending a DF packet
-
+    sctimer_set_callback(app_vars.inner_rx_stop_timerId, cb_inner_slot_rxstoptimer);
     //app_vars.time_slotStartAt = sctimer_readCounter()+SLOT_DURATION;
     //sctimer_setCompare(app_vars.slot_timerId, app_vars.time_slotStartAt);
     
@@ -250,7 +252,7 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
     app_dbg.num_endFrame++;
-
+    clocks_stop();
     if (app_vars.state == APP_STATE_RX) {
         //received a ble packet
         app_vars.isTargetPkt = FALSE;
@@ -332,7 +334,6 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_slot_timer(void) {
-
       leds_error_toggle();
       // update slot offset
       app_vars.slot_offset = (app_vars.slot_offset+1)%NUM_SLOTS;
@@ -378,14 +379,19 @@ void cb_slot_timer(void) {
       break;
       case 3:
           //turn on the radio for receiving the broadcast packet
-          radio_rfOn();
-          app_vars.state = APP_STATE_RX;
-          radio_setFrequency(BEACON_CHANNEL, FREQ_RX);
-          radio_rxEnable();
-          radio_rxNow();
+
+          sctimer_setCompare(app_vars.inner_rxtimerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET - TURNON_OFFSET);
+          sctimer_setCompare(app_vars.inner_rx_stop_timerId, app_vars.time_slotStartAt - SLOT_DURATION + SENDING_OFFSET + 0.1*TURNON_OFFSET);
+
+          //radio_rfOn();
+          //app_vars.state = APP_STATE_RX;
+          //radio_setFrequency(BEACON_CHANNEL, FREQ_RX);
+          //radio_rxEnable();
+          //radio_rxNow();
       break;
       default:
           radio_rfOff();
+          clocks_stop();
           app_vars.state = APP_STATE_OFF;
       break;
       }
@@ -402,11 +408,19 @@ void cb_inner_slot_rxtimer(void) {
     radio_rxNow();
 }
 
+void cb_inner_slot_rxstoptimer(void) {
+    app_dbg.num_timer++;
+    radio_rfOff();
+    clocks_stop();
+}
+
+
 void cb_inner_slot_txtimer(void) {
     radio_rfOn();
     //radio_setFrequency(CHANNEL, FREQ_RX);
     //radio_loadPacket(app_vars.packet,LENGTH_PACKET);
     radio_txEnable();
+    app_vars.state = APP_STATE_TX;
     radio_txNow();
 }
 

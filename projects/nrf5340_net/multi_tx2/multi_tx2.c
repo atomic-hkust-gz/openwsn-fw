@@ -17,12 +17,13 @@ when send the packet in one slot.
 #include "radio_df.h"
 #include "radio_CHW_df.h"
 #include "timer.h"
+#include "debugpins.h"
 
 //=========================== defines =========================================
 
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
-#define CHANNEL         0              ///< 0~39
+#define CHANNEL         17              ///< 0~39
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 #define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
@@ -42,7 +43,7 @@ const static uint8_t ble_uuid[16]       = {
 };
 
 #define SEND_DURATION     (16000000/200)*100        //5ms@ (16000000/200)
-#define SEND_OFFSET       (16000000/5000)*0.3        //200us @ (16000000/5000)
+#define SEND_OFFSET       (16000000/5000)*1        //200us @ (16000000/5000)
 
 //define debug GPIO
 #define DEBUG_PORT           1
@@ -119,6 +120,8 @@ int mote_main(void) {
     // initialize board
     board_init();
 
+    debugpins_init();
+
     // turn radio off
     radio_rfOff();
     app_vars.state = APP_STATE_OFF;
@@ -142,7 +145,7 @@ int mote_main(void) {
     timer0_set_callback(0, cb_timer);
 
     radio_rfOn();
-    radio_setFrequency(CHANNEL, FREQ_TX);
+    radio_setFrequency(CHANNEL, FREQ_RX);
     radio_rxEnable();
     app_vars.state = APP_STATE_RX;
     radio_rxNow();
@@ -151,18 +154,7 @@ int mote_main(void) {
 
     // sleep
     while (1){
-        app_vars.tx_now = 0;
-        while (app_vars.tx_now == 0) {
-            board_sleep();
-        }
-
-        timer0_capture_now(0);
-        app_vars.start_timestamp = timer0_getCapturedValue(0);
-
-        radio_txEnable();
-        app_vars.state = APP_STATE_TX;
-
-        radio_txNow();
+        board_sleep();
         //continue;
     }
      
@@ -210,13 +202,17 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
+    
+    //NRF_P1_NS->OUTSET =  1 << DEBUG_RADIO_PIN;
+    //NRF_P1_NS->OUTCLR =  1 << DEBUG_RADIO_PIN;
 
     app_dbg.num_endFrame++;
 
-    timer0_capture_now(0);
-
+    //timer0_capture_now(0);
+    
+    //radio_rfOff();
     if (app_vars.state == APP_STATE_RX) {
-        
+
         app_vars.isTargetPkt = FALSE;
 
         radio_getReceivedFrame(
@@ -233,16 +229,27 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         }
 
         if (app_vars.isTargetPkt) {
-            uint32_t endframe_timestamp = timer0_getCapturedValue(0);
-            app_vars.time_slotStartAt = endframe_timestamp + SEND_OFFSET;
+            //uint32_t endframe_timestamp = timer0_getCapturedValue(0);
+            app_vars.time_slotStartAt = timestamp + SEND_OFFSET;
             timer0_schedule(0, app_vars.time_slotStartAt);
 
             app_vars.pkt_sqn = app_vars.rxpk_packet[33];
             app_vars.packet_len = sizeof(app_vars.packet);
+
             assemble_ibeacon_packet(app_vars.pkt_sqn);
-            radio_setFrequency(CHANNEL, FREQ_TX);
+            //radio_setFrequency(CHANNEL, FREQ_TX);
             radio_loadPacket(app_vars.packet, LENGTH_PACKET);
+            
+            //radio_rfOn();
+            //radio_setFrequency(CHANNEL, FREQ_TX);
+            
+            radio_txEnable();
+            app_vars.state = APP_STATE_TX;
+            return;
+
         } else {
+            radio_rfOn();
+            radio_setFrequency(CHANNEL, FREQ_RX);
             radio_rxEnable();
             radio_rxNow();
         }
@@ -251,6 +258,8 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 
 
     if (app_vars.state == APP_STATE_TX) {
+        //radio_rfOn();
+        //radio_setFrequency(CHANNEL, FREQ_RX);
         radio_rxEnable();
         app_vars.state = APP_STATE_RX;
         radio_rxNow();
@@ -258,10 +267,18 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_timer(void) {
+    
+    //NRF_P1_NS->OUTSET =  1 << DEBUG_RADIO_PIN;
+    //NRF_P1_NS->OUTCLR =  1 << DEBUG_RADIO_PIN;
+
     leds_error_toggle();
     app_dbg.num_timer++;
-    radio_txEnable();
-    app_vars.state = APP_STATE_TX;
+    //radio_txEnable();
+    //app_vars.state = APP_STATE_TX;
     radio_txNow();
+
+    //NRF_P1_NS->OUTSET =  1 << DEBUG_RADIO_PIN;
+    //NRF_P1_NS->OUTCLR =  1 << DEBUG_RADIO_PIN;
+    
     //app_vars.tx_now = 1;
 }

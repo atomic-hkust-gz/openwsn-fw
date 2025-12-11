@@ -34,7 +34,7 @@ direction finding with coreHW antenna board
 
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
-#define CHANNEL         37              ///< 0~39
+#define CHANNEL         0              ///< 0~39
 #define TIMER_PERIOD    (32768/200)*100    ///< 0xffff = 2s@32kHz
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 

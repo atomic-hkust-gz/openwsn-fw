@@ -18,7 +18,7 @@ Tx1 node will periodicly send a packet with CTE to help measure the time drift b
 
 #define LENGTH_BLE_CRC  3
 #define LENGTH_PACKET   125+LENGTH_BLE_CRC  ///< maximum length is 127 bytes
-#define CHANNEL         0              ///< 0~39
+#define CHANNEL         17              ///< 0~39
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 #define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
@@ -135,6 +135,9 @@ int mote_main(void) {
     assemble_ibeacon_packet(app_vars.pkt_sqn);
     radio_loadPacket(app_vars.packet, LENGTH_PACKET);
 
+    radio_txEnable();
+    app_vars.state = APP_STATE_TX;
+
 
     // sleep
 
@@ -185,7 +188,8 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
-
+    //NRF_P1_NS->OUTSET =  1 << DEBUG_RADIO_PIN;
+    //NRF_P1_NS->OUTCLR =  1 << DEBUG_RADIO_PIN;
     app_dbg.num_endFrame++;
     
     if (app_vars.state = APP_STATE_TX) {
@@ -194,6 +198,10 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
         app_vars.pkt_sqn++;
         assemble_ibeacon_packet(app_vars.pkt_sqn);
         radio_loadPacket(app_vars.packet, LENGTH_PACKET);
+        //NRF_P1_NS->OUTSET =  1 << DEBUG_RADIO_PIN;
+        radio_txEnable();     // last for 143us, measured by logic analyzer
+        //NRF_P1_NS->OUTCLR =  1 << DEBUG_RADIO_PIN;
+        app_vars.state = APP_STATE_TX;
     }
 
 }
@@ -202,9 +210,6 @@ void cb_timer(void) {
 
     leds_error_toggle();
     app_dbg.num_timer++;
-    
-    radio_txEnable();
-    app_vars.state = APP_STATE_TX;
     radio_txNow();
 
 }

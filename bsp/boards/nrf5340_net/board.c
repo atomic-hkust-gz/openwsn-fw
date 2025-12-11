@@ -40,6 +40,8 @@ void board_init(void) {
     uart_init();
     radio_init();
     sctimer_init();
+
+    //enable_dcdc();
 }
 
 void board_sleep(void) {
@@ -70,3 +72,18 @@ void clocks_stop( void ){
     NRF_CLOCK_NS->TASKS_HFCLKSTOP = 1;
     while (NRF_CLOCK_NS->EVENTS_HFCLKSTARTED == 1);
 }
+
+//void enable_dcdc(void) {
+
+//    uint32_t status; 
+
+//    status = NRF_POWER_NS->MAINREGSTATUS;
+
+//    if (status == 0) {
+
+//        while (NRF_POWER_NS->DCDCEN == 0){
+//            // in normal voltage mode: PS1.2, page 59
+//            NRF_POWER_NS->DCDCEN = (uint32_t)1;
+//        }
+//    }
+//}
