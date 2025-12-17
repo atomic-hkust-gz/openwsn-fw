@@ -18,6 +18,7 @@
 #include "sctimer.h"
 #include "openrandom.h"
 #include "msf.h"
+#include "radio_wrapper.h"
 
 //=========================== definition ======================================
 
