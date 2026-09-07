@@ -22,6 +22,7 @@ remainder of the packet contains an incrementing bytes.
 #include "aod.h"
 #include "uart.h"
 #include "timer.h"
+#include "radio_CHW_df.h"
 
 //=========================== defines =========================================
 
@@ -33,7 +34,7 @@ remainder of the packet contains an incrementing bytes.
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
 //#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
-#define LEN_UART_BUFFER ((NUM_SAMPLES*4)*2+9)
+#define LEN_UART_BUFFER ((NUM_SAMPLES*4)*2+12)
 #define LENGTH_SERIAL_FRAME  127            // length of the serial frame
 
 #define ENABLE_DF       1
@@ -151,8 +152,9 @@ int mote_main(void) {
     timer_start();
     
 #if ENABLE_DF == 1
-    //antenna_CHW_rx_switch_init();
-    radio_configure_direction_finding_antenna_switch();
+    antenna_CHW_rx_switch_init();
+    set_antenna_CHW_switches();
+    //radio_configure_direction_finding_antenna_switch();
     //set_antenna_CHW_switches();
 #endif
 
@@ -220,6 +222,9 @@ int mote_main(void) {
                     app_vars.uart_buffer_to_send[710]     = 0xff;
                     app_vars.uart_buffer_to_send[711]     = 0xff; 
                     app_vars.uart_buffer_to_send[712]     = 0xff;
+                    app_vars.uart_buffer_to_send[713]     = 0xff;
+                    app_vars.uart_buffer_to_send[714]     = 0xff; 
+                    app_vars.uart_buffer_to_send[715]     = 0xff;
 
                     app_vars.uart_lastTxByteIndex = 0;
                     
@@ -285,15 +290,19 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     );
 
     // check the frame is sent by radio_tx project
-    expectedFrame = TRUE;
+    expectedFrame = FALSE;
     
-    if (app_vars.rxpk_len>LENGTH_PACKET){
-        expectedFrame = FALSE;
-    } else {
+    //if (app_vars.rxpk_len>LENGTH_PACKET){
+    //    expectedFrame = FALSE;
+    //} else {
 
-        if(app_vars.rxpk_buf[0]!=0x42){
-            expectedFrame = FALSE;
-        }
+    //    if(app_vars.rxpk_buf[0]!=0x42){
+    //        expectedFrame = FALSE;
+    //    }
+    //}
+
+    if (app_vars.rxpk_buf[2] == 0xaa & app_vars.rxpk_buf[3] == 0xbb & app_vars.rxpk_buf[4] == 0xcc) {
+        expectedFrame = TRUE;
     }
     
     if (expectedFrame){

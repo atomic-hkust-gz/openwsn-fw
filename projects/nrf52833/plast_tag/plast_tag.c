@@ -166,7 +166,7 @@ int mote_main(void) {
     app_vars.got_sample = FALSE;
     //set slot offset to any value untill sync
     app_vars.slot_offset = 10;
-    app_vars.node_id = 6;         //    #559=1    #870=2
+    app_vars.node_id = 1;         //    #559=1    #870=2
     
     sample_array_int_t sample_array_int;
     // initialize board

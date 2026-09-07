@@ -25,7 +25,7 @@
 #define TXPOWER         0xD5            ///< 2's complement format, 0xD8 = -40dbm
 
 #define NUM_SAMPLES     SAMPLE_MAXCNT
-#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+8)
+#define LEN_UART_BUFFER ((NUM_SAMPLES*4)+12)
 //#define LEN_UART_BUFFER ((NUM_SAMPLES*4)*2+7)
 #define LENGTH_SERIAL_FRAME  127            // length of the serial frame
 
@@ -69,13 +69,22 @@ typedef struct {
                 uint8_t         slot_timerId;
                 uint8_t         inner_timerId;
                 app_state_t     state;
-
+                
+                uint8_t         channel;
+                uint8_t         next_channel;
                 uint8_t         slot_offset;
                 uint8_t         pkt_sqn;
+                uint8_t         rx_packet_sqn;
                 uint32_t        time_slotStartAt;
 
                 uint8_t         packet[LENGTH_PACKET];
                 uint8_t         packet_len;
+
+                uint8_t         uart_buffer_to_send[LEN_UART_BUFFER];
+                uint16_t        uart_lastTxByteIndex;
+      volatile  uint8_t         uartDone;
+                uint8_t         rxpk_done;
+
                 uint8_t         rxpk_packet[LENGTH_PACKET];
                 uint8_t         rxpk_packet_len;
                 int8_t          rxpk_rssi;
@@ -85,9 +94,12 @@ typedef struct {
                 uint8_t         rx_doneAt;
                 uint8_t         tx_now;
 
-                uint32_t       start_timestamp;
-                uint32_t       end_timestamp;
-                uint32_t       time_interval;
+                uint16_t        num_samples;
+                uint32_t        tx1_sample_buffer[NUM_SAMPLES];
+
+                uint32_t        tx_done_timestamp;
+                uint32_t        rx_done_timestamp;
+                uint32_t        time_interval;
 
                 bool           isTargetPkt;
 
@@ -101,6 +113,10 @@ void      cb_endFrame(PORT_TIMER_WIDTH timestamp);
 
 void      cb_timer(void);
 void      assemble_ibeacon_packet(uint8_t);
+
+void     cb_uartTxDone(void);
+uint8_t  cb_uartRxCb(void);
+
 void      nrf_gpio_cfg_output(uint8_t port_number, uint32_t pin_number);
 //=========================== main ============================================
 
@@ -116,9 +132,14 @@ int mote_main(void) {
     // initialize board
     board_init();
     debugpins_init();
+    
+    uart_setCallbacks(cb_uartTxDone,cb_uartRxCb);
+    uart_enableInterrupts();
+
 
     radio_rfOff();
     app_vars.state = APP_STATE_OFF;
+    app_vars.channel = 0;
 
     nrf_gpio_cfg_output(0, DEBUG_RADIO_PIN);
 
@@ -146,14 +167,44 @@ int mote_main(void) {
     // prepare radio
     radio_rfOn();
     // freq type only effects on scum port
-    radio_setFrequency(CHANNEL, FREQ_RX);
+    radio_setFrequency(app_vars.channel, FREQ_RX);
 
     radio_rxEnable();
     app_vars.state = APP_STATE_RX;
     radio_rxNow();
 
     while(1) {
-        board_sleep();
+        app_vars.rxpk_done = 0;
+        while (app_vars.rxpk_done == 0) {
+            continue;
+        }
+
+        // if I get here, I just received target packet
+        for (i=0;i<app_vars.num_samples;i++) {
+            app_vars.uart_buffer_to_send[4*i+0] = (app_vars.tx1_sample_buffer[i] >>24) & 0x000000ff;
+            app_vars.uart_buffer_to_send[4*i+1] = (app_vars.tx1_sample_buffer[i] >>16) & 0x000000ff;
+            app_vars.uart_buffer_to_send[4*i+2] = (app_vars.tx1_sample_buffer[i] >> 8) & 0x000000ff;
+            app_vars.uart_buffer_to_send[4*i+3] = (app_vars.tx1_sample_buffer[i] >> 0) & 0x000000ff;
+        }
+        app_vars.time_interval = app_vars.tx_done_timestamp - app_vars.rx_done_timestamp;
+
+        app_vars.uart_buffer_to_send[352] = (app_vars.time_interval >> 24) & 0x000000ff;
+        app_vars.uart_buffer_to_send[353] = (app_vars.time_interval >> 16) & 0x000000ff;
+        app_vars.uart_buffer_to_send[354] = (app_vars.time_interval >>  8) & 0x000000ff;
+        app_vars.uart_buffer_to_send[355] = (app_vars.time_interval >>  0) & 0x000000ff;
+        
+        app_vars.uart_buffer_to_send[356] = app_vars.rx_packet_sqn;
+        app_vars.uart_buffer_to_send[357] = app_vars.channel+1;       //this packet is at channel
+
+        app_vars.uart_buffer_to_send[358]     = 0xff;
+        app_vars.uart_buffer_to_send[359]     = 0xff; 
+        app_vars.uart_buffer_to_send[360]     = 0xff;
+        app_vars.uart_buffer_to_send[361]     = 0xff;
+        app_vars.uart_buffer_to_send[362]     = 0xff; 
+        app_vars.uart_buffer_to_send[363]     = 0xff;
+
+        app_vars.uart_lastTxByteIndex = 0;
+        uart_writeByte(app_vars.uart_buffer_to_send[0]);
     }
 }
 
@@ -186,7 +237,7 @@ void assemble_ibeacon_packet(uint8_t sqn) {
      i                    += 16;
      app_vars.packet[i++]  = 0x00;               // major
      app_vars.packet[i++]  = 0xff;
-     app_vars.packet[i++]  = 0x00;               // minor
+     app_vars.packet[i++]  = app_vars.channel;               // minor
      app_vars.packet[i++]  = sqn;                // 34 byte
      app_vars.packet[i++]  = 0x02;               // tx id
 }
@@ -202,14 +253,11 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 }
 
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
+    uint8_t next_ch;
+    uint8_t rx_ch;
     app_dbg.num_endFrame++;
-    
-    radio_rfOff();
-
     if (app_vars.state == APP_STATE_RX) {
-        
         app_vars.isTargetPkt = FALSE;
-        
         radio_getReceivedFrame(
             app_vars.rxpk_packet,
             &app_vars.rxpk_packet_len,
@@ -218,41 +266,45 @@ void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
             &app_vars.rxpk_lqi,
             &app_vars.rxpk_crc
         );
-        
-        if (app_vars.rxpk_packet[0] == 0x42 & app_vars.rxpk_packet[1] == 0x21) {
-            app_vars.isTargetPkt = TRUE;      //Check if received packet is a legal plast system packet
+        app_vars.num_samples = radio_get_df_samples(app_vars.tx1_sample_buffer, NUM_SAMPLES);
+        /* TX1: 0x42/0x21, tx id=0x01, 下一信道 0..19 */
+        if (app_vars.rxpk_crc
+            && app_vars.rxpk_packet[0] == 0x42
+            && app_vars.rxpk_packet[1] == 0x21
+            && app_vars.rxpk_packet[34] == 0x01
+            && app_vars.rxpk_packet[32] < 20) {
+            app_vars.isTargetPkt = TRUE;
         }
-
         if (app_vars.isTargetPkt) {
+            rx_ch   = app_vars.channel;           /* 刚收到包的信道，回包仍用它 */
+            next_ch = app_vars.rxpk_packet[32];   /* TX1 告知的下一听信道 */
+            app_vars.rx_done_timestamp = timestamp;
+            app_vars.rx_packet_sqn     = app_vars.rxpk_packet[33];
+            app_vars.next_channel      = next_ch;
+            app_vars.rxpk_done         = 1;
             app_vars.time_slotStartAt = timestamp + SEND_OFFSET;
             timer_schedule(0, app_vars.time_slotStartAt);
-            
-            app_vars.pkt_sqn = app_vars.rxpk_packet[33];
-            app_vars.packet_len = sizeof(app_vars.packet);
-            
-            radio_rfOn();
-            radio_setFrequency(CHANNEL, FREQ_TX);
+            app_vars.pkt_sqn     = app_vars.rxpk_packet[33];
+            app_vars.packet_len  = sizeof(app_vars.packet);
+            radio_setFrequency(rx_ch, FREQ_TX);   /* 同信道 echo，不要 channel-1 */
             assemble_ibeacon_packet(app_vars.pkt_sqn);
             radio_loadPacket(app_vars.packet, LENGTH_PACKET);
-            
-            //radio_configure_direction_finding_antenna_switch();
             radio_configure_direction_finding_manual_AoD();
-
             radio_txEnable();
             app_vars.state = APP_STATE_TX;
             return;
-        } else {
-            radio_rfOn();
-            radio_configure_direction_finding_manual_AoD();
-            radio_setFrequency(CHANNEL, FREQ_RX);
-            radio_rxEnable();
-            radio_rxNow();
         }
+        /* 非目标包：必须留在当前信道，否则会丢掉正在等 echo 的 TX1 */
+        radio_configure_direction_finding_manual_AoD();
+        radio_setFrequency(app_vars.channel, FREQ_RX);
+        radio_rxEnable();
+        radio_rxNow();
+        return;
     }
-
     if (app_vars.state == APP_STATE_TX) {
-        radio_rfOn();
-        radio_setFrequency(CHANNEL, FREQ_RX);
+        app_vars.tx_done_timestamp = timestamp;
+        app_vars.channel = app_vars.next_channel;  /* echo 发完再跳 */
+        radio_setFrequency(app_vars.channel, FREQ_RX);
         radio_configure_direction_finding_manual_AoD();
         radio_rxEnable();
         app_vars.state = APP_STATE_RX;
@@ -265,4 +317,26 @@ void cb_timer(void) {
     app_dbg.num_timer++;
 
     radio_txNow();
+}
+
+void cb_uartTxDone(void) {
+
+   app_vars.uart_lastTxByteIndex++;
+   if (app_vars.uart_lastTxByteIndex<LEN_UART_BUFFER) {
+      uart_writeByte(app_vars.uart_buffer_to_send[app_vars.uart_lastTxByteIndex]);
+   } else {
+      app_vars.uartDone = 1;
+   }
+}
+
+uint8_t cb_uartRxCb(void) {
+   uint8_t byte;
+   
+   // read received byte
+   byte = uart_readByte();
+   
+   // echo that byte over serial
+   uart_writeByte(byte);
+   
+   return 0;
 }
