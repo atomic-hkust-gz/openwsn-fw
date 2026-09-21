@@ -22,7 +22,6 @@ remainder of the packet contains an incrementing bytes.
 #include "aod.h"
 #include "uart.h"
 #include "timer.h"
-#include "radio_CHW_df.h"
 
 //=========================== defines =========================================
 
@@ -152,10 +151,8 @@ int mote_main(void) {
     timer_start();
     
 #if ENABLE_DF == 1
-    antenna_CHW_rx_switch_init();
-    set_antenna_CHW_switches();
-    //radio_configure_direction_finding_antenna_switch();
-    //set_antenna_CHW_switches();
+    radio_configure_direction_finding_antenna_switch();
+
 #endif
 
     uart_setCallbacks(cb_uartTxDone,cb_uartRxCb);

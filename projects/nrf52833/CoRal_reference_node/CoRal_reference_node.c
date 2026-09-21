@@ -9,7 +9,7 @@ Timer0 runs at 16 MHz (prescaler 0):
   (16000000/200)*2   = 10 ms
   (16000000/200)*100 = 500 ms
 
-\author Manjiang Cao <mcao999@connect.hkust-gz.edu.cn>, Sept 2025.
+\author Manjiang Cao <mcao999@connect.hkust-gz.edu.cn>, Sept 2026.
 */
 
 #include "stdint.h"
@@ -55,9 +55,11 @@ const static uint8_t ble_uuid[16]       = {
 
 #define SLOT_DURATION     ((16000000/200)*100)  // 500 ms @ 16 MHz
 #define SYNC_OFFSET       ((16000000/200)*2)    // 10 ms into the slot
+#define NUM_SLOTS         10
+// Slot map: 0 REF beacon + TGT echo; 1-8 RX report to TGT; 9 TGT position broadcast
 
 #define SLOT_TIMER_ID     0
-#define INNER_TIMER_ID    1
+#define INNER_TIMER_ID    3
 #define CAPTURE_ID        2
 
 #define NODE_ID_REF       0
@@ -89,13 +91,13 @@ app_dbg_t app_dbg;
 
  typedef struct {
                  app_state_t     state;
- 
-                 uint8_t         pkt_sqn;
+
+                 uint8_t         slot_number;
                  uint32_t        time_slotStartAt;
- 
+
                  uint8_t         packet[LENGTH_PACKET];
                  uint8_t         packet_len;
- 
+
                  uint8_t         tx_now;
  } app_vars_t;
  
@@ -159,7 +161,7 @@ int mote_main(void) {
     // freq type only effects on scum port
     radio_setFrequency(CHANNEL, FREQ_TX);
     app_vars.packet_len = sizeof(app_vars.packet);
-    assemble_ibeacon_packet(app_vars.pkt_sqn);
+    assemble_ibeacon_packet(app_vars.slot_number);
     radio_loadPacket(app_vars.packet, LENGTH_PACKET);
 
     radio_txEnable();
@@ -219,16 +221,11 @@ void cb_startFrame(PORT_TIMER_WIDTH timestamp) {
 void cb_endFrame(PORT_TIMER_WIDTH timestamp) {
     app_dbg.num_endFrame++;
 
-    if (app_vars.state == APP_STATE_TX) {
-        // Next TX time is kept on the 500 ms slot grid in cb_timer / cb_slot_inner_timer.
-        // Do not re-arm from the radio end timestamp, or the period drifts by airtime.
-        app_vars.pkt_sqn++;
-        assemble_ibeacon_packet(app_vars.pkt_sqn);
-        radio_loadPacket(app_vars.packet, LENGTH_PACKET);
-
-        radio_txEnable();
-        app_vars.state = APP_STATE_TX;
-    }
+    //if (app_vars.state == APP_STATE_TX) {
+    //    // Slot index and next TX time are updated in cb_timer, not from PHYEND.
+    //    radio_txEnable();
+    //    app_vars.state = APP_STATE_TX;
+    //}
 }
 
 void cb_timer(void) {
@@ -236,8 +233,15 @@ void cb_timer(void) {
     app_dbg.num_timer++;
 
     app_vars.time_slotStartAt += SLOT_DURATION;
+    app_vars.slot_number = (uint8_t)((app_vars.slot_number + 1) % NUM_SLOTS);
+
     timer_schedule(SLOT_TIMER_ID,  app_vars.time_slotStartAt + SLOT_DURATION);
     timer_schedule(INNER_TIMER_ID, app_vars.time_slotStartAt + SYNC_OFFSET);
+
+    assemble_ibeacon_packet(app_vars.slot_number);
+    radio_loadPacket(app_vars.packet, LENGTH_PACKET);
+    radio_txEnable();
+    app_vars.state = APP_STATE_TX;
 }
 
 void cb_slot_inner_timer(void) {

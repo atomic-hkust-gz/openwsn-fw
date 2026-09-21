@@ -39,7 +39,7 @@
 
 #define BLE_ACCESS_ADDR           0x8E89BED6  // the actual address is 0xD6, 0xBE, 0x89, 0x8E
 
-#define RADIO_TXPOWER             0xe2 // in 2-compilant format  0xec == -20db
+#define RADIO_TXPOWER             0x0    // in 2-compilant format  0xec == -20db
 
 // the maxmium should be ((1<<14)-1), but need larger .bss size
 #define MAX_IQSAMPLES            0x58

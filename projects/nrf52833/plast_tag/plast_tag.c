@@ -171,7 +171,6 @@ int mote_main(void) {
     sample_array_int_t sample_array_int;
     // initialize board
     board_init();
-
     // turn radio off
     radio_rfOff();
 
